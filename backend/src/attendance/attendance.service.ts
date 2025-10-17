@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import type { PrismaService } from 'src/prisma/prisma.service';
 import type { CreateAttendanceDto } from './dto/create-attendance.dto';
 import type { UpdateAttendanceCto } from './dto/update-attendance.dto';
@@ -52,7 +53,7 @@ export class AttendanceService {
   async findAll(params?: { workerId?: number; date?: string; month?: string }) {
     const { workerId, date, month } = params || {};
 
-    const where: any = {};
+    const where: Prisma.AttendanceWhereInput = {};
 
     if (workerId) where.workerId = workerId;
 
