@@ -1,0 +1,8 @@
+<<<<<<< HEAD
+{ "semi": true, "singleQuote": true, "tabWidth": 2, "trailingComma": "all" }
+=======
+{
+  "singleQuote": true,
+  "trailingComma": "all"
+}
+>>>>>>> 5a9cccb (setup initial project structure)
