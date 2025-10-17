@@ -8,15 +8,21 @@ generator client {
 }
 
 model Worker {
-  id          Int          @id @default(autoincrement())
-  name        String
-  phone       String?
-  wage        Float
-  isActive    Boolean      @default(true)
-  balance     Float        @default(0)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  wage      Float
+  otRate    Float    @default(0)
+  isActive  Boolean  @default(true)
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations
   attendances Attendance[]
+  salaries    Salary[]
+  advances    Advance[]
+  expenses    Expense[]
 }
 
 enum AttendanceStatus {
@@ -38,4 +44,61 @@ model Attendance {
 
   @@unique([workerId, date])
   @@index([date])
+}
+
+enum SalaryStatus {
+  PENDING
+  PARTIAL
+  PAID
+}
+
+model Salary {
+  id           Int          @id @default(autoincrement())
+  workerId     Int
+  cycleStart   DateTime
+  cycleEnd     DateTime
+  basePay      Float        @default(0)
+  otPay        Float        @default(0)
+  grossPay     Float        @default(0)
+  totalAdvance Float        @default(0)
+  totalExpense Float        @default(0)
+  netPay       Float        @default(0)
+  status       SalaryStatus @default(PENDING)
+  paymentProof String?
+  issuedAt     DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  worker Worker @relation(fields: [workerId], references: [id])
+}
+
+model Advance {
+  id        Int      @id @default(autoincrement())
+  workerId  Int
+  amount    Float
+  reason    String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relation
+  worker Worker @relation(fields: [workerId], references: [id])
+
+  @@index([workerId, date])
+}
+
+model Expense {
+  id        Int      @id @default(autoincrement())
+  workerId  Int?
+  amount    Float
+  type      String // e.g. "Material", "Transport", "Food"
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // optional relation: sometimes site-wide, not always linked to a worker
+  worker Worker? @relation(fields: [workerId], references: [id])
+
+  @@index([workerId, date])
 }
