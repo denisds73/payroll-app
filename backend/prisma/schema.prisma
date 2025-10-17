@@ -6,3 +6,36 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+model Worker {
+  id          Int      @id @default(autoincrement())
+  name        String
+  phone       String?
+  wage        Float
+  isActive    Boolean  @default(true)
+  balance     Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum AttendanceStatus {
+  PRESENT
+  HALF
+  ABSENT
+}
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  date      DateTime
+  status    AttendanceStatus
+  otUnits   Float?           @default(0)
+  note      String?          // optional free-text (reason / remark / proof reference)
+  worker    Worker           @relation(fields: [workerId], references: [id])
+  workerId  Int
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([workerId, date])
+  @@index([date])
+}
+

@@ -1,4 +1,41 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import { WorkersService } from './workers.service';
+import { CreateWorkerDto } from './dto/create-worker.dto';
+import { UpdateWorkerDto } from './dto/update-worker.dto';
 
 @Controller('workers')
-export class WorkersController {}
+export class WorkersController {
+  constructor(private workersService: WorkersService) {}
+
+  @Get()
+  findAll() {
+    return this.workersService.findAll();
+  }
+
+  @Post()
+  create(@Body() createWorkerDto: CreateWorkerDto) {
+    return this.workersService.create(createWorkerDto);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateWorkerDto: UpdateWorkerDto,
+  ) {
+    return this.workersService.update(id, updateWorkerDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.workersService.remove(id);
+  }
+}
