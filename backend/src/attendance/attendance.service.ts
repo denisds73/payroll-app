@@ -1,11 +1,7 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UpdateAttendanceCto } from './dto/update-attendance.dto';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import type { PrismaService } from 'src/prisma/prisma.service';
+import type { CreateAttendanceDto } from './dto/create-attendance.dto';
+import type { UpdateAttendanceCto } from './dto/update-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -26,12 +22,10 @@ export class AttendanceService {
       throw new BadRequestException('Worker not found');
     }
 
-    const date = new Date(dto.date + 'T00:00:00');
+    const date = new Date(`${dto.date}T00:00:00`);
 
     if (date > this.startOfToday()) {
-      throw new BadRequestException(
-        'Attendance can not be marked for future date',
-      );
+      throw new BadRequestException('Attendance can not be marked for future date');
     }
 
     try {
@@ -48,10 +42,8 @@ export class AttendanceService {
         },
       });
     } catch (error) {
-      if (error.code == 'P2002') {
-        throw new ConflictException(
-          'Attendance for this worker on this date already exists',
-        );
+      if (error.code === 'P2002') {
+        throw new ConflictException('Attendance for this worker on this date already exists');
       }
       throw error;
     }
@@ -72,7 +64,7 @@ export class AttendanceService {
     }
 
     if (date) {
-      const localDate = new Date(date + 'T00:00:00');
+      const localDate = new Date(`${date}T00:00:00`);
       const nextDate = new Date(localDate);
       nextDate.setDate(nextDate.getDate() + 1);
       where.date = { gte: localDate, lt: nextDate };
@@ -112,7 +104,7 @@ export class AttendanceService {
     }
 
     if (dto.date) {
-      const newDate = new Date(dto.date + 'T00:00:00');
+      const newDate = new Date(`${dto.date}T00:00:00`);
       if (newDate > this.startOfToday()) {
         throw new BadRequestException('Cannot update to a future date');
       }

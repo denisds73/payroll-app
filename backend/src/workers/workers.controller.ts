@@ -1,16 +1,7 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
-import { WorkersService } from './workers.service';
-import { CreateWorkerDto } from './dto/create-worker.dto';
-import { UpdateWorkerDto } from './dto/update-worker.dto';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import type { CreateWorkerDto } from './dto/create-worker.dto';
+import type { UpdateWorkerDto } from './dto/update-worker.dto';
+import type { WorkersService } from './workers.service';
 
 @Controller('workers')
 export class WorkersController {
@@ -27,10 +18,7 @@ export class WorkersController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateWorkerDto: UpdateWorkerDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateWorkerDto: UpdateWorkerDto) {
     return this.workersService.update(id, updateWorkerDto);
   }
 
