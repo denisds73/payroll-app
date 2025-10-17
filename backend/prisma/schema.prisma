@@ -8,14 +8,15 @@ generator client {
 }
 
 model Worker {
-  id          Int      @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
   phone       String?
   wage        Float
-  isActive    Boolean  @default(true)
-  balance     Float    @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean      @default(true)
+  balance     Float        @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendances Attendance[]
 }
 
 enum AttendanceStatus {
@@ -29,7 +30,7 @@ model Attendance {
   date      DateTime
   status    AttendanceStatus
   otUnits   Float?           @default(0)
-  note      String?          // optional free-text (reason / remark / proof reference)
+  note      String? // optional free-text (reason / remark / proof reference)
   worker    Worker           @relation(fields: [workerId], references: [id])
   workerId  Int
   createdAt DateTime         @default(now())
@@ -38,4 +39,3 @@ model Attendance {
   @@unique([workerId, date])
   @@index([date])
 }
-
