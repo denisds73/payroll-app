@@ -9,9 +9,9 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import type { AttendanceService } from './attendance.service';
-import type { CreateAttendanceDto } from './dto/create-attendance.dto';
-import type { UpdateAttendanceCto } from './dto/update-attendance.dto';
+import { AttendanceService } from './attendance.service';
+import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import { UpdateAttendanceCto } from './dto/update-attendance.dto';
 
 @Controller('attendance')
 export class AttendanceController {

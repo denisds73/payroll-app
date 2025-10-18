@@ -1,8 +1,8 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
-import type { PrismaService } from 'src/prisma/prisma.service';
-import type { CreateAttendanceDto } from './dto/create-attendance.dto';
-import type { UpdateAttendanceCto } from './dto/update-attendance.dto';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import { UpdateAttendanceCto } from './dto/update-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
