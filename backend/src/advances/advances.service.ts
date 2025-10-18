@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAdvanceDto } from './dto/create-advance.dto';
+import { UpdateAdvanceDto } from './dto/update-advance.dto';
 
 @Injectable()
 export class AdvancesService {
@@ -85,5 +85,54 @@ export class AdvancesService {
         date: 'desc',
       },
     });
+  }
+
+  async update(id: number, dto: UpdateAdvanceDto) {
+    const advance = await this.prisma.advance.findUnique({ where: { id } });
+
+    if (!advance) {
+      throw new NotFoundException(`Advance with the id ${id} not found`);
+    }
+
+    if (dto.date) {
+      const newDate = new Date(`${dto.date}T00:00:00Z`);
+      if (newDate > this.startOfToday()) {
+        throw new BadRequestException('Advance rate cannot be in the future');
+      }
+    }
+
+    return this.prisma.advance.update({
+      where: { id },
+      data: {
+        ...(dto.amount !== undefined && { amount: dto.amount }),
+        ...(dto.date && { date: new Date(`${dto.date}T00:00:00Z`) }),
+        ...(dto.reason !== undefined && { reason: dto.reason }),
+      },
+      include: {
+        worker: true,
+      },
+    });
+  }
+
+  async remove(id: number) {
+    const advance = await this.prisma.advance.findUnique({
+      where: { id },
+      include: {
+        worker: true,
+      },
+    });
+
+    if (!advance) {
+      throw new NotFoundException(`Advance with id ${id} not found`);
+    }
+
+    await this.prisma.advance.delete({
+      where: { id },
+    });
+
+    return {
+      message: `Advance of ₹${advance.amount} for ${advance.worker.name} deleted successfully`,
+      data: advance,
+    };
   }
 }

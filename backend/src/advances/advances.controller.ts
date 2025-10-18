@@ -1,6 +1,17 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { AdvancesService } from './advances.service';
 import { CreateAdvanceDto } from './dto/create-advance.dto';
+import { UpdateAdvanceDto } from './dto/update-advance.dto';
 
 @Controller('advances')
 export class AdvancesController {
@@ -26,8 +37,13 @@ export class AdvancesController {
     });
   }
 
-  // @Delete(':id')
-  // this.delete(@Param('id', ParseIntPipe) id: number){
-  //   return this.advancesService.remove(id);
-  // }
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAdvanceDto) {
+    return this.advancesService.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.advancesService.remove(id);
+  }
 }
