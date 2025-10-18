@@ -135,4 +135,43 @@ export class AdvancesService {
       data: advance,
     };
   }
+
+  async getWorkerTotal(workerId: number, startDate?: string, endDate?: string) {
+    const worker = await this.prisma.worker.findUnique({ where: { id: workerId } });
+
+    if (!worker) {
+      throw new NotFoundException(`Worker with ID ${workerId} not found`);
+    }
+
+    const where: any = {};
+
+    if (startDate || endDate) {
+      where.date = {};
+
+      if (startDate) {
+        where.date.gte = new Date(`${startDate}T00:00:00Z`);
+      }
+
+      if (endDate) {
+        const end = new Date(`${endDate}T00:00:00Z`);
+        end.setDate(end.getDate() + 1);
+        where.date.lt = end;
+      }
+    }
+
+    const result = await this.prisma.advance.aggregate({
+      where,
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return {
+      workerId,
+      workerName: worker.name,
+      totalAdvances: result._sum.amount || 0,
+      startDate: startDate || null,
+      endDate: endDate || null,
+    };
+  }
 }

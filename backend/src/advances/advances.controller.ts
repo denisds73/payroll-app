@@ -46,4 +46,13 @@ export class AdvancesController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.advancesService.remove(id);
   }
+
+  @Get('worker/:id/total')
+  async getWorkerTotal(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.advancesService.getWorkerTotal(id, startDate, endDate);
+  }
 }
