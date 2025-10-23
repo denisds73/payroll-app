@@ -1,17 +1,19 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DateService } from 'src/shared/date.service';
+import { SalaryLockService } from 'src/shared/salary-lock.service';
 import { CreateAdvanceDto } from './dto/create-advance.dto';
+import { FilterAdvancesDto } from './dto/filter-advances.dto';
 import { UpdateAdvanceDto } from './dto/update-advance.dto';
 
 @Injectable()
 export class AdvancesService {
-  constructor(private prisma: PrismaService) {}
-
-  private startOfToday(): Date {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  }
+  constructor(
+    private prisma: PrismaService,
+    private dateService: DateService,
+    private salaryLock: SalaryLockService,
+  ) {}
 
   async create(dto: CreateAdvanceDto) {
     const worker = await this.prisma.worker.findUnique({ where: { id: dto.workerId } });
@@ -24,8 +26,8 @@ export class AdvancesService {
       throw new BadRequestException('Cannot give advance to an inactive worker');
     }
 
-    const advanceDate = new Date(`${dto.date}T00:00:00Z`);
-    if (advanceDate > this.startOfToday()) {
+    const advanceDate = this.dateService.parseDate(dto.date);
+    if (advanceDate > this.dateService.startOfToday()) {
       throw new BadRequestException('Advance date cannot be in the future');
     }
 
@@ -42,15 +44,10 @@ export class AdvancesService {
     });
   }
 
-  async findAll(params?: {
-    workerId?: number;
-    startDate?: string;
-    endDate?: string;
-    month?: string;
-  }) {
+  async findAll(params?: FilterAdvancesDto) {
     const { workerId, startDate, endDate, month } = params || {};
 
-    const where: any = {};
+    const where: Prisma.AdvanceWhereInput = {};
 
     if (workerId) {
       where.workerId = workerId;
@@ -58,8 +55,8 @@ export class AdvancesService {
 
     if (month) {
       const [year, monthPart] = month.split('-').map(Number);
-      const start = new Date(year, monthPart - 1, 1);
-      const end = new Date(year, monthPart, 1);
+      const start = this.dateService.startOfMonth(year, monthPart);
+      const end = this.dateService.startOfMonth(year, monthPart + 1);
       where.date = { gte: start, lt: end };
     }
 
@@ -67,10 +64,10 @@ export class AdvancesService {
       where.date = {};
 
       if (startDate) {
-        where.date.gte = new Date(`${startDate}T00:00:00`);
+        where.date.gte = this.dateService.parseDate(startDate);
       }
       if (endDate) {
-        const end = new Date(`${endDate}T00:00:00`);
+        const end = this.dateService.parseDate(endDate);
         end.setDate(end.getDate() + 1);
         where.date.lt = end;
       }
@@ -94,9 +91,11 @@ export class AdvancesService {
       throw new NotFoundException(`Advance with the id ${id} not found`);
     }
 
+    await this.salaryLock.assertNotLocked(advance.workerId, advance.date, 'advance');
+
     if (dto.date) {
-      const newDate = new Date(`${dto.date}T00:00:00Z`);
-      if (newDate > this.startOfToday()) {
+      const newDate = this.dateService.parseDate(dto.date);
+      if (newDate > this.dateService.startOfToday()) {
         throw new BadRequestException('Advance rate cannot be in the future');
       }
     }
@@ -126,6 +125,8 @@ export class AdvancesService {
       throw new NotFoundException(`Advance with id ${id} not found`);
     }
 
+    await this.salaryLock.assertNotLocked(advance.workerId, advance.date, 'advance');
+
     await this.prisma.advance.delete({
       where: { id },
     });
@@ -143,7 +144,7 @@ export class AdvancesService {
       throw new NotFoundException(`Worker with ID ${workerId} not found`);
     }
 
-    const where: any = {};
+    const where: Prisma.AdvanceWhereInput = {};
 
     if (startDate || endDate) {
       where.date = {};

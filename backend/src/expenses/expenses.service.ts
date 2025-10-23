@@ -1,7 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DateService } from 'src/shared/date.service';
 import { SalaryLockService } from 'src/shared/salary-lock.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
+import { FilterExpensesDto } from './dto/filter-expenses.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 
 @Injectable()
@@ -9,13 +12,8 @@ export class ExpensesService {
   constructor(
     private prisma: PrismaService,
     private salaryLock: SalaryLockService,
+    private dateService: DateService,
   ) {}
-
-  private startOfToday(): Date {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  }
 
   async create(dto: CreateExpenseDto) {
     const { workerId, amount, typeId, note, date } = dto;
@@ -25,8 +23,8 @@ export class ExpensesService {
     if (!worker) throw new NotFoundException('Worker not found');
     if (!worker.isActive) throw new BadRequestException('Cannot add expense for inactive worker');
 
-    const expenseDate = new Date(`${date}T00:00:00Z`);
-    if (expenseDate > this.startOfToday()) {
+    const expenseDate = this.dateService.parseDate(date);
+    if (expenseDate > this.dateService.startOfToday()) {
       throw new BadRequestException('Expense date cannot be in the future');
     }
 
@@ -50,22 +48,17 @@ export class ExpensesService {
     return expense;
   }
 
-  async findAll(params?: {
-    workerId?: number;
-    month?: string;
-    startDate?: string;
-    endDate?: string;
-  }) {
+  async findAll(params?: FilterExpensesDto) {
     const { workerId, month, startDate, endDate } = params || {};
 
-    const where: any = {};
+    const where: Prisma.ExpenseWhereInput = {};
 
     if (workerId) where.workerId = workerId;
 
     if (month) {
       const [year, monthPart] = month.split('-').map(Number);
-      const start = new Date(year, monthPart - 1, 1);
-      const end = new Date(year, monthPart, 1);
+      const start = this.dateService.startOfMonth(year, monthPart);
+      const end = this.dateService.startOfMonth(year, monthPart + 1);
       where.date = { gte: start, lt: end };
     }
 
@@ -73,10 +66,10 @@ export class ExpensesService {
       where.date = {};
 
       if (startDate) {
-        where.date.gte = new Date(`${startDate}T00:00:00`);
+        where.date.gte = this.dateService.parseDate(startDate);
       }
       if (endDate) {
-        const end = new Date(`${endDate}T00:00:00`);
+        const end = this.dateService.parseDate(endDate);
         end.setDate(end.getDate() + 1);
         where.date.lt = end;
       }
@@ -102,8 +95,8 @@ export class ExpensesService {
     await this.salaryLock.assertNotLocked(expense.workerId, expense.date, 'expense');
 
     if (dto.date) {
-      const newDate = new Date(`${dto.date}T00:00:00Z`);
-      if (newDate > this.startOfToday()) {
+      const newDate = this.dateService.parseDate(dto.date);
+      if (newDate > this.dateService.startOfToday()) {
         throw new BadRequestException('Expense date cannot be in the future');
       }
     }
@@ -119,7 +112,7 @@ export class ExpensesService {
         amount: dto.amount ?? expense.amount,
         note: dto.note ?? expense.note,
         typeId: dto.typeId ?? expense.typeId,
-        date: dto.date ? new Date(`${dto.date}T00:00:00Z`) : expense.date,
+        date: dto.date ? this.dateService.parseDate(dto.date) : expense.date,
       },
     });
 
