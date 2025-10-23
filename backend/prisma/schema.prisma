@@ -87,18 +87,23 @@ model Advance {
   @@index([workerId, date])
 }
 
-model Expense {
-  id        Int      @id @default(autoincrement())
-  workerId  Int?
-  amount    Float
-  type      String // e.g. "Material", "Transport", "Food"
-  note      String?
-  date      DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model ExpenseType {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  expenses Expense[]
+}
 
-  // optional relation: sometimes site-wide, not always linked to a worker
-  worker Worker? @relation(fields: [workerId], references: [id])
+model Expense {
+  id        Int         @id @default(autoincrement())
+  workerId  Int
+  amount    Float
+  date      DateTime
+  note      String?
+  typeId    Int
+  type      ExpenseType @relation(fields: [typeId], references: [id])
+  worker    Worker      @relation(fields: [workerId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   @@index([workerId, date])
 }
