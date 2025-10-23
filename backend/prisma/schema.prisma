@@ -15,6 +15,7 @@ model Worker {
   otRate    Float    @default(0)
   isActive  Boolean  @default(true)
   balance   Float    @default(0)
+  joinedAt  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -63,6 +64,7 @@ model Salary {
   totalAdvance Float        @default(0)
   totalExpense Float        @default(0)
   netPay       Float        @default(0)
+  totalPaid    Float        @default(0)
   status       SalaryStatus @default(PENDING)
   paymentProof String?
   issuedAt     DateTime?
