@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { UpdateAttendanceCto } from './dto/update-attendance.dto';
+import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 
 @Controller('attendance')
 export class AttendanceController {
@@ -41,7 +41,7 @@ export class AttendanceController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAttendanceCto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAttendanceDto) {
     return this.attendanceService.update(id, dto);
   }
 

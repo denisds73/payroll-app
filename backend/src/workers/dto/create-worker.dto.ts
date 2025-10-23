@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateWorkerDto {
   @IsString()
@@ -10,6 +10,14 @@ export class CreateWorkerDto {
 
   @IsNumber()
   wage: number;
+
+  @IsNumber()
+  @IsOptional()
+  otRate?: number;
+
+  @IsOptional()
+  @IsDateString()
+  joinedAt?: string;
 
   @IsOptional()
   @IsBoolean()
