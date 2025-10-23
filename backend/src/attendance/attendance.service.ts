@@ -116,6 +116,8 @@ export class AttendanceService {
       throw new BadRequestException('Attendance record not found');
     }
 
+    await this.salaryLock.assertNotLocked(attendance.workerId, attendance.date, 'attendance');
+
     if (dto.date) {
       const newDate = this.dateService.parseDate(dto.date);
       if (newDate > this.dateService.startOfToday()) {
@@ -145,6 +147,8 @@ export class AttendanceService {
     if (!attendance) {
       throw new BadRequestException('Attendance record not found');
     }
+
+    await this.salaryLock.assertNotLocked(attendance.workerId, attendance.date, 'attendance');
 
     await this.prisma.attendance.delete({
       where: { id },
