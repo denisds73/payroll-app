@@ -2,78 +2,83 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UpdateAttendanceCto } from './dto/update-attendance.dto';
+import { DateService } from 'src/shared/date.service';
+import { SalaryLockService } from 'src/shared/salary-lock.service';
+import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import { FilterAttendanceDto } from './dto/filter-attendance.dto';
+import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private prisma: PrismaService) {}
-
-  private startOfToday(): Date {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  }
+  constructor(
+    private prisma: PrismaService,
+    private dateService: DateService,
+    private salaryLock: SalaryLockService,
+  ) {}
 
   async create(dto: CreateAttendanceDto) {
-    const worker = await this.prisma.worker.findUnique({
-      where: { id: dto.workerId },
-    });
+    const worker = await this.prisma.worker.findUnique({ where: { id: dto.workerId } });
 
     if (!worker) {
-      throw new BadRequestException('Worker not found');
+      throw new NotFoundException('Worker not found');
     }
 
-    const date = new Date(dto.date + 'T00:00:00');
-
-    if (date > this.startOfToday()) {
-      throw new BadRequestException(
-        'Attendance can not be marked for future date',
-      );
+    if (!worker.isActive) {
+      throw new BadRequestException('Cannot mark attendance for inactive worker');
     }
 
-    try {
-      return await this.prisma.attendance.create({
-        data: {
-          workerId: dto.workerId,
-          date,
-          status: dto.status,
-          otUnits: dto.otUnits ?? 0,
-          note: dto.note,
-        },
-        include: {
-          worker: true,
-        },
-      });
-    } catch (error) {
-      if (error.code == 'P2002') {
-        throw new ConflictException(
-          'Attendance for this worker on this date already exists',
-        );
-      }
-      throw error;
+    const date = this.dateService.parseDate(dto.date);
+    if (date > this.dateService.startOfToday()) {
+      throw new BadRequestException('Cannot mark attendance for future dates');
     }
+
+    // Check for duplicate attendance
+    const existing = await this.prisma.attendance.findFirst({
+      where: {
+        workerId: dto.workerId,
+        date: date,
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Attendance for this date already exists');
+    }
+
+    return this.prisma.attendance.create({
+      data: {
+        workerId: dto.workerId,
+        date,
+        status: dto.status,
+        otUnits: dto.otUnits,
+        note: dto.note,
+      },
+      include: {
+        worker: true,
+      },
+    });
   }
 
-  async findAll(params?: { workerId?: number; date?: string; month?: string }) {
+  async findAll(params?: FilterAttendanceDto) {
     const { workerId, date, month } = params || {};
 
-    const where: any = {};
+    const where: Prisma.AttendanceWhereInput = {};
 
     if (workerId) where.workerId = workerId;
 
     if (month) {
       const [year, monthPart] = month.split('-').map(Number);
-      const start = new Date(year, monthPart - 1, 1);
-      const end = new Date(year, monthPart, 1);
+      const start = this.dateService.startOfMonth(year, monthPart);
+      const end = this.dateService.startOfMonth(year, monthPart + 1);
       where.date = { gte: start, lt: end };
     }
 
     if (date) {
-      const localDate = new Date(date + 'T00:00:00');
-      const nextDate = new Date(localDate);
+      const localDate = this.dateService.parseDate(date);
+      const nextDate = this.dateService.parseDate(date);
       nextDate.setDate(nextDate.getDate() + 1);
       where.date = { gte: localDate, lt: nextDate };
     }
@@ -102,7 +107,7 @@ export class AttendanceService {
     return record;
   }
 
-  async update(id: number, dto: UpdateAttendanceCto) {
+  async update(id: number, dto: UpdateAttendanceDto) {
     const attendance = await this.prisma.attendance.findUnique({
       where: { id },
     });
@@ -111,9 +116,11 @@ export class AttendanceService {
       throw new BadRequestException('Attendance record not found');
     }
 
+    await this.salaryLock.assertNotLocked(attendance.workerId, attendance.date, 'attendance');
+
     if (dto.date) {
-      const newDate = new Date(dto.date + 'T00:00:00');
-      if (newDate > this.startOfToday()) {
+      const newDate = this.dateService.parseDate(dto.date);
+      if (newDate > this.dateService.startOfToday()) {
         throw new BadRequestException('Cannot update to a future date');
       }
     }
@@ -140,6 +147,8 @@ export class AttendanceService {
     if (!attendance) {
       throw new BadRequestException('Attendance record not found');
     }
+
+    await this.salaryLock.assertNotLocked(attendance.workerId, attendance.date, 'attendance');
 
     await this.prisma.attendance.delete({
       where: { id },

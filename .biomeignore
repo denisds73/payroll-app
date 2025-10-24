@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+out
+coverage
+.next
+*.config.js
+electron/dist
+electron/build

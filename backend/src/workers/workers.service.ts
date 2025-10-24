@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateWorkerDto } from './dto/create-worker.dto';
-import { NotFoundException } from '@nestjs/common';
 import { UpdateWorkerDto } from './dto/update-worker.dto';
 
 @Injectable()
@@ -13,7 +12,13 @@ export class WorkersService {
   }
 
   create(data: CreateWorkerDto) {
-    return this.prisma.worker.create({ data });
+    const { joinedAt, ...rest } = data;
+    return this.prisma.worker.create({
+      data: {
+        ...rest,
+        joinedAt: joinedAt ? new Date(`${joinedAt}T00:00:00Z`) : undefined,
+      },
+    });
   }
 
   async update(id: number, data: UpdateWorkerDto) {
