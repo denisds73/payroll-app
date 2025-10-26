@@ -1,1 +1,56 @@
 @import "tailwindcss";
+
+@theme {
+  /* Reset default theme first (optional) */
+  --color-*: initial;
+
+  /* ⚪ Backgrounds */
+  --color-background: #ffffff;
+  --color-background-subtle: #f9fafb;
+  --color-background-muted: #f3f3f5;
+
+  /* 🩶 Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-secondary: #fafafa;
+  --color-surface-border: #e5e7eb;
+
+  /* 🔤 Text */
+  --color-text-primary: #111828;
+  --color-text-secondary: #4A5565;
+  --color-text-muted: #707891;
+  --color-text-subtle: #9BA3B7;
+  --color-text-inverted: #F5F6F8;
+
+  /* ⚫ Primary */
+  --color-primary: #111828;
+  --color-primary-foreground: #F5F6F8;
+  --color-primary-hover: #2A324A;
+
+  /* 🟢 Success */
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+
+  /* 🟡 Warning */
+  --color-warning: #eab308;
+  --color-warning-soft: #fef9c3;
+
+  /* 🔴 Error */
+  --color-error: #dc2626;
+  --color-error-soft: #fee2e2;
+
+  /* 🔵 Info */
+  --color-info: #2563eb;
+  --color-info-soft: #dbeafe;
+
+  /* ⚪ Neutral scale */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-400: #9ca3af;
+  --color-neutral-500: #6b7280;
+  --color-neutral-600: #4b5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #111827;
+}

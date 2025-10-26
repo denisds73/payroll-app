@@ -7,11 +7,8 @@ export default {
       tsx: (content) => content,
     },
   },
-  theme: {
-    extend: {},
-  },
-  plugins: [],
   experimental: {
     optimizeUniversal: true,
   },
+  // You can add additional configuration options here as needed
 };
