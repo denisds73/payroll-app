@@ -1,56 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* Reset default theme first (optional) */
-  --color-*: initial;
+  /* Brand / Main Colors (Apple-inspired, professional) */
+  --color-primary: #18181b;             /* Near-black for main UI (Apple style) */
+  --color-primary-hover: #27272a;       /* Slightly lighter for hover state */
+  --color-secondary: #334155;           /* Slate blue-gray for elegant accent */
+  --color-secondary-hover: #475569;     /* Lighter slate for hover */
 
-  /* ⚪ Backgrounds */
-  --color-background: #ffffff;
-  --color-background-subtle: #f9fafb;
-  --color-background-muted: #f3f3f5;
+  /* Feedback / Alerts (Tailwind recommended) */
+  --color-success: #10B981;             /* Green-500 */
+  --color-success-hover: #059669;       /* Green-600 */
+  --color-error: #EF4444;               /* Red-500 */
+  --color-error-hover: #DC2626;         /* Red-600 */
+  --color-warning: #F59E0B;             /* Amber-500 */
+  --color-warning-hover: #D97706;       /* Amber-600 */
+  --color-info: #3B82F6;                /* Blue-500 (info) */
+  --color-info-hover: #2563EB;          /* Blue-600 */
 
-  /* 🩶 Surfaces */
-  --color-surface: #ffffff;
-  --color-surface-secondary: #fafafa;
-  --color-surface-border: #e5e7eb;
+  /* Backgrounds */
+  --color-background: #F5F5F7;          /* Apple off-white */
+  --color-card: #FFFFFF;                /* Pure card white */
 
-  /* 🔤 Text */
-  --color-text-primary: #111828;
-  --color-text-secondary: #4A5565;
-  --color-text-muted: #707891;
-  --color-text-subtle: #9BA3B7;
-  --color-text-inverted: #F5F6F8;
-
-  /* ⚫ Primary */
-  --color-primary: #111828;
-  --color-primary-foreground: #F5F6F8;
-  --color-primary-hover: #2A324A;
-
-  /* 🟢 Success */
-  --color-success: #16a34a;
-  --color-success-soft: #dcfce7;
-
-  /* 🟡 Warning */
-  --color-warning: #eab308;
-  --color-warning-soft: #fef9c3;
-
-  /* 🔴 Error */
-  --color-error: #dc2626;
-  --color-error-soft: #fee2e2;
-
-  /* 🔵 Info */
-  --color-info: #2563eb;
-  --color-info-soft: #dbeafe;
-
-  /* ⚪ Neutral scale */
-  --color-neutral-50: #fafafa;
-  --color-neutral-100: #f4f4f5;
-  --color-neutral-200: #e5e7eb;
-  --color-neutral-300: #d1d5db;
-  --color-neutral-400: #9ca3af;
-  --color-neutral-500: #6b7280;
-  --color-neutral-600: #4b5563;
-  --color-neutral-700: #374151;
-  --color-neutral-800: #1f2937;
-  --color-neutral-900: #111827;
+  /* Text (Apple-inspired grayscale hierarchy) */
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;      /* Subdued label */
+  --color-text-disabled: #a1a1aa;       /* Low emphasis/disabled */
 }
