@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand / Main Colors (Apple-inspired, professional) */
+  --color-primary: #18181b;             /* Near-black for main UI (Apple style) */
+  --color-primary-hover: #27272a;       /* Slightly lighter for hover state */
+  --color-secondary: #334155;           /* Slate blue-gray for elegant accent */
+  --color-secondary-hover: #475569;     /* Lighter slate for hover */
+
+  /* Feedback / Alerts (Tailwind recommended) */
+  --color-success: #10B981;             /* Green-500 */
+  --color-success-hover: #059669;       /* Green-600 */
+  --color-error: #EF4444;               /* Red-500 */
+  --color-error-hover: #DC2626;         /* Red-600 */
+  --color-warning: #F59E0B;             /* Amber-500 */
+  --color-warning-hover: #D97706;       /* Amber-600 */
+  --color-info: #3B82F6;                /* Blue-500 (info) */
+  --color-info-hover: #2563EB;          /* Blue-600 */
+
+  /* Backgrounds */
+  --color-background: #F5F5F7;          /* Apple off-white */
+  --color-card: #FFFFFF;                /* Pure card white */
+
+  /* Text (Apple-inspired grayscale hierarchy) */
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;      /* Subdued label */
+  --color-text-disabled: #a1a1aa;       /* Low emphasis/disabled */
+}
