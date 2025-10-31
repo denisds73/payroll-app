@@ -1,9 +1,16 @@
 {
   "name": "payroll-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
+  "description": "software for managing attendances, expenses, advances, salaries, and workers",
+  "main": "electron/main.js",
   "scripts": {
+    "start": "NODE_ENV=development electron .",
+    "dev": "concurrently \"cd frontend && npm run dev\" \"NODE_ENV=development electron .\"",
+    "build": "npm run build:frontend && npm run build:backend && npm run build:electron",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:electron": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -14,18 +21,42 @@
     "prepare": "husky"
   },
   "keywords": [],
-  "author": "",
+  "author": "flavio-denis",
   "license": "ISC",
   "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.4",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json}": [
       "biome check --write --no-errors-on-unmatched"
     ]
+  },
+  "build": {
+    "appId": "com.payroll.app",
+    "productName": "Payroll App",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.business"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   },
   "dependencies": {
     "clsx": "^2.1.1",
