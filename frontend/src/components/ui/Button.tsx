@@ -23,7 +23,7 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   type = 'button',
   className,
-  icon = <Plus />,
+  icon,
   iconPosition = 'left',
 }) => {
   const baseStyles = `inline-flex items-center justify-center font-medium rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2`;
