@@ -1,37 +1,15 @@
-import { useState } from 'react';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
+import { MdCheckCircle } from 'react-icons/md';
+import Badge from '../components/ui/Badge';
 
 export default function TestPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [errors, setErrors] = useState({ name: '', email: '' });
-
-  const handleSubmit = () => {
-    const newErrors = {
-      name: name.trim() === '' ? 'Name is required' : '',
-      email: email.trim() === '' ? 'Email is required' : '',
-    };
-    setErrors(newErrors);
-  };
-
   return (
-    <div className="flex flex-col">
-      <Input
-        label="Enter name"
-        error={errors.name}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <Input
-        label="Enter email"
-        error={errors.email}
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <Button onClick={handleSubmit} type="submit">
-        Submit
-      </Button>
+    <div className="flex gap-2 flex-wrap items-center">
+      <Badge text="Active" variant="success" />
+      <Badge text="Inactive" variant="error" />
+      <Badge text="Pending" variant="warning" />
+      <Badge text="Info" variant="info" />
+      <Badge text="Default" />
+      <Badge text="Success" variant="success" icon={<MdCheckCircle />} />
     </div>
   );
 }
