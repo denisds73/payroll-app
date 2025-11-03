@@ -47,12 +47,12 @@ const OTInputStepper: React.FC<OTInputStepperProps> = ({
   const buttonBaseClass = clsx(
     'flex items-center justify-center w-9 h-9 rounded-md font-semibold text-sm',
     'border border-primary transition-all duration-150 ease-out',
-    'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-secondary cursor-pointer',
+    'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-secondary',
   );
 
   const buttonActiveClass = clsx(
     'bg-card text-text-primary hover:bg-primary-hover hover:text-card',
-    'active:scale-95',
+    'active:scale-95 cursor-pointer',
   );
 
   const buttonDisabledClass =
