@@ -1,28 +1,31 @@
-import Avatar from '../components/ui/Avatar';
+import { useState } from 'react';
+import RadioGroup from '../components/ui/Radiogroup';
 
-export default function TestPage() {
+const attendanceOptions = [
+  { value: 'P', label: 'Present' },
+  { value: 'A', label: 'Absent' },
+  { value: 'H', label: 'Halfday' },
+];
+
+export default function RadioGroupTestPage() {
+  // 1. State for chosen attendance value
+  const [attendance, setAttendance] = useState('P');
+
   return (
-    <div className="flex gap-4 items-center">
-      {/* Name only: should show initials */}
-      <Avatar name="Flavio Denis" />
+    <div className="p-8">
+      {/* 2. Display your RadioGroup */}
+      <h2 className="mb-2 font-bold text-lg">Attendance Selector (Test)</h2>
+      <RadioGroup
+        name="attendance"
+        options={attendanceOptions}
+        value={attendance}
+        onChange={setAttendance}
+      />
 
-      {/* Photo URL present: should show image */}
-      <Avatar name="Jane Doe" src="https://randomuser.me/api/portraits/women/68.jpg" />
-
-      {/* Larger avatar (test sizing) */}
-      <Avatar name="John Smith" size={64} />
-
-      {/* Photo with broken URL: should fallback to initials */}
-      <Avatar name="Alex Broken" src="broken/notfound.jpg" />
-
-      {/* Short name: edge case */}
-      <Avatar name="A" />
-
-      {/* Non-Latin/alphabet name: does it show something sensible? */}
-      <Avatar name="山田 太郎" />
-
-      {/* Custom className */}
-      <Avatar name="Custom" className="ring-2 ring-green-300" />
+      {/* 3. Show current state to verify logic */}
+      <div className="mt-4">
+        <span className="font-mono">Currently selected: {attendance}</span>
+      </div>
     </div>
   );
 }
