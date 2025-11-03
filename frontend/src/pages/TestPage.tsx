@@ -1,30 +1,22 @@
 import { useState } from 'react';
-import RadioGroup from '../components/ui/Radiogroup';
+import OTInputStepper from '../components/ui/OTInputStepper';
 
-const attendanceOptions = [
-  { value: 'P', label: 'Present' },
-  { value: 'A', label: 'Absent' },
-  { value: 'H', label: 'Halfday' },
-];
-
-export default function RadioGroupTestPage() {
-  // 1. State for chosen attendance value
-  const [attendance, setAttendance] = useState('P');
+export default function OTInputStepperTestPage() {
+  const [ot, setOt] = useState(0); // Start at 0 OT
 
   return (
-    <div className="p-8">
-      {/* 2. Display your RadioGroup */}
-      <h2 className="mb-2 font-bold text-lg">Attendance Selector (Test)</h2>
-      <RadioGroup
-        name="attendance"
-        options={attendanceOptions}
-        value={attendance}
-        onChange={setAttendance}
+    <div className="p-8 space-y-4">
+      <h2 className="text-xl font-bold">OT Stepper (Test)</h2>
+      <OTInputStepper
+        value={ot}
+        onChange={setOt}
+        step={0.5}
+        min={0}
+        max={3}
+        // Try adding/removing disabled={true} to test lock logic!
       />
-
-      {/* 3. Show current state to verify logic */}
-      <div className="mt-4">
-        <span className="font-mono">Currently selected: {attendance}</span>
+      <div>
+        <span>Current OT value: {ot}</span>
       </div>
     </div>
   );
