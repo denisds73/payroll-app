@@ -106,7 +106,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
   const renderActionButtons = () => {
     if (!isEditing) {
       return (
-        <Button variant="outline" size="sm" onClick={handleEdit}>
+        <Button className="border-2 font-semibold" variant="outline" size="md" onClick={handleEdit}>
           Edit
         </Button>
       );
@@ -115,10 +115,10 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
     if (isDirty) {
       return (
         <div className="flex gap-2">
-          <Button variant="primary" size="sm" onClick={handleSave}>
+          <Button variant="primary" size="md" onClick={handleSave}>
             Save
           </Button>
-          <Button variant="secondary" size="sm" onClick={handleCancel}>
+          <Button variant="secondary" size="md" onClick={handleCancel}>
             Cancel
           </Button>
         </div>
@@ -138,7 +138,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
 
   return (
     <div className="flex items-center gap-4 p-4 bg-card rounded-lg border border-gray-200">
-      <div className="w-28 text-sm font-medium text-text-primary">{formatDate(date)}</div>
+      <div className="w-28 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
       <RadioGroup
         name={`attendance-${date}`}
@@ -156,14 +156,15 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         max={2}
         step={0.5}
       />
+      <div className="max-w-md">
+        <Textarea
+          value={formData.notes}
+          onChange={handleNotesChange}
+          disabled={!isEditing}
+          placeholder="Add notes..."
+        />
+      </div>
 
-      <Textarea
-        value={formData.notes}
-        onChange={handleNotesChange}
-        disabled={!isEditing}
-        placeholder="Add notes..."
-        rows={2}
-      />
       <div className="ml-auto">{renderActionButtons()}</div>
     </div>
   );

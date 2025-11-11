@@ -44,10 +44,10 @@ export default function RadioGroup({
           />
           <span
             className={clsx(
-              'w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center transition',
+              'w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center transition bg-card',
               value === option.value
                 ? 'bg-primary border-primary'
-                : 'bg-background border-primary/20',
+                : 'bg-background border-primary/80',
               disabled && 'bg-gray-200 border-gray-200',
             )}
           >

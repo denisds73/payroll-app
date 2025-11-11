@@ -46,7 +46,7 @@ const OTInputStepper: React.FC<OTInputStepperProps> = ({
 
   const buttonBaseClass = clsx(
     'flex items-center justify-center w-9 h-9 rounded-md font-semibold text-sm',
-    'border border-primary transition-all duration-150 ease-out',
+    'border-2 border-primary/80 transition-all duration-150 ease-out',
     'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-secondary',
   );
 
@@ -89,7 +89,7 @@ const OTInputStepper: React.FC<OTInputStepperProps> = ({
         disabled={disabled}
         onChange={handleInputChange}
         className={clsx(
-          'w-16 text-center border border-primary rounded-md px-2 py-2',
+          'w-16 text-center border-2 border-primary/80 rounded-md px-2 py-2',
           'bg-card text-text-primary text-sm font-medium',
           'transition-all duration-150 ease-out',
           'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-secondary',
