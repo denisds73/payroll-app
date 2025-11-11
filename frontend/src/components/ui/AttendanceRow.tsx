@@ -137,10 +137,11 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-card rounded-lg border border-gray-200">
-      <div className="w-28 text-md font-medium text-text-primary">{formatDate(date)}</div>
+    <div className="flex flex-nowrap items-center gap-x-10 p-4 bg-card rounded-lg border border-gray-200">
+      <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
       <RadioGroup
+        className="shrink-0"
         name={`attendance-${date}`}
         options={attendanceOptions}
         value={formData.attendanceStatus}
@@ -149,6 +150,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
       />
 
       <OTInputStepper
+        className="shrink-0"
         value={formData.otHours}
         onChange={handleOtChange}
         disabled={!isEditing}
@@ -156,7 +158,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         max={2}
         step={0.5}
       />
-      <div className="max-w-md">
+      <div className="max-w-md flex-1 min-w-0 relative" style={{ top: '-3px' }}>
         <Textarea
           value={formData.notes}
           onChange={handleNotesChange}
@@ -165,7 +167,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         />
       </div>
 
-      <div className="ml-auto">{renderActionButtons()}</div>
+      <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
     </div>
   );
 };
