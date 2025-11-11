@@ -70,12 +70,11 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
   };
 
   const handleCancel = () => {
-    const hasSavedData =
-      savedData.attendanceStatus !== '' || savedData.otHours !== 0 || savedData.notes !== '';
-
     setFormData(savedData);
     setIsDirty(false);
-    if (hasSavedData) {
+    const currentHasSavedData =
+      savedData.attendanceStatus !== '' || savedData.otHours !== 0 || savedData.notes !== '';
+    if (currentHasSavedData) {
       setIsEditing(false);
     }
   };
@@ -104,6 +103,9 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
   }, [formData, savedData, isEditing]);
 
   const renderActionButtons = () => {
+    const hasSavedData =
+      savedData.attendanceStatus !== '' || savedData.otHours !== 0 || savedData.notes !== '';
+
     if (!isEditing) {
       return (
         <Button className="border-2 font-semibold" variant="outline" size="md" onClick={handleEdit}>
@@ -125,12 +127,13 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
       );
     }
 
-    if (isEditing && isDirty) {
-      return (
-        <Button variant="secondary" size="sm" onClick={handleCancel}>
-          Cancel
-        </Button>
-      );
+    if (isEditing) {
+      if (hasSavedData)
+        return (
+          <Button variant="secondary" size="md" onClick={handleCancel}>
+            Cancel
+          </Button>
+        );
     }
 
     return null;
