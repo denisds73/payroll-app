@@ -1,22 +1,26 @@
 import { useState } from 'react';
-import OTInputStepper from '../components/ui/OTInputStepper';
+import AttendanceRow from '../components/ui/AttendanceRow';
 
-export default function OTInputStepperTestPage() {
-  const [ot, setOt] = useState(0); // Start at 0 OT
+export default function TestPage() {
+  const [saved, setSaved] = useState<{
+    attendanceStatus: string;
+    otHours: number;
+    notes: string;
+  } | null>(null);
+
+  const initialData = {
+    attendanceStatus: 'Present',
+    otHours: 1,
+    notes: 'Initial note',
+  };
 
   return (
-    <div className="p-8 space-y-4">
-      <h2 className="text-xl font-bold">OT Stepper (Test)</h2>
-      <OTInputStepper
-        value={ot}
-        onChange={setOt}
-        step={0.5}
-        min={0}
-        max={3}
-        // Try adding/removing disabled={true} to test lock logic!
-      />
-      <div>
-        <span>Current OT value: {ot}</span>
+    <div className="p-8 space-y-6">
+      <h2 className="text-xl font-bold">AttendanceRow Single Row Test</h2>
+      <AttendanceRow date={'2025-11-11'} onSave={setSaved} />
+      <div className="mt-8">
+        <h3 className="font-semibold">Saved Data:</h3>
+        <pre>{JSON.stringify(saved, null, 2)}</pre>
       </div>
     </div>
   );

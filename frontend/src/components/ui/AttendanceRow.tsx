@@ -1,0 +1,172 @@
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import Button from './Button';
+import OTInputStepper from './OTInputStepper';
+import RadioGroup, { type RadioOption } from './RadioGroup';
+import Textarea from './Textarea';
+
+interface AttendanceData {
+  attendanceStatus: string;
+  otHours: number;
+  notes: string;
+}
+
+interface AttendanceRowProps {
+  date: string;
+  initialData?: AttendanceData;
+  onSave?: (data: AttendanceData) => void;
+}
+
+const attendanceOptions: RadioOption[] = [
+  { value: 'Present', label: 'Present' },
+  { value: 'Absent', label: 'Absent' },
+  { value: 'Halfday', label: 'Half Day' },
+];
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear());
+  return `${day}-${month}-${year}`;
+};
+
+const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave }) => {
+  const [isEditing, setIsEditing] = useState<boolean>(true);
+  const [isDirty, setIsDirty] = useState<boolean>(false);
+
+  const [formData, setFormData] = useState<AttendanceData>({
+    attendanceStatus: '',
+    otHours: 0,
+    notes: '',
+  });
+
+  const [savedData, setSavedData] = useState<AttendanceData>({
+    attendanceStatus: '',
+    otHours: 0,
+    notes: '',
+  });
+
+  const handleAttendanceChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, attendanceStatus: value }));
+  };
+
+  const handleOtChange = (value: number) => {
+    setFormData((prev) => ({ ...prev, otHours: value }));
+  };
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, notes: e.target.value }));
+  };
+
+  const handleSave = () => {
+    setSavedData(formData);
+    setIsEditing(false);
+    setIsDirty(false);
+
+    if (onSave) {
+      onSave(formData);
+    }
+  };
+
+  const handleCancel = () => {
+    const hasSavedData =
+      savedData.attendanceStatus !== '' || savedData.otHours !== 0 || savedData.notes !== '';
+
+    setFormData(savedData);
+    setIsDirty(false);
+    if (hasSavedData) {
+      setIsEditing(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+      setSavedData(initialData);
+      setIsEditing(false);
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const hasChanges =
+      formData.attendanceStatus !== savedData.attendanceStatus ||
+      formData.otHours !== savedData.otHours ||
+      formData.notes !== savedData.notes;
+
+    setIsDirty(hasChanges);
+  }, [formData, savedData, isEditing]);
+
+  const renderActionButtons = () => {
+    if (!isEditing) {
+      return (
+        <Button variant="outline" size="sm" onClick={handleEdit}>
+          Edit
+        </Button>
+      );
+    }
+
+    if (isDirty) {
+      return (
+        <div className="flex gap-2">
+          <Button variant="primary" size="sm" onClick={handleSave}>
+            Save
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleCancel}>
+            Cancel
+          </Button>
+        </div>
+      );
+    }
+
+    if (isEditing && isDirty) {
+      return (
+        <Button variant="secondary" size="sm" onClick={handleCancel}>
+          Cancel
+        </Button>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className="flex items-center gap-4 p-4 bg-card rounded-lg border border-gray-200">
+      <div className="w-28 text-sm font-medium text-text-primary">{formatDate(date)}</div>
+
+      <RadioGroup
+        name={`attendance-${date}`}
+        options={attendanceOptions}
+        value={formData.attendanceStatus}
+        onChange={handleAttendanceChange}
+        disabled={!isEditing}
+      />
+
+      <OTInputStepper
+        value={formData.otHours}
+        onChange={handleOtChange}
+        disabled={!isEditing}
+        min={0}
+        max={2}
+        step={0.5}
+      />
+
+      <Textarea
+        value={formData.notes}
+        onChange={handleNotesChange}
+        disabled={!isEditing}
+        placeholder="Add notes..."
+        rows={2}
+      />
+      <div className="ml-auto">{renderActionButtons()}</div>
+    </div>
+  );
+};
+
+export default AttendanceRow;

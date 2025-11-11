@@ -3,7 +3,7 @@ import type React from 'react';
 import { useId } from 'react';
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label: string;
+  label?: string;
   error?: string;
 }
 
