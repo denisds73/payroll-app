@@ -140,7 +140,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
   };
 
   return (
-    <div className="flex flex-nowrap items-center gap-x-10 p-4 bg-card rounded-lg border border-gray-200">
+    <div className="flex flex-nowrap items-center gap-x-8 px-3 py-1 bg-card ">
       <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
       <RadioGroup
