@@ -161,7 +161,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         max={2}
         step={0.5}
       />
-      <div className="max-w-md flex-1 min-w-0 relative" style={{ top: '-3px' }}>
+      <div className="max-w-xs flex-1 min-w-0 relative" style={{ top: '-3px' }}>
         <Textarea
           value={formData.notes}
           onChange={handleNotesChange}
