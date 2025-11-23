@@ -62,12 +62,11 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       {/* Header + Filters */}
       <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
         {/* Table Labels */}
-        <div className="grid grid-cols-5 gap-x-6 font-semibold text-text-primary text-base w-full">
-          <div className="w-28">Date</div>
-          <div className="w-28">Status</div>
-          <div className="w-28">OT Hours</div>
-          <div className="flex-1">Notes</div>
-          <div className="w-28 text-right">Actions</div>
+        <div className="grid grid-cols-5 gap-x-8 font-semibold text-text-primary text-base w-full">
+          <div className="w-28 ml-8">Date</div>
+          <div className="w-28 ml-10">Status</div>
+          <div className="w-28 ml-12">OT Hours</div>
+          <div className="flex-1 ml-20">Notes</div>
         </div>
         {/* Filters */}
         <div className="flex items-center gap-2 ml-6">
