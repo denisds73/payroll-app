@@ -88,8 +88,6 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           </select>
           <input
             type="number"
-            min={2020}
-            max={2030}
             className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-20 focus:ring-2 focus:ring-primary transition-all outline-none"
             value={candidateYear}
             onChange={(e) => setCandidateYear(Number(e.target.value))}
