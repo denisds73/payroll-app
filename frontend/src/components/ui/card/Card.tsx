@@ -17,14 +17,5 @@ export const Card = ({ title, children, variant = 'default', className }: CardPr
     className,
   );
 
-  return (
-    <div className={cardClasses}>
-      {title && (
-        <div className="border-b border-zinc-200 px-6 py-4">
-          <h3 className="text-lg font-semibold text-primary">{title}</h3>
-        </div>
-      )}
-      <div className="p-6">{children}</div>
-    </div>
-  );
+  return <div className={cardClasses}>{children}</div>;
 };
