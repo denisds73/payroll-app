@@ -12,7 +12,7 @@ function App() {
             <Button>Home</Button>
           </Link>
           <Link to="/test">
-            <Button>Test Input</Button>
+            <Button>Test Component</Button>
           </Link>
         </div>
       </nav>
