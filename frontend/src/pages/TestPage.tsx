@@ -1,7 +1,7 @@
-import { AddWorker } from './Workers/AddWorker';
+import { UpdateWorker } from './Workers/UpdateWorker';
 
 const TestPage = () => {
-  return <AddWorker />;
+  return <UpdateWorker />;
 };
 
 export default TestPage;

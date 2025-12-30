@@ -53,7 +53,7 @@ export const workerAPI = {
       joinedAt?: string;
       isActive?: boolean;
     }>,
-  ) => api.put(`/workers/${id}`, data),
+  ) => api.patch(`/workers/${id}`, data),
 
   delete: (id: string) => api.delete(`/workers/${id}`),
 };

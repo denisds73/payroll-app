@@ -26,37 +26,55 @@ export class SalariesService {
 
     const attendanceRecords = await this.prisma.attendance.findMany({
       where: { workerId, date: { gte: cycleStart, lte: cycleEnd } },
+      // ensure snapshot fields are loaded
+      select: {
+        status: true,
+        otUnits: true,
+        wageAtTime: true,
+        otRateAtTime: true,
+      },
     });
 
     if (attendanceRecords.length === 0)
       throw new BadRequestException('No attendance found for this period');
 
+    // Use snapshot wage/otRate stored on each attendance
+    let basePay = 0;
+    let otPay = 0;
     let totalDays = 0;
     let totalOtUnits = 0;
 
     for (const record of attendanceRecords) {
-      if (record.status === 'PRESENT') totalDays += 1;
-      if (record.status === 'HALF') totalDays += 0.5;
-      totalOtUnits += record.otUnits ?? 0;
+      if (record.status === 'PRESENT') {
+        basePay += record.wageAtTime;
+        totalDays += 1;
+      } else if (record.status === 'HALF') {
+        basePay += record.wageAtTime * 0.5;
+        totalDays += 0.5;
+      }
+
+      const otUnits = record.otUnits ?? 0;
+      otPay += otUnits * record.otRateAtTime;
+      totalOtUnits += otUnits;
     }
 
-    const basePay = totalDays * worker.wage;
-    const otPay = totalOtUnits * worker.otRate;
     const grossPay = basePay + otPay;
 
-    // Get advances including any shortfall advance from previous cycle
+    // advances (including previous shortfall auto-advance)
     const advanceResult = await this.prisma.advance.aggregate({
       _sum: { amount: true },
       where: {
         workerId,
         OR: [
-          // Regular advances within the cycle
           { date: { gte: cycleStart, lte: cycleEnd } },
-          // Shortfall advance from previous cycle end
           {
             AND: [
               { date: lastSalary ? lastSalary.cycleEnd : cycleStart },
-              { reason: { startsWith: 'Auto advance: salary shortfall' } },
+              {
+                reason: {
+                  startsWith: 'Auto advance: salary shortfall',
+                },
+              },
             ],
           },
         ],
@@ -82,7 +100,9 @@ export class SalariesService {
             workerId,
             date: cycleEnd,
             amount: shortfall,
-            reason: `Auto advance: salary shortfall for cycle ${cycleStart.toISOString().split('T')[0]} to ${cycleEnd.toISOString().split('T')[0]}`,
+            reason: `Auto advance: salary shortfall for cycle ${
+              cycleStart.toISOString().split('T')[0]
+            } to ${cycleEnd.toISOString().split('T')[0]}`,
           },
         });
       }
@@ -206,7 +226,6 @@ export class SalariesService {
     const newTotalPaid = salary.totalPaid + amount;
     const newStatus = newTotalPaid === salary.netPay ? SalaryStatus.PAID : SalaryStatus.PARTIAL;
 
-    // Update salary and worker balance in a transaction
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedSalary = await tx.salary.update({
         where: { id: salaryId },
@@ -218,7 +237,6 @@ export class SalariesService {
         },
       });
 
-      // Update worker balance
       await tx.worker.update({
         where: { id: salary.workerId },
         data: {

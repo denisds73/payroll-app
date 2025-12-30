@@ -1,6 +1,23 @@
-import { OmitType, PartialType } from '@nestjs/mapped-types';
-import { CreateExpenseDto } from './create-expense.dto';
+import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class UpdateExpenseDto extends PartialType(
-  OmitType(CreateExpenseDto, ['workerId'] as const),
-) {}
+export class UpdateExpenseDto {
+  @IsOptional()
+  @IsNumber()
+  workerId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  amount?: number;
+
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+
+  @IsOptional()
+  @IsNumber()
+  typeId?: number;
+}

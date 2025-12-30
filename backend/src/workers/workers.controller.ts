@@ -12,6 +12,11 @@ export class WorkersController {
     return this.workersService.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.workersService.findOne(+id);
+  }
+
   @Post()
   create(@Body() createWorkerDto: CreateWorkerDto) {
     return this.workersService.create(createWorkerDto);
