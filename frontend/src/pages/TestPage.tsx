@@ -1,7 +1,7 @@
-import { UpdateWorker } from './Workers/UpdateWorker';
+import WorkerDetail from './Workers/WorkerDetail';
 
 const TestPage = () => {
-  return <UpdateWorker />;
+  return <WorkerDetail />;
 };
 
 export default TestPage;

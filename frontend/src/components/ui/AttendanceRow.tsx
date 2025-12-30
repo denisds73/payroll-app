@@ -17,10 +17,11 @@ interface AttendanceRowProps {
   onSave?: (data: AttendanceData) => void;
 }
 
+// FIXED: Use lowercase values to match frontend convention
 const attendanceOptions: RadioOption[] = [
-  { value: 'Present', label: 'Present' },
-  { value: 'Absent', label: 'Absent' },
-  { value: 'Halfday', label: 'Half Day' },
+  { value: 'present', label: 'Present' },
+  { value: 'absent', label: 'Absent' },
+  { value: 'half', label: 'Half Day' },
 ];
 
 const formatDate = (dateString: string) => {
@@ -83,13 +84,15 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
     setIsEditing(true);
   };
 
+  // FIXED: Better logging to debug initialData
   useEffect(() => {
     if (initialData) {
+      console.log(`📋 AttendanceRow ${date} received initialData:`, initialData);
       setFormData(initialData);
       setSavedData(initialData);
       setIsEditing(false);
     }
-  }, [initialData]);
+  }, [initialData, date]);
 
   useEffect(() => {
     if (!isEditing) return;

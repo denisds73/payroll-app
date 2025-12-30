@@ -59,3 +59,23 @@ export const workerAPI = {
 };
 
 export default api;
+
+
+export const attendanceAPI = {
+  getByWorkerAndMonth: (workerId: number, month: number, year: number) => {
+    const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+    return api.get(`/attendance?workerId=${workerId}&month=${monthStr}`);
+  },
+
+  create: (data: {
+    workerId: number;
+    date: string;
+    status: string;
+    otUnits: number;
+    note?: string;
+  }) => api.post('/attendance', data),
+
+  update: (id: number, data: any) => api.patch(`/attendance/${id}`, data),
+
+  delete: (id: number) => api.delete(`/attendance/${id}`),
+};

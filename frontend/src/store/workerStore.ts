@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import api from '../services/api';
 
-interface Worker {
+export interface Worker {
   id: number;
   name: string;
   phone: string;
