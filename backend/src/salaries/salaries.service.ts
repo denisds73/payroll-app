@@ -1,13 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, SalaryStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DateService } from '../shared/date.service';
 import { FilterSalariesDto } from './dto/filter-salaries.dto';
 
 @Injectable()
 export class SalariesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private dateService: DateService,
+  ) {}
 
-  private async calculateSalaryData(workerId: number) {
+  // NEW: Pure calculation function (no database writes)
+  private async calculateBreakdown(workerId: number) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: workerId },
     });
@@ -22,11 +27,12 @@ export class SalariesService {
     const cycleStart = lastSalary
       ? new Date(lastSalary.cycleEnd.getTime() + 86400000)
       : worker.joinedAt;
-    const cycleEnd = new Date();
+    const cycleEnd = this.dateService.startOfToday();
+
+    console.log('Cycle calculation:', { workerId, cycleStart, cycleEnd });
 
     const attendanceRecords = await this.prisma.attendance.findMany({
       where: { workerId, date: { gte: cycleStart, lte: cycleEnd } },
-      // ensure snapshot fields are loaded
       select: {
         status: true,
         otUnits: true,
@@ -35,10 +41,12 @@ export class SalariesService {
       },
     });
 
+    console.log('Found attendance records:', attendanceRecords.length);
+
     if (attendanceRecords.length === 0)
       throw new BadRequestException('No attendance found for this period');
 
-    // Use snapshot wage/otRate stored on each attendance
+    // Calculate pay
     let basePay = 0;
     let otPay = 0;
     let totalDays = 0;
@@ -60,7 +68,7 @@ export class SalariesService {
 
     const grossPay = basePay + otPay;
 
-    // advances (including previous shortfall auto-advance)
+    // Calculate deductions
     const advanceResult = await this.prisma.advance.aggregate({
       _sum: { amount: true },
       where: {
@@ -88,69 +96,71 @@ export class SalariesService {
 
     const totalAdvance = advanceResult._sum.amount ?? 0;
     const totalExpense = expenseResult._sum.amount ?? 0;
-
     const netPay = grossPay - totalAdvance - totalExpense;
 
+    return {
+      cycleStart,
+      cycleEnd,
+      totalDays,
+      totalOtUnits,
+      basePay,
+      otPay,
+      grossPay,
+      totalAdvance,
+      totalExpense,
+      netPay,
+    };
+  }
+
+  // Calculate salary (NO database writes - just preview)
+  async calculateSalary(workerId: number) {
+    return this.calculateBreakdown(workerId);
+  }
+
+  // Create salary (writes to database)
+  async createSalary(workerId: number) {
+    const breakdown = await this.calculateBreakdown(workerId);
+
+    // Now create the salary record
     const result = await this.prisma.$transaction(async (tx) => {
-      if (netPay < 0) {
-        const shortfall = Math.abs(netPay);
+      // If net pay is negative, create auto-advance
+      if (breakdown.netPay < 0) {
+        const shortfall = Math.abs(breakdown.netPay);
 
         await tx.advance.create({
           data: {
             workerId,
-            date: cycleEnd,
+            date: breakdown.cycleEnd,
             amount: shortfall,
             reason: `Auto advance: salary shortfall for cycle ${
-              cycleStart.toISOString().split('T')[0]
-            } to ${cycleEnd.toISOString().split('T')[0]}`,
+              breakdown.cycleStart.toISOString().split('T')[0]
+            } to ${breakdown.cycleEnd.toISOString().split('T')[0]}`,
           },
         });
       }
 
-      const salaryNet = netPay < 0 ? 0 : netPay;
+      const salaryNet = breakdown.netPay < 0 ? 0 : breakdown.netPay;
 
       const salary = await tx.salary.create({
         data: {
           workerId,
-          cycleStart,
-          cycleEnd,
-          basePay,
-          otPay,
-          grossPay,
-          totalAdvance,
-          totalExpense,
+          cycleStart: breakdown.cycleStart,
+          cycleEnd: breakdown.cycleEnd,
+          basePay: breakdown.basePay,
+          otPay: breakdown.otPay,
+          grossPay: breakdown.grossPay,
+          totalAdvance: breakdown.totalAdvance,
+          totalExpense: breakdown.totalExpense,
           netPay: salaryNet,
           totalPaid: 0,
           status: SalaryStatus.PENDING,
         },
       });
 
-      return {
-        salary,
-        breakdown: {
-          totalDays,
-          totalOtUnits,
-          basePay,
-          otPay,
-          grossPay,
-          totalAdvance,
-          totalExpense,
-          netPay,
-        },
-      };
+      return salary;
     });
 
     return result;
-  }
-
-  async calculateSalary(workerId: number) {
-    const result = await this.calculateSalaryData(workerId);
-    return result.breakdown;
-  }
-
-  async createSalary(workerId: number) {
-    const result = await this.calculateSalaryData(workerId);
-    return result.salary;
   }
 
   async getWorkerSalaries(workerId: number, filter: FilterSalariesDto = {}) {
@@ -250,5 +260,48 @@ export class SalariesService {
     });
 
     return result;
+  }
+
+  async debugSalary(workerId: number) {
+    const worker = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+    });
+
+    const lastSalary = await this.prisma.salary.findFirst({
+      where: { workerId },
+      orderBy: { cycleEnd: 'desc' },
+    });
+
+    const cycleStart = lastSalary
+      ? new Date(lastSalary.cycleEnd.getTime() + 86400000)
+      : worker?.joinedAt;
+    const cycleEnd = new Date();
+
+    const allAttendance = await this.prisma.attendance.findMany({
+      where: { workerId },
+      select: { date: true, status: true },
+    });
+
+    const filteredAttendance = await this.prisma.attendance.findMany({
+      where: {
+        workerId,
+        date: { gte: cycleStart, lte: cycleEnd },
+      },
+      select: { date: true, status: true },
+    });
+
+    return {
+      workerId,
+      workerJoinedAt: worker?.joinedAt,
+      lastSalary: lastSalary || 'None',
+      cycleStart: cycleStart,
+      cycleEnd: cycleEnd,
+      cycleStartISO: cycleStart?.toISOString(),
+      cycleEndISO: cycleEnd.toISOString(),
+      allAttendanceCount: allAttendance.length,
+      allAttendanceDates: allAttendance.map((a) => a.date.toISOString()),
+      filteredAttendanceCount: filteredAttendance.length,
+      filteredAttendanceDates: filteredAttendance.map((a) => a.date.toISOString()),
+    };
   }
 }

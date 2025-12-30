@@ -44,6 +44,10 @@ export class AttendanceService {
       throw new BadRequestException('Cannot mark attendance for future dates');
     }
 
+    if (date < worker.joinedAt) {
+      throw new BadRequestException('Cannot mark attendance before worker joined');
+    }
+
     const existing = await this.prisma.attendance.findFirst({
       where: {
         workerId: dto.workerId,
