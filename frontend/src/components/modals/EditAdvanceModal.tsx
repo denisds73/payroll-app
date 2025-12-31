@@ -79,8 +79,13 @@ export default function EditAdvanceModal({
         reason: formData.reason || undefined,
       });
 
-      onSuccess();
+      // First close the modal with animation
       handleClose();
+
+      // Then call onSuccess after animation completes
+      setTimeout(() => {
+        onSuccess();
+      }, 250); // Wait for animation to complete
     } catch (err) {
       const errorMessage =
         err instanceof Error && 'response' in err

@@ -83,44 +83,50 @@ export default function EditExpenseModal({
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    if (!expense) return;
+  e.preventDefault();
+  if (!expense) return;
 
-    setError(null);
+  setError(null);
 
-    if (!formData.amount || Number(formData.amount) <= 0) {
-      setError('Please enter a valid amount');
-      return;
-    }
+  if (!formData.amount || Number(formData.amount) <= 0) {
+    setError('Please enter a valid amount');
+    return;
+  }
 
-    if (!formData.typeId) {
-      setError('Please select an expense type');
-      return;
-    }
+  if (!formData.typeId) {
+    setError('Please select an expense type');
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      await expensesAPI.update(expense.id, {
-        date: formData.date,
-        amount: Number(formData.amount),
-        typeId: Number(formData.typeId),
-        note: formData.note || undefined,
-      });
+  try {
+    await expensesAPI.update(expense.id, {
+      date: formData.date,
+      amount: Number(formData.amount),
+      typeId: Number(formData.typeId),
+      note: formData.note || undefined,
+    });
 
+    // First close the modal with animation
+    handleClose();
+    
+    // Then call onSuccess after animation completes
+    setTimeout(() => {
       onSuccess();
-      handleClose();
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error && 'response' in err
-          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          : 'Failed to update expense';
+    }, 250); // Wait for animation to complete
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : 'Failed to update expense';
 
-      setError(errorMessage || 'Failed to update expense');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError(errorMessage || 'Failed to update expense');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleClose = (): void => {
     if (!loading) {
