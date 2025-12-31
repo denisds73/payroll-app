@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { Plus } from 'lucide-react';
 
 interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'danger' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'dangerLight' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
@@ -32,6 +32,7 @@ export const Button: React.FC<ButtonProps> = ({
     primary: `bg-primary text-white hover:bg-primary-hover focus:ring-primary`,
     secondary: `bg-secondary text-white hover:bg-secondary-hover focus:ring-secondary`,
     danger: `bg-error text-white hover:bg-error-hover focus:ring-error`,
+    dangerLight: `border border-error text-error hover:bg-error/10 focus:ring-error`,
     outline: `border border-primary text-primary hover:bg-neutral-50 focus:ring-primary`,
   };
 

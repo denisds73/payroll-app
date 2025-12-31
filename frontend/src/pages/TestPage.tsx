@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import IssueAdvanceModal from '../components/modals/IssueAdvanceModal';
 import { salariesAPI } from '../services/api';
 
 const TestPage = () => {
+  const [modalOpen, setModalOpen] = useState(true);
+
   useEffect(() => {
     const testCalculate = async () => {
       try {
@@ -14,7 +17,21 @@ const TestPage = () => {
     testCalculate();
   }, []);
 
-  return <div>Testing salariesAPI... Check console.</div>;
+  return (
+    <div>
+      <div>Testing salariesAPI... Check console.</div>
+      <IssueAdvanceModal
+        workerId={3}
+        workerName="Test Worker"
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => alert('Advance issued!')}
+      />
+      <button type="button" onClick={() => setModalOpen(true)}>
+        Open IssueAdvanceModal
+      </button>
+    </div>
+  );
 };
 
 export default TestPage;

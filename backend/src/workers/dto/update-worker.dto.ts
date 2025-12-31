@@ -18,10 +18,15 @@ export class UpdateWorkerDto {
   otRate?: number;
 
   @IsOptional()
-  @IsDateString()
-  joinedAt?: string;
-
-  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  wageEffectiveDate?: string;
+
+  @IsOptional()
+  @IsString()
+  otRateEffectiveDate?: string;
 }
+

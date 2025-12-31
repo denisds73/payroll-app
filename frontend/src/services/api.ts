@@ -60,7 +60,6 @@ export const workerAPI = {
 
 export default api;
 
-
 export const attendanceAPI = {
   getByWorkerAndMonth: (workerId: number, month: number, year: number) => {
     const monthStr = `${year}-${String(month).padStart(2, '0')}`;
@@ -84,39 +83,38 @@ export const attendanceAPI = {
 
 // Advances API
 export const advancesAPI = {
-  // Get advances for a worker
-  getByWorker: (workerId: number, startDate?: string, endDate?: string) => {
-    const params = new URLSearchParams({ workerId: workerId.toString() });
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    return api.get(`/advances?${params.toString()}`);
-  },
+  create: (data: { workerId: number; date: string; amount: number; reason?: string }) =>
+    api.post('/advances', data),
 
-  // Get total advances for a worker in a period
-  getWorkerTotal: (workerId: number, startDate?: string, endDate?: string) => {
-    const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    return api.get(`/advances/worker/${workerId}/total?${params.toString()}`);
-  },
+  getByWorker: (
+    workerId: number,
+    params?: { month?: string; startDate?: string; endDate?: string },
+  ) => api.get('/advances', { params: { workerId, ...params } }),
 
-  // Create advance
+  update: (id: number, data: { amount?: number; date?: string; reason?: string }) =>
+    api.patch(`/advances/${id}`, data),
+
+  delete: (id: number) => api.delete(`/advances/${id}`),
+};
+
+export const expensesAPI = {
   create: (data: {
     workerId: number;
     date: string;
     amount: number;
-    reason: string;
-  }) => api.post('/advances', data),
+    typeId: number;
+    note?: string;
+  }) => api.post('/expenses', data),
 
-  // Update advance
-  update: (id: number, data: Partial<{
-    amount: number;
-    date: string;
-    reason: string;
-  }>) => api.patch(`/advances/${id}`, data),
+  getByWorker: (
+    workerId: number,
+    params?: { month?: string; startDate?: string; endDate?: string },
+  ) => api.get('/expenses', { params: { workerId, ...params } }),
 
-  // Delete advance
-  delete: (id: number) => api.delete(`/advances/${id}`),
+  update: (id: number, data: { amount?: number; date?: string; typeId?: number; note?: string }) =>
+    api.patch(`/expenses/${id}`, data),
+
+  delete: (id: number) => api.delete(`/expenses/${id}`),
 };
 
 // Salaries API
@@ -128,11 +126,14 @@ export const salariesAPI = {
   create: (workerId: number) => api.post(`/salaries/${workerId}`),
 
   // Get worker salaries
-  getByWorker: (workerId: number, params?: {
-    startDate?: string;
-    endDate?: string;
-    status?: 'PENDING' | 'PARTIAL' | 'PAID';
-  }) => {
+  getByWorker: (
+    workerId: number,
+    params?: {
+      startDate?: string;
+      endDate?: string;
+      status?: 'PENDING' | 'PARTIAL' | 'PAID';
+    },
+  ) => {
     const searchParams = new URLSearchParams();
     if (params?.startDate) searchParams.append('startDate', params.startDate);
     if (params?.endDate) searchParams.append('endDate', params.endDate);
@@ -144,39 +145,30 @@ export const salariesAPI = {
   getPending: () => api.get('/salaries/pending'),
 
   // Issue salary (pay full or partial)
-  issue: (salaryId: number, data: {
-    amount: number;
-    paymentProof?: string;
-  }) => api.post(`/salaries/${salaryId}/issue`, data),
+  issue: (
+    salaryId: number,
+    data: {
+      amount: number;
+      paymentProof?: string;
+    },
+  ) => api.post(`/salaries/${salaryId}/issue`, data),
 };
 
-// Expenses API
-export const expensesAPI = {
-  // Get expenses for a worker
-  getByWorker: (workerId: number, startDate?: string, endDate?: string) => {
-    const params = new URLSearchParams({ workerId: workerId.toString() });
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    return api.get(`/expenses?${params.toString()}`);
-  },
+export const expenseTypesAPI = {
+  getAll: () => api.get('/expense-types'),
+  create: (data: { name: string }) => api.post('/expense-types', data),
+};
 
-  // Create expense
-  create: (data: {
-    workerId: number;
-    date: string;
-    amount: number;
-    typeId: number;
-    note?: string;
-  }) => api.post('/expenses', data),
+export const workersAPI = {
+  getAll: () => api.get('/workers'),
 
-  // Update expense
-  update: (id: number, data: Partial<{
-    amount: number;
-    date: string;
-    typeId: number;
-    note: string;
-  }>) => api.patch(`/expenses/${id}`, data),
+  create: (data: { name: string; phone?: string; wage: number; otRate: number }) =>
+    api.post('/workers', data),
 
-  // Delete expense
-  delete: (id: number) => api.delete(`/expenses/${id}`),
+  update: (
+    id: number,
+    data: { name?: string; phone?: string; wage?: number; otRate?: number; isActive?: boolean },
+  ) => api.patch(`/workers/${id}`, data),
+
+  delete: (id: number) => api.delete(`/workers/${id}`),
 };

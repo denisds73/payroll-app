@@ -48,54 +48,154 @@ export class WorkersService {
     });
   }
 
-  async update(id: number, updateWorkerDto: UpdateWorkerDto) {
+  async update(id: number, dto: UpdateWorkerDto) {
     const worker = await this.prisma.worker.findUnique({ where: { id } });
+    if (!worker) throw new NotFoundException('Worker not found');
 
-    if (!worker) {
-      throw new NotFoundException(`Worker with ID ${id} not found`);
-    }
+    const wageChanged = dto.wage !== undefined && dto.wage !== worker.wage;
+    const otRateChanged = dto.otRate !== undefined && dto.otRate !== worker.otRate;
 
-    return this.prisma.$transaction(async (tx) => {
-      // Check if wage or OT rate is changing
-      const wageChanged =
-        updateWorkerDto.wage !== undefined && updateWorkerDto.wage !== worker.wage;
+    if (wageChanged || otRateChanged) {
+      const wageEffectiveDate = dto.wageEffectiveDate
+        ? new Date(dto.wageEffectiveDate)
+        : new Date();
 
-      const otRateChanged =
-        updateWorkerDto.otRate !== undefined && updateWorkerDto.otRate !== worker.otRate;
+      const otRateEffectiveDate = dto.otRateEffectiveDate
+        ? new Date(dto.otRateEffectiveDate)
+        : new Date();
 
-      // If wage/OT rate changed, create wage history record
-      if (wageChanged || otRateChanged) {
+      const earliestEffectiveDate =
+        wageChanged && otRateChanged
+          ? wageEffectiveDate < otRateEffectiveDate
+            ? wageEffectiveDate
+            : otRateEffectiveDate
+          : wageChanged
+            ? wageEffectiveDate
+            : otRateEffectiveDate;
+
+      // Check if any salaries have been paid that include the effective date
+      const paidSalaries = await this.prisma.salary.findFirst({
+        where: {
+          workerId: id,
+          cycleStart: {
+            lte: earliestEffectiveDate,
+          },
+          cycleEnd: {
+            gte: earliestEffectiveDate,
+          },
+        },
+      });
+
+      if (paidSalaries) {
+        throw new BadRequestException(
+          'Cannot change wage/OT rate for a period with paid salary. ' +
+            'The effective date must be after the last paid salary cycle.',
+        );
+      }
+
+      await this.prisma.$transaction(async (tx) => {
+        // 1. Create wage history record
         await tx.wageHistory.create({
           data: {
             workerId: id,
-            wage: updateWorkerDto.wage ?? worker.wage,
-            otRate: updateWorkerDto.otRate ?? worker.otRate,
-            effectiveFrom: new Date(),
-            reason: 'Wage adjustment',
+            wage: dto.wage ?? worker.wage,
+            otRate: dto.otRate ?? worker.otRate,
+            effectiveFrom: earliestEffectiveDate,
+            reason: 'Manual update',
           },
         });
-      }
 
-      // Extract and convert joinedAt date
-      const { joinedAt, ...rest } = updateWorkerDto;
+        // 2. Update attendance records from wage effective date onwards
+        if (wageChanged) {
+          await tx.attendance.updateMany({
+            where: {
+              workerId: id,
+              date: {
+                gte: wageEffectiveDate,
+              },
+            },
+            data: {
+              wageAtTime: dto.wage,
+            },
+          });
+        }
 
-      // Update worker with converted date
-      return tx.worker.update({
-        where: { id },
-        data: {
-          ...rest,
-          ...(joinedAt && { joinedAt: new Date(`${joinedAt}T00:00:00Z`) }),
-        },
+        // 3. Update attendance records from OT rate effective date onwards
+        if (otRateChanged) {
+          await tx.attendance.updateMany({
+            where: {
+              workerId: id,
+              date: {
+                gte: otRateEffectiveDate,
+              },
+            },
+            data: {
+              otRateAtTime: dto.otRate,
+            },
+          });
+        }
+
+        // 4. Update the worker record
+        await tx.worker.update({
+          where: { id },
+          data: {
+            ...(dto.name && { name: dto.name }),
+            ...(dto.phone !== undefined && { phone: dto.phone }),
+            ...(dto.wage !== undefined && { wage: dto.wage }),
+            ...(dto.otRate !== undefined && { otRate: dto.otRate }),
+            ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+          },
+        });
       });
+
+      return this.prisma.worker.findUnique({ where: { id } });
+    }
+
+    // If no wage/OT rate change, simple update
+    return this.prisma.worker.update({
+      where: { id },
+      data: {
+        ...(dto.name && { name: dto.name }),
+        ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.wage !== undefined && { wage: dto.wage }),
+        ...(dto.otRate !== undefined && { otRate: dto.otRate }),
+        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+      },
     });
   }
 
   async remove(id: number) {
     const worker = await this.prisma.worker.findUnique({ where: { id } });
+
     if (!worker) {
       throw new NotFoundException(`Worker with ID ${id} not found`);
     }
-    return this.prisma.worker.delete({ where: { id } });
+
+    // Delete all related records in a transaction
+    await this.prisma.$transaction(async (tx) => {
+      // Delete attendance records
+      await tx.attendance.deleteMany({ where: { workerId: id } });
+
+      // Delete advances
+      await tx.advance.deleteMany({ where: { workerId: id } });
+
+      // Delete expenses
+      await tx.expense.deleteMany({ where: { workerId: id } });
+
+      // Delete salaries
+      await tx.salary.deleteMany({ where: { workerId: id } });
+
+      // Delete wage history (if exists)
+      await tx.wageHistory.deleteMany({ where: { workerId: id } });
+
+      // Finally delete the worker
+      await tx.worker.delete({ where: { id } });
+    });
+
+    return {
+      message: 'Worker and all related records deleted successfully',
+      worker,
+    };
   }
 
   // Helper method to get wage that was active on a specific date

@@ -10,8 +10,8 @@
   /* Feedback / Alerts (Tailwind recommended) */
   --color-success: #10B981;             /* Green-500 */
   --color-success-hover: #059669;       /* Green-600 */
-  --color-error: #EF4444;               /* Red-500 */
-  --color-error-hover: #DC2626;         /* Red-600 */
+  --color-error: #DC2626;               /* Red-500 */
+  --color-error-hover: #B91C1C;         /* Red-700, darker for hover */
   --color-warning: #F59E0B;             /* Amber-500 */
   --color-warning-hover: #D97706;       /* Amber-600 */
   --color-info: #3B82F6;                /* Blue-500 (info) */
