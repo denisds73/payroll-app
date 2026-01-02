@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import AttendanceRow from './AttendanceRow';
 
-// --- Types ---
 interface AttendanceData {
   attendanceStatus: string;
   otHours: number;
@@ -14,12 +13,10 @@ interface AttendanceTableProps {
   attendanceMap: Record<string, AttendanceData | undefined>;
   loading: boolean;
   error?: string;
-  onMonthChange: (month: number) => void;
-  onYearChange: (year: number) => void;
+  onMonthYearChange: (month: number, year: number) => void;
   onSaveAttendance: (date: string, data: AttendanceData) => void;
 }
 
-// --- Utilities ---
 function formatDateLocal(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -43,8 +40,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   attendanceMap,
   loading,
   error,
-  onMonthChange,
-  onYearChange,
+  onMonthYearChange,
   onSaveAttendance,
 }) => {
   const [candidateMonth, setCandidateMonth] = useState(month);
@@ -59,16 +55,13 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
 
   return (
     <div className="rounded-xl bg-card shadow-md w-full">
-      {/* Header + Filters */}
       <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
-        {/* Table Labels */}
         <div className="grid grid-cols-5 gap-x-8 font-semibold text-text-primary text-base w-full">
           <div className="w-28 ml-8">Date</div>
           <div className="w-28 ml-10">Status</div>
           <div className="w-28 ml-12">OT Hours</div>
           <div className="flex-1 ml-20">Notes</div>
         </div>
-        {/* Filters */}
         <div className="flex items-center gap-2 ml-6">
           <select
             className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
@@ -94,19 +87,8 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           />
           <button
             type="button"
-            className="
-              ml-2 px-4 py-1 
-              rounded 
-              bg-primary 
-              hover:bg-primary-hover 
-              text-card font-semibold 
-              transition-all
-              shadow-sm
-            "
-            onClick={() => {
-              onMonthChange(candidateMonth);
-              onYearChange(candidateYear);
-            }}
+            className="ml-2 px-4 py-1 rounded bg-primary hover:bg-primary-hover text-card font-semibold transition-all shadow-sm active:scale-95 active:shadow-none"
+            onClick={() => onMonthYearChange(candidateMonth, candidateYear)}
             aria-label="Apply month/year filter"
           >
             Apply

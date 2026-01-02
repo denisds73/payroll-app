@@ -7,14 +7,21 @@ import { SalariesService } from './salaries.service';
 export class SalariesController {
   constructor(private readonly salariesService: SalariesService) {}
 
+  // ✅ Move specific routes BEFORE generic parameter routes
+  
+  @Get('debug/:workerId')
+  async debugSalary(@Param('workerId', ParseIntPipe) workerId: number) {
+    return this.salariesService.debugSalary(workerId);
+  }
+
   @Get('calculate/:workerId')
   async calculateSalary(@Param('workerId', ParseIntPipe) workerId: number) {
     return this.salariesService.calculateSalary(workerId);
   }
 
-  @Post(':workerId')
-  async createSalary(@Param('workerId', ParseIntPipe) workerId: number) {
-    return this.salariesService.createSalary(workerId);
+  @Get('pending')
+  async getPendingSalaries() {
+    return this.salariesService.getPendingSalaries();
   }
 
   @Get('worker/:workerId')
@@ -25,9 +32,9 @@ export class SalariesController {
     return this.salariesService.getWorkerSalaries(workerId, filter);
   }
 
-  @Get('pending')
-  async getPendingSalaries() {
-    return this.salariesService.getPendingSalaries();
+  @Post(':workerId')
+  async createSalary(@Param('workerId', ParseIntPipe) workerId: number) {
+    return this.salariesService.createSalary(workerId);
   }
 
   @Post(':id/issue')

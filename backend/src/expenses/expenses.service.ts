@@ -79,6 +79,7 @@ export class ExpensesService {
       where,
       include: {
         worker: true,
+        type: true,
       },
       orderBy: {
         date: 'desc',
@@ -102,7 +103,8 @@ export class ExpensesService {
     }
 
     if (dto.typeId) {
-      const type = await this.prisma.expense.findUnique({ where: { id: dto.typeId } });
+      // ✅ Fixed: Check expenseType table instead of expense table
+      const type = await this.prisma.expenseType.findUnique({ where: { id: dto.typeId } });
       if (!type) throw new NotFoundException('Expense type not found');
     }
 
@@ -113,6 +115,10 @@ export class ExpensesService {
         note: dto.note ?? expense.note,
         typeId: dto.typeId ?? expense.typeId,
         date: dto.date ? this.dateService.parseDate(dto.date) : expense.date,
+      },
+      include: {
+        worker: true,
+        type: true,
       },
     });
 

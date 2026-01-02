@@ -24,6 +24,7 @@ model Worker {
   salaries    Salary[]
   advances    Advance[]
   expenses    Expense[]
+  wageHistory WageHistory[]
 }
 
 enum AttendanceStatus {
@@ -33,18 +34,36 @@ enum AttendanceStatus {
 }
 
 model Attendance {
-  id        Int              @id @default(autoincrement())
-  date      DateTime
-  status    AttendanceStatus
-  otUnits   Float?           @default(0)
-  note      String? // optional free-text (reason / remark / proof reference)
-  worker    Worker           @relation(fields: [workerId], references: [id])
-  workerId  Int
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id           Int              @id @default(autoincrement())
+  date         DateTime
+  status       AttendanceStatus
+  otUnits      Float?           @default(0)
+  note         String?
+  
+  wageAtTime   Float            // Wage rate when attendance was marked
+  otRateAtTime Float            // OT rate when attendance was marked
+  
+  worker       Worker           @relation(fields: [workerId], references: [id])
+  workerId     Int
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@unique([workerId, date])
   @@index([date])
+}
+
+model WageHistory {
+  id            Int      @id @default(autoincrement())
+  workerId      Int
+  wage          Float
+  otRate        Float
+  effectiveFrom DateTime
+  reason        String?
+  createdAt     DateTime @default(now())
+  
+  worker        Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  
+  @@index([workerId, effectiveFrom])
 }
 
 enum SalaryStatus {

@@ -10,8 +10,8 @@
   /* Feedback / Alerts (Tailwind recommended) */
   --color-success: #10B981;             /* Green-500 */
   --color-success-hover: #059669;       /* Green-600 */
-  --color-error: #EF4444;               /* Red-500 */
-  --color-error-hover: #DC2626;         /* Red-600 */
+  --color-error: #DC2626;               /* Red-500 */
+  --color-error-hover: #B91C1C;         /* Red-700, darker for hover */
   --color-warning: #F59E0B;             /* Amber-500 */
   --color-warning-hover: #D97706;       /* Amber-600 */
   --color-info: #3B82F6;                /* Blue-500 (info) */
@@ -25,4 +25,32 @@
   --color-text-primary: #18181b;
   --color-text-secondary: #52525b;      /* Subdued label */
   --color-text-disabled: #a1a1aa;       /* Low emphasis/disabled */
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

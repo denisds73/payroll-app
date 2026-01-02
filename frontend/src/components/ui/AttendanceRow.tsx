@@ -18,9 +18,9 @@ interface AttendanceRowProps {
 }
 
 const attendanceOptions: RadioOption[] = [
-  { value: 'Present', label: 'Present' },
-  { value: 'Absent', label: 'Absent' },
-  { value: 'Halfday', label: 'Half Day' },
+  { value: 'present', label: 'Present' },
+  { value: 'absent', label: 'Absent' },
+  { value: 'half', label: 'Half Day' },
 ];
 
 const formatDate = (dateString: string) => {
@@ -85,11 +85,12 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
 
   useEffect(() => {
     if (initialData) {
+      console.log(`📋 AttendanceRow ${date} received initialData:`, initialData);
       setFormData(initialData);
       setSavedData(initialData);
       setIsEditing(false);
     }
-  }, [initialData]);
+  }, [initialData, date]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -150,6 +151,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         value={formData.attendanceStatus}
         onChange={handleAttendanceChange}
         disabled={!isEditing}
+        showLabels={false}
       />
 
       <OTInputStepper

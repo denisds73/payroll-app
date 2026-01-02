@@ -21,7 +21,15 @@ export class AttendanceService {
   ) {}
 
   async create(dto: CreateAttendanceDto) {
-    const worker = await this.prisma.worker.findUnique({ where: { id: dto.workerId } });
+    const worker = await this.prisma.worker.findUnique({
+      where: { id: dto.workerId },
+      include: {
+        wageHistory: {
+          orderBy: { effectiveFrom: 'desc' },
+          take: 1,
+        },
+      },
+    });
 
     if (!worker) {
       throw new NotFoundException('Worker not found');
@@ -36,17 +44,22 @@ export class AttendanceService {
       throw new BadRequestException('Cannot mark attendance for future dates');
     }
 
-    // Check for duplicate attendance
+    if (date < worker.joinedAt) {
+      throw new BadRequestException('Cannot mark attendance before worker joined');
+    }
+
     const existing = await this.prisma.attendance.findFirst({
       where: {
         workerId: dto.workerId,
-        date: date,
+        date,
       },
     });
 
     if (existing) {
       throw new ConflictException('Attendance for this date already exists');
     }
+
+    const latestWage = worker.wageHistory[0] || null;
 
     return this.prisma.attendance.create({
       data: {
@@ -55,6 +68,9 @@ export class AttendanceService {
         status: dto.status,
         otUnits: dto.otUnits,
         note: dto.note,
+        // snapshot wage & ot rate
+        wageAtTime: latestWage ? latestWage.wage : 0,
+        otRateAtTime: latestWage ? latestWage.otRate : 0,
       },
       include: {
         worker: true,
@@ -118,16 +134,20 @@ export class AttendanceService {
 
     await this.salaryLock.assertNotLocked(attendance.workerId, attendance.date, 'attendance');
 
-    if (dto.date) {
-      const newDate = this.dateService.parseDate(dto.date);
+    // Only check date if present in dto
+    if ('date' in dto && dto.date) {
+      const newDate = this.dateService.parseDate((dto as any).date);
       if (newDate > this.dateService.startOfToday()) {
         throw new BadRequestException('Cannot update to a future date');
       }
     }
 
+    // prevent accidental overwrite of snapshot fields
+    const { wageAtTime, otRateAtTime, ...rest } = dto as Record<string, any>;
+
     return this.prisma.attendance.update({
       where: { id },
-      data: dto,
+      data: rest,
       include: {
         worker: true,
       },
