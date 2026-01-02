@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
-import AttendanceRow from './AttendanceRow';
+import ExpenseRow from './ExpenseRow';
 
-interface AttendanceData {
-  attendanceStatus: string;
-  otHours: number;
-  notes: string;
+interface ExpenseData {
+  id?: number | string;
+  typeId: number;
+  amount: number;
+  note: string;
+  workerId?: number;
+  date?: string;
 }
 
-interface AttendanceTableProps {
+interface ExpenseTableProps {
   month: number;
   year: number;
-  attendanceMap: Record<string, AttendanceData | undefined>;
+  expenseTypes: { id: number; name: string }[];
+  expenseMap: Record<string, ExpenseData[]>;
   loading: boolean;
   error?: string;
   onMonthYearChange: (month: number, year: number) => void;
-  onSaveAttendance: (date: string, data: AttendanceData) => void;
+  onSaveExpense: (date: string, data: ExpenseData) => void;
+  onDeleteExpense: (expenseId: number | string) => void;
+  onAddNewExpense: (date: string) => void;
 }
 
 function formatDateLocal(date: Date): string {
@@ -34,14 +40,17 @@ function getAllDaysInMonth(month: number, year: number): string[] {
   return days;
 }
 
-const AttendanceTable: React.FC<AttendanceTableProps> = ({
+const ExpenseTable: React.FC<ExpenseTableProps> = ({
   month,
   year,
-  attendanceMap,
+  expenseTypes,
+  expenseMap,
   loading,
   error,
   onMonthYearChange,
-  onSaveAttendance,
+  onSaveExpense,
+  onDeleteExpense,
+  onAddNewExpense,
 }) => {
   const [candidateMonth, setCandidateMonth] = useState(month);
   const [candidateYear, setCandidateYear] = useState(year);
@@ -56,13 +65,13 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   return (
     <div className="rounded-xl bg-card shadow-md w-full">
       <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
-        <div className="grid grid-cols-5 gap-x-8 font-semibold text-text-primary text-base w-full">
-          <div className="w-28 ml-8">Date</div>
-          <div className="w-28 ml-10">Status</div>
-          <div className="w-28 ml-12">OT Hours</div>
-          <div className="flex-1 ml-20">Notes</div>
+        <div className="flex gap-x-15 font-semibold text-text-primary text-base w-full items-center">
+          <div className="w-8 shrink-0" />
+          <div className="w-28 shrink-0">Date</div>
+          <div className="w-48 shrink-0 ml-8">Expense Type</div>
+          <div className="w-32 shrink-0">Amount</div>
         </div>
-        <div className="flex items-center gap-2 ml-6">
+        <div className="flex items-center gap-2 ml-6 shrink-0">
           <select
             className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
             value={candidateMonth}
@@ -102,7 +111,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         </div>
       )}
 
-      <div className="overflow-y-auto max-h-[500px] rounded-b-xl px-6 py-3 space-y-2">
+      <div className="overflow-y-auto max-h-[500px] rounded-b-xl px-6 py-3 space-y-1">
         {loading ? (
           Array.from({ length: 5 }, (_, i) => (
             <div
@@ -112,17 +121,45 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           ))
         ) : (
           <>
-            {dates.map((date) => (
-              <AttendanceRow
-                key={date}
-                date={date}
-                initialData={attendanceMap[date]}
-                onSave={(data) => onSaveAttendance(date, data)}
-              />
-            ))}
-            {dates.every((date) => !attendanceMap[date]) && (
+            {dates.map((date) => {
+              const expensesForDate = expenseMap[date] || [];
+
+              if (expensesForDate.length === 0) {
+                return (
+                  <ExpenseRow
+                    key={`${date}-empty`}
+                    date={date}
+                    expenseTypes={expenseTypes}
+                    onSave={(data) => onSaveExpense(date, data)}
+                    showAddButton={false}
+                    canDelete={false}
+                    isNew={false}
+                  />
+                );
+              }
+
+              return expensesForDate.map((expense, index) => {
+                const isTemp = typeof expense.id === 'string' && expense.id.startsWith('temp-');
+                return (
+                  <ExpenseRow
+                    key={expense.id}
+                    date={date}
+                    expenseTypes={expenseTypes}
+                    initialData={expense}
+                    onSave={(data) => onSaveExpense(date, data)}
+                    onDelete={onDeleteExpense}
+                    showAddButton={index === expensesForDate.length - 1}
+                    onAddNew={() => onAddNewExpense(date)}
+                    canDelete={true}
+                    isNew={isTemp}
+                  />
+                );
+              });
+            })}
+
+            {dates.every((date) => !expenseMap[date] || expenseMap[date].length === 0) && (
               <div className="mt-6 text-text-secondary text-center text-sm">
-                No attendance records for this month yet.
+                No expense records for this month yet.
               </div>
             )}
           </>
@@ -132,4 +169,4 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   );
 };
 
-export default AttendanceTable;
+export default ExpenseTable;

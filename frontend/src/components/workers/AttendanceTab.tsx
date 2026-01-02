@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import { attendanceAPI } from '../../services/api';
 import AttendanceTable from '../ui/AttendanceTable';
 
@@ -18,16 +20,57 @@ interface AttendanceTabProps {
 }
 
 export default function AttendanceTab({ workerId, onAttendanceChange }: AttendanceTabProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date();
-  const [month, setMonth] = useState(today.getMonth() + 1);
-  const [year, setYear] = useState(today.getFullYear());
+
+  const month = Number(searchParams.get('month')) || today.getMonth() + 1;
+  const year = Number(searchParams.get('year')) || today.getFullYear();
+
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceDataWithId>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
+  const isInitialMount = useRef(true);
+  const prevMonthRef = useRef(month);
+  const prevYearRef = useRef(year);
+
   useEffect(() => {
     fetchAttendance();
   }, [workerId, month, year]);
+
+  useEffect(() => {
+    const currentMonth = Number(searchParams.get('month'));
+    const currentYear = Number(searchParams.get('year'));
+
+    if (currentMonth && (currentMonth < 1 || currentMonth > 12)) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('month', String(today.getMonth() + 1));
+      setSearchParams(newParams);
+    }
+
+    if (currentYear && (currentYear < 2000 || currentYear > 2100)) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('year', String(today.getFullYear()));
+      setSearchParams(newParams);
+    }
+  }, [searchParams, setSearchParams, today]);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      prevMonthRef.current = month;
+      prevYearRef.current = year;
+      return;
+    }
+
+    if (prevMonthRef.current !== month || prevYearRef.current !== year) {
+      const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+      toast.success(`Viewing ${monthName} ${year}`);
+
+      prevMonthRef.current = month;
+      prevYearRef.current = year;
+    }
+  }, [month, year]);
 
   const fetchAttendance = async () => {
     setLoading(true);
@@ -38,7 +81,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
 
       const map: Record<string, AttendanceDataWithId> = {};
 
-      response.data.forEach((record: any) => {
+      for (const record of response.data) {
         const dateStr = record.date.split('T')[0];
         const frontendStatus = record.status.toLowerCase();
 
@@ -48,11 +91,12 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
           otHours: record.otUnits || 0,
           notes: record.note || '',
         };
-      });
+      }
 
       setAttendanceMap(map);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch attendance');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Failed to fetch attendance');
     } finally {
       setLoading(false);
     }
@@ -102,10 +146,18 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
       if (onAttendanceChange) {
         onAttendanceChange();
       }
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to save attendance';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const errorMsg = error.response?.data?.message || 'Failed to save attendance';
       alert(errorMsg);
     }
+  };
+
+  const handleMonthYearChange = (newMonth: number, newYear: number) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('month', String(newMonth));
+    newParams.set('year', String(newYear));
+    setSearchParams(newParams);
   };
 
   return (
@@ -116,8 +168,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
         attendanceMap={attendanceMap}
         loading={loading}
         error={error}
-        onMonthChange={setMonth}
-        onYearChange={setYear}
+        onMonthYearChange={handleMonthYearChange}
         onSaveAttendance={handleSaveAttendance}
       />
     </div>

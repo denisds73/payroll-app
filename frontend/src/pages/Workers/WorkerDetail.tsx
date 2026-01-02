@@ -10,12 +10,13 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import PaySalaryModal from '../../components/modals/PaySalaryModal';
 import Button from '../../components/ui/Button';
 import Tabs from '../../components/ui/Tabs';
 import AttendanceTab from '../../components/workers/AttendanceTab';
+import ExpenseTab from '../../components/workers/ExpenseTab';
 import HistoryTab from '../../components/workers/HistoryTab';
 import ProfileTab from '../../components/workers/ProfileTab';
 import { salariesAPI } from '../../services/api';
@@ -36,13 +37,15 @@ interface CycleStats {
 
 export default function WorkerDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { workers, fetchWorkers } = useWorkerStore();
-  const [activeTab, setActiveTab] = useState('attendance');
+
+  const activeTab = searchParams.get('tab') || 'attendance';
+
   const [cycleStats, setCycleStats] = useState<CycleStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
 
-  // Modal states
   const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
 
@@ -60,45 +63,72 @@ export default function WorkerDetail() {
     }
   }, [worker?.id]);
 
-  const fetchCycleStats = async (workerId: number) => {
-    setLoadingStats(true);
+  useEffect(() => {
+    const validTabs = ['attendance', 'expenses', 'history', 'profile'];
+    const currentTab = searchParams.get('tab');
+
+    if (currentTab && !validTabs.includes(currentTab)) {
+      setSearchParams({ tab: 'attendance' });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const fetchCycleStats = async (workerId: number, silent = false) => {
+    if (!silent) {
+      setLoadingStats(true);
+    }
     setStatsError(null);
 
     try {
       const response = await salariesAPI.calculate(workerId);
       setCycleStats(response.data);
       console.log('Cycle stats loaded:', response.data);
-    } catch (error: any) {
-      if (error.response?.status === 400) {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      if (err.response?.status === 400) {
         setStatsError('No attendance in current cycle');
       } else {
         setStatsError('Error loading cycle stats');
       }
-      console.log('Cycle stats error:', error.response?.data?.message);
+      console.log('Cycle stats error:', err.response?.data?.message);
     } finally {
-      setLoadingStats(false);
+      if (!silent) {
+        setLoadingStats(false);
+      }
     }
   };
 
   const handleSalarySuccess = () => {
     if (worker) {
       console.log('Salary paid - refreshing stats');
-      fetchCycleStats(worker.id);
+      fetchCycleStats(worker.id, true);
     }
   };
 
   const handleAttendanceChange = () => {
     if (worker) {
       console.log('Attendance changed - refreshing stats');
-      fetchCycleStats(worker.id);
+      fetchCycleStats(worker.id, true);
     }
   };
 
   const handleAdvanceSuccess = () => {
     if (worker) {
       console.log('Advance issued - refreshing stats');
-      fetchCycleStats(worker.id);
+      fetchCycleStats(worker.id, true);
     }
+  };
+
+  const handleExpenseChange = () => {
+    if (worker) {
+      console.log('Expense changed - refreshing stats');
+      fetchCycleStats(worker.id, true);
+    }
+  };
+
+  const handleTabChange = (tabId: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', tabId);
+    setSearchParams(newParams);
   };
 
   const formatCurrency = (amount: number) => {
@@ -128,15 +158,14 @@ export default function WorkerDetail() {
 
   const tabs = [
     { id: 'attendance', label: 'Attendance', icon: <Calendar className="w-4 h-4" /> },
+    { id: 'expenses', label: 'Expenses', icon: <Receipt className="w-4 h-4" /> },
     { id: 'history', label: 'History', icon: <FileText className="w-4 h-4" /> },
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
   ];
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      {/* Worker Header */}
       <div className="bg-card p-6 rounded-lg shadow-sm">
-        {/* Top Row: Worker Info + Action Buttons */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -166,7 +195,6 @@ export default function WorkerDetail() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
               variant="secondary"
@@ -189,8 +217,7 @@ export default function WorkerDetail() {
           </div>
         </div>
 
-        {/* Cycle Stats Cards */}
-        {loadingStats ? (
+        {loadingStats && !cycleStats ? (
           <div className="py-4">
             <p className="text-sm text-text-secondary">Loading current cycle stats...</p>
           </div>
@@ -213,11 +240,10 @@ export default function WorkerDetail() {
               </div>
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {/* Earned Card */}
               <button
                 type="button"
                 className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-                onClick={() => setActiveTab('history')}
+                onClick={() => handleTabChange('history')}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="w-5 h-5 text-success" />
@@ -231,11 +257,10 @@ export default function WorkerDetail() {
                 </p>
               </button>
 
-              {/* Advances Card */}
               <button
                 type="button"
                 className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-                onClick={() => setActiveTab('history')}
+                onClick={() => handleTabChange('history')}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-5 h-5 text-warning" />
@@ -249,11 +274,10 @@ export default function WorkerDetail() {
                 </p>
               </button>
 
-              {/* Expenses Card */}
               <button
                 type="button"
                 className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-                onClick={() => setActiveTab('history')}
+                onClick={() => handleTabChange('history')}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Receipt className="w-5 h-5 text-info" />
@@ -267,7 +291,6 @@ export default function WorkerDetail() {
                 </p>
               </button>
 
-              {/* Net Payable Card */}
               <div className="bg-white rounded-lg p-4 border-2 border-primary">
                 <div className="flex items-center gap-2 mb-3">
                   <FileText
@@ -289,21 +312,27 @@ export default function WorkerDetail() {
         ) : null}
       </div>
 
-      {/* Tabs */}
       <div className="bg-card rounded-lg shadow-sm">
-        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
 
-        {/* Tab Content */}
         <div className="p-6">
           {activeTab === 'attendance' && (
             <AttendanceTab workerId={worker.id} onAttendanceChange={handleAttendanceChange} />
+          )}
+
+          {activeTab === 'expenses' && (
+            <ExpenseTab
+              workerId={worker.id}
+              workerName={worker.name}
+              onExpenseChange={handleExpenseChange}
+            />
           )}
 
           {activeTab === 'history' && (
             <HistoryTab
               workerId={worker.id}
               workerName={worker.name}
-              onDataChange={() => fetchCycleStats(worker.id)}
+              onDataChange={() => fetchCycleStats(worker.id, true)}
             />
           )}
 
@@ -313,7 +342,7 @@ export default function WorkerDetail() {
               onUpdate={() => {
                 fetchWorkers();
                 if (worker) {
-                  fetchCycleStats(worker.id);
+                  fetchCycleStats(worker.id, true);
                 }
               }}
             />
@@ -321,7 +350,6 @@ export default function WorkerDetail() {
         </div>
       </div>
 
-      {/* Issue Advance Modal */}
       <IssueAdvanceModal
         workerId={worker.id}
         workerName={worker.name}

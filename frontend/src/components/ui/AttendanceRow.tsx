@@ -17,7 +17,6 @@ interface AttendanceRowProps {
   onSave?: (data: AttendanceData) => void;
 }
 
-// FIXED: Use lowercase values to match frontend convention
 const attendanceOptions: RadioOption[] = [
   { value: 'present', label: 'Present' },
   { value: 'absent', label: 'Absent' },
@@ -84,7 +83,6 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
     setIsEditing(true);
   };
 
-  // FIXED: Better logging to debug initialData
   useEffect(() => {
     if (initialData) {
       console.log(`📋 AttendanceRow ${date} received initialData:`, initialData);
@@ -153,6 +151,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         value={formData.attendanceStatus}
         onChange={handleAttendanceChange}
         disabled={!isEditing}
+        showLabels={false}
       />
 
       <OTInputStepper
