@@ -10,7 +10,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
+
+    const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : '';
+    console.log('API Request:', config.method?.toUpperCase(), config.url + params);
     return config;
   },
   (error) => {
@@ -20,7 +22,10 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', response.status, response.config.url);
+    const params = response.config.params
+      ? `?${new URLSearchParams(response.config.params).toString()}`
+      : '';
+    console.log('API Response:', response.status, response.config.url + params);
     return response;
   },
   (error) => {
@@ -79,9 +84,7 @@ export const attendanceAPI = {
   delete: (id: number) => api.delete(`/attendance/${id}`),
 };
 
-// Existing worker and attendance APIs...
 
-// Advances API
 export const advancesAPI = {
   create: (data: { workerId: number; date: string; amount: number; reason?: string }) =>
     api.post('/advances', data),
@@ -117,43 +120,6 @@ export const expensesAPI = {
   delete: (id: number) => api.delete(`/expenses/${id}`),
 };
 
-// Salaries API
-export const salariesAPI = {
-  // Calculate salary (preview without creating)
-  calculate: (workerId: number) => api.get(`/salaries/calculate/${workerId}`),
-
-  // Create salary record
-  create: (workerId: number) => api.post(`/salaries/${workerId}`),
-
-  // Get worker salaries
-  getByWorker: (
-    workerId: number,
-    params?: {
-      startDate?: string;
-      endDate?: string;
-      status?: 'PENDING' | 'PARTIAL' | 'PAID';
-    },
-  ) => {
-    const searchParams = new URLSearchParams();
-    if (params?.startDate) searchParams.append('startDate', params.startDate);
-    if (params?.endDate) searchParams.append('endDate', params.endDate);
-    if (params?.status) searchParams.append('status', params.status);
-    return api.get(`/salaries/worker/${workerId}?${searchParams.toString()}`);
-  },
-
-  // Get all pending salaries
-  getPending: () => api.get('/salaries/pending'),
-
-  // Issue salary (pay full or partial)
-  issue: (
-    salaryId: number,
-    data: {
-      amount: number;
-      paymentProof?: string;
-    },
-  ) => api.post(`/salaries/${salaryId}/issue`, data),
-};
-
 export const expenseTypesAPI = {
   getAll: () => api.get('/expense-types'),
   create: (data: { name: string }) => api.post('/expense-types', data),
@@ -171,4 +137,37 @@ export const workersAPI = {
   ) => api.patch(`/workers/${id}`, data),
 
   delete: (id: number) => api.delete(`/workers/${id}`),
+};
+
+export const salariesAPI = {
+
+  calculate: (workerId: number, payDate?: string) => {
+    console.log('🔍 salariesAPI.calculate called:', { workerId, payDate });
+    return api.get(
+      `/salaries/calculate/${workerId}`,
+      payDate ? { params: { payDate } } : undefined,
+    );
+  },
+
+
+  create: (workerId: number, payDate?: string) => {
+    console.log('🔍 salariesAPI.create called:', { workerId, payDate });
+    return api.post(`/salaries/${workerId}`, {}, payDate ? { params: { payDate } } : undefined);
+  },
+
+  getByWorker: (
+    workerId: number,
+    params?: {
+      startDate?: string;
+      endDate?: string;
+      status?: 'PENDING' | 'PARTIAL' | 'PAID';
+    },
+  ) => api.get(`/salaries/worker/${workerId}`, { params }),
+
+
+  getPending: () => api.get('/salaries/pending'),
+
+
+  issue: (salaryId: number, data: { amount: number; paymentProof?: string }) =>
+    api.post(`/salaries/${salaryId}/issue`, data),
 };

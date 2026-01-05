@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** @jsxImportSource react */
 import { X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
@@ -27,8 +27,9 @@ interface SalaryCalculation {
 }
 
 interface SalaryFormData {
+  paymentAmount: string;
   paymentDate: string;
-  note: string;
+  paymentProof: string;
 }
 
 export default function PaySalaryModal({
@@ -39,19 +40,22 @@ export default function PaySalaryModal({
   onSuccess,
 }: PaySalaryModalProps) {
   const today = new Date().toISOString().split('T')[0];
+  const paymentAmountId = useId();
   const paymentDateId = useId();
-  const noteId = useId();
+  const paymentProofId = useId();
   const modalTitleId = useId();
 
   const [formData, setFormData] = useState<SalaryFormData>({
+    paymentAmount: '',
     paymentDate: today,
-    note: '',
+    paymentProof: '',
   });
   const [salaryData, setSalaryData] = useState<SalaryCalculation | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [calculating, setCalculating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,13 +66,27 @@ export default function PaySalaryModal({
     }
   }, [isOpen, workerId]);
 
-  const fetchSalaryCalculation = async (): Promise<void> => {
+  useEffect(() => {
+    if (salaryData && !isPartialPayment) {
+      setFormData((prev) => ({
+        ...prev,
+        paymentAmount: salaryData.netPay > 0 ? salaryData.netPay.toString() : '0',
+      }));
+    }
+  }, [salaryData, isPartialPayment]);
+
+  const fetchSalaryCalculation = async (payDate?: string): Promise<void> => {
     setCalculating(true);
     setError(null);
 
     try {
-      const response = await salariesAPI.calculate(workerId);
-      setSalaryData(response.data);
+      console.log('🔍 Fetching calculation with payDate:', payDate);
+      const calcResponse = await salariesAPI.calculate(workerId, payDate);
+      setSalaryData(calcResponse.data);
+      console.log('Salary calculated:', {
+        payDate: payDate || 'today',
+        data: calcResponse.data,
+      });
     } catch (err) {
       const errorMessage =
         err instanceof Error && 'response' in err
@@ -76,8 +94,19 @@ export default function PaySalaryModal({
           : 'Failed to calculate salary';
 
       setError(errorMessage || 'Failed to calculate salary');
+      setSalaryData(null);
     } finally {
       setCalculating(false);
+    }
+  };
+
+  const handlePaymentDateChange = async (newDate: string): Promise<void> => {
+    console.log('🔍 Payment date changed to:', newDate);
+    setFormData((prev) => ({ ...prev, paymentDate: newDate }));
+
+    if (newDate) {
+      console.log('🔍 Calling API with payDate:', newDate);
+      await fetchSalaryCalculation(newDate);
     }
   };
 
@@ -90,18 +119,34 @@ export default function PaySalaryModal({
       return;
     }
 
+    const paymentAmount = Number.parseFloat(formData.paymentAmount);
+
+    if (Number.isNaN(paymentAmount) || paymentAmount <= 0) {
+      setError('Please enter a valid payment amount');
+      return;
+    }
+
+    if (paymentAmount > salaryData.netPay) {
+      setError(
+        `Payment amount cannot exceed net payable: ₹${salaryData.netPay.toLocaleString('en-IN')}`,
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await salariesAPI.pay(workerId, {
-        paymentDate: formData.paymentDate,
-        note: formData.note || undefined,
-      });
+      console.log('Creating salary record for pay date:', formData.paymentDate);
+      const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
+      const salaryId = createResponse.data.id;
+      console.log('Salary record created:', salaryId);
 
-      setFormData({
-        paymentDate: today,
-        note: '',
+      console.log('Issuing payment...');
+      await salariesAPI.issue(salaryId, {
+        amount: paymentAmount,
+        paymentProof: formData.paymentProof || undefined,
       });
+      console.log('Payment issued successfully');
 
       onSuccess();
       handleClose();
@@ -123,11 +168,13 @@ export default function PaySalaryModal({
 
       setTimeout(() => {
         setFormData({
+          paymentAmount: '',
           paymentDate: today,
-          note: '',
+          paymentProof: '',
         });
         setSalaryData(null);
         setError(null);
+        setIsPartialPayment(false);
         onClose();
       }, 200);
     }
@@ -142,6 +189,21 @@ export default function PaySalaryModal({
   const handleBackdropKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     if (e.key === 'Escape') {
       handleClose();
+    }
+  };
+
+  const handlePaymentTypeChange = (partial: boolean): void => {
+    setIsPartialPayment(partial);
+    if (!partial && salaryData) {
+      setFormData((prev) => ({
+        ...prev,
+        paymentAmount: salaryData.netPay > 0 ? salaryData.netPay.toString() : '0',
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        paymentAmount: '',
+      }));
     }
   };
 
@@ -160,6 +222,8 @@ export default function PaySalaryModal({
 
   if (!isOpen) return null;
 
+  const isRetroactive = formData.paymentDate !== today;
+
   return (
     <div
       className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-opacity duration-200 ${
@@ -167,17 +231,16 @@ export default function PaySalaryModal({
       }`}
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropKeyDown}
-      role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-lg w-full transition-all duration-200 ${
+        className={`bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
           <div>
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
               Pay Salary
@@ -198,7 +261,7 @@ export default function PaySalaryModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
             <div
-              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm animate-shake"
+              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm"
               role="alert"
             >
               {error}
@@ -208,11 +271,24 @@ export default function PaySalaryModal({
           {calculating ? (
             <div className="py-8 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              <p className="text-sm text-text-secondary mt-3">Calculating salary...</p>
+              <p className="text-sm text-text-secondary mt-3">
+                {isRetroactive ? 'Recalculating for selected date...' : 'Calculating salary...'}
+              </p>
             </div>
           ) : salaryData ? (
             <>
-              {/* Salary Breakdown */}
+              {isRetroactive && (
+                <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-warning flex items-center gap-2">
+                    ⚠️ Retroactive Payment
+                  </p>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Salary calculated up to {formatDate(formData.paymentDate)}. Transactions after
+                    this date will be included in the next cycle.
+                  </p>
+                </div>
+              )}
+
               <div className="bg-background rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-gray-300">
                   <span className="text-sm font-semibold text-text-primary">Salary Cycle</span>
@@ -221,7 +297,6 @@ export default function PaySalaryModal({
                   </span>
                 </div>
 
-                {/* Earnings */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-text-secondary">
@@ -247,7 +322,6 @@ export default function PaySalaryModal({
                   </div>
                 </div>
 
-                {/* Deductions */}
                 <div className="space-y-2 pt-2 border-t border-gray-300">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-text-secondary">Advances</span>
@@ -263,7 +337,6 @@ export default function PaySalaryModal({
                   </div>
                 </div>
 
-                {/* Net Pay */}
                 <div className="flex items-center justify-between pt-3 border-t-2 border-gray-400">
                   <span className="text-base font-bold text-text-primary">Net Payable</span>
                   <span
@@ -273,50 +346,129 @@ export default function PaySalaryModal({
                   </span>
                 </div>
                 {salaryData.netPay < 0 && (
-                  <p className="text-xs text-error text-center">Worker owes company</p>
+                  <p className="text-xs text-error text-center">
+                    ⚠️ Worker owes company - no payment required
+                  </p>
                 )}
               </div>
 
-              {/* Payment Date */}
-              <div>
-                <label
-                  htmlFor={paymentDateId}
-                  className="block text-sm font-medium text-text-primary mb-2"
-                >
-                  Payment Date <span className="text-error">*</span>
-                </label>
-                <input
-                  type="date"
-                  id={paymentDateId}
-                  value={formData.paymentDate}
-                  max={today}
-                  onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                  required
-                  disabled={loading}
-                />
-              </div>
+              {salaryData.netPay > 0 && (
+                <>
+                  <div>
+                    <label
+                      htmlFor={paymentDateId}
+                      className="block text-sm font-medium text-text-primary mb-2"
+                    >
+                      Payment Date <span className="text-error">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id={paymentDateId}
+                      value={formData.paymentDate}
+                      min={
+                        salaryData
+                          ? new Date(salaryData.cycleStart).toISOString().split('T')[0]
+                          : undefined
+                      }
+                      max={today}
+                      onChange={(e) => handlePaymentDateChange(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                      required
+                      disabled={loading || calculating}
+                    />
+                    <p className="text-xs text-text-secondary mt-1">
+                      {isRetroactive
+                        ? '💡 Salary recalculated for this date'
+                        : 'Select today or any past date'}
+                    </p>
+                  </div>
 
-              {/* Note */}
-              <div>
-                <label
-                  htmlFor={noteId}
-                  className="block text-sm font-medium text-text-primary mb-2"
-                >
-                  Note (Optional)
-                </label>
-                <textarea
-                  id={noteId}
-                  value={formData.note}
-                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                  placeholder="Add payment details or remarks..."
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
-                  disabled={loading}
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-3">
+                      Payment Type
+                    </label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentTypeChange(false)}
+                        disabled={loading}
+                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                          !isPartialPayment
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-background text-text-secondary hover:bg-gray-200'
+                        }`}
+                      >
+                        Full Payment
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentTypeChange(true)}
+                        disabled={loading}
+                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                          isPartialPayment
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-background text-text-secondary hover:bg-gray-200'
+                        }`}
+                      >
+                        Partial Payment
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Actions */}
+                  <div>
+                    <label
+                      htmlFor={paymentAmountId}
+                      className="block text-sm font-medium text-text-primary mb-2"
+                    >
+                      Payment Amount <span className="text-error">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-medium">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        id={paymentAmountId}
+                        value={formData.paymentAmount}
+                        onChange={(e) =>
+                          setFormData({ ...formData, paymentAmount: e.target.value })
+                        }
+                        placeholder="Enter amount"
+                        min="0"
+                        max={salaryData.netPay}
+                        step="0.01"
+                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                        required
+                        disabled={loading || !isPartialPayment}
+                      />
+                    </div>
+                    {isPartialPayment && (
+                      <p className="text-xs text-text-secondary mt-1">
+                        Maximum: {formatCurrency(salaryData.netPay)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor={paymentProofId}
+                      className="block text-sm font-medium text-text-primary mb-2"
+                    >
+                      Payment Reference / Note
+                    </label>
+                    <textarea
+                      id={paymentProofId}
+                      value={formData.paymentProof}
+                      onChange={(e) => setFormData({ ...formData, paymentProof: e.target.value })}
+                      placeholder="e.g., UPI Ref: 123456789, Cash, Cheque #1234..."
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
+                      disabled={loading}
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
@@ -328,15 +480,27 @@ export default function PaySalaryModal({
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  {loading ? 'Processing...' : 'Confirm Payment'}
-                </Button>
+                {salaryData.netPay > 0 ? (
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    disabled={loading || calculating}
+                    className="flex-1"
+                  >
+                    {loading ? 'Processing...' : 'Confirm Payment'}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    onClick={handleClose}
+                    className="flex-1"
+                  >
+                    Close
+                  </Button>
+                )}
               </div>
             </>
           ) : null}
