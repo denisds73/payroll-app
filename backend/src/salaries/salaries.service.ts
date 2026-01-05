@@ -11,8 +11,7 @@ export class SalariesService {
     private dateService: DateService,
   ) {}
 
-  // NEW: Pure calculation function (no database writes)
-  private async calculateBreakdown(workerId: number) {
+  private async calculateBreakdown(workerId: number, payDate?: Date) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: workerId },
     });
@@ -27,12 +26,27 @@ export class SalariesService {
     const cycleStart = lastSalary
       ? new Date(lastSalary.cycleEnd.getTime() + 86400000)
       : worker.joinedAt;
-    const cycleEnd = this.dateService.startOfToday();
 
-    console.log('Cycle calculation:', { workerId, cycleStart, cycleEnd });
+    const cycleEnd = payDate || this.dateService.startOfToday();
+
+    if (cycleEnd < cycleStart) {
+      throw new BadRequestException(
+        `Pay date cannot be before cycle start date (${cycleStart.toISOString().split('T')[0]})`,
+      );
+    }
+
+    console.log('Cycle calculation:', {
+      workerId,
+      cycleStart,
+      cycleEnd,
+      isRetroactive: !!payDate,
+    });
 
     const attendanceRecords = await this.prisma.attendance.findMany({
-      where: { workerId, date: { gte: cycleStart, lte: cycleEnd } },
+      where: {
+        workerId,
+        date: { gte: cycleStart, lte: cycleEnd },
+      },
       select: {
         status: true,
         otUnits: true,
@@ -43,10 +57,6 @@ export class SalariesService {
 
     console.log('Found attendance records:', attendanceRecords.length);
 
-    if (attendanceRecords.length === 0)
-      throw new BadRequestException('No attendance found for this period');
-
-    // Calculate pay
     let basePay = 0;
     let otPay = 0;
     let totalDays = 0;
@@ -68,7 +78,6 @@ export class SalariesService {
 
     const grossPay = basePay + otPay;
 
-    // Calculate deductions
     const advanceResult = await this.prisma.advance.aggregate({
       _sum: { amount: true },
       where: {
@@ -91,7 +100,10 @@ export class SalariesService {
 
     const expenseResult = await this.prisma.expense.aggregate({
       _sum: { amount: true },
-      where: { workerId, date: { gte: cycleStart, lte: cycleEnd } },
+      where: {
+        workerId,
+        date: { gte: cycleStart, lte: cycleEnd },
+      },
     });
 
     const totalAdvance = advanceResult._sum.amount ?? 0;
@@ -112,18 +124,16 @@ export class SalariesService {
     };
   }
 
-  // Calculate salary (NO database writes - just preview)
-  async calculateSalary(workerId: number) {
-    return this.calculateBreakdown(workerId);
+  async calculateSalary(workerId: number, payDate?: string) {
+    const parsedDate = payDate ? this.dateService.parseDate(payDate) : undefined;
+    return this.calculateBreakdown(workerId, parsedDate);
   }
 
-  // Create salary (writes to database)
-  async createSalary(workerId: number) {
-    const breakdown = await this.calculateBreakdown(workerId);
+  async createSalary(workerId: number, payDate?: string) {
+    const parsedDate = payDate ? this.dateService.parseDate(payDate) : undefined;
+    const breakdown = await this.calculateBreakdown(workerId, parsedDate);
 
-    // Now create the salary record
     const result = await this.prisma.$transaction(async (tx) => {
-      // If net pay is negative, create auto-advance
       if (breakdown.netPay < 0) {
         const shortfall = Math.abs(breakdown.netPay);
 

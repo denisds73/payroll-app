@@ -1,9 +1,9 @@
-import { DollarSign, Edit2, Receipt, TrendingUp, Trash2 } from 'lucide-react';
+import { DollarSign, Edit2, Receipt, Trash2, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { advancesAPI, expensesAPI, salariesAPI } from '../../services/api';
 import ConfirmModal from '../modals/ConfirmModal';
 import EditAdvanceModal from '../modals/EditAdvanceModal';
 import EditExpenseModal from '../modals/EditExpenseModal';
-import { advancesAPI, expensesAPI, salariesAPI } from '../../services/api';
 
 interface HistoryTabProps {
   workerId: number;
@@ -19,7 +19,7 @@ interface HistoryItem {
   description: string;
   cycleInfo?: string;
   typeId?: number;
-  typeName?: string;  // Added
+  typeName?: string;
 }
 
 export default function HistoryTab({ workerId, workerName, onDataChange }: HistoryTabProps) {
@@ -27,7 +27,6 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Modal states
   const [editAdvanceModalOpen, setEditAdvanceModalOpen] = useState(false);
   const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -55,9 +54,11 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
       const salaries: HistoryItem[] = salariesResponse.data.map((sal: any) => ({
         id: sal.id,
         type: 'salary' as const,
-        date: sal.paymentDate,
-        amount: sal.netPay,
-        description: sal.note || 'Salary payment',
+        date: sal.issuedAt || sal.cycleEnd,
+        amount: sal.totalPaid,
+        description:
+          sal.paymentProof ||
+          `Salary for ${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
         cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
       }));
 
@@ -69,11 +70,11 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         amount: exp.amount,
         description: exp.note || 'Expense',
         typeId: exp.typeId,
-        typeName: exp.type?.name || 'Unknown',  // Added
+        typeName: exp.type?.name || 'Unknown',
       }));
 
       const combined = [...advances, ...salaries, ...expenses].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       );
 
       setHistory(combined);

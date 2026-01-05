@@ -10,6 +10,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, useSearchParams } from 'react-router-dom';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import PaySalaryModal from '../../components/modals/PaySalaryModal';
@@ -84,9 +85,7 @@ export default function WorkerDetail() {
       console.log('Cycle stats loaded:', response.data);
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
-      if (err.response?.status === 400) {
-        setStatsError('No attendance in current cycle');
-      } else {
+      if (err.response?.status !== 400) {
         setStatsError('Error loading cycle stats');
       }
       console.log('Cycle stats error:', err.response?.data?.message);
@@ -100,7 +99,9 @@ export default function WorkerDetail() {
   const handleSalarySuccess = () => {
     if (worker) {
       console.log('Salary paid - refreshing stats');
+      toast.success('Salary paid successfully!');
       fetchCycleStats(worker.id, true);
+      fetchWorkers();
     }
   };
 
@@ -114,7 +115,9 @@ export default function WorkerDetail() {
   const handleAdvanceSuccess = () => {
     if (worker) {
       console.log('Advance issued - refreshing stats');
+      toast.success('Advance issued successfully!');
       fetchCycleStats(worker.id, true);
+      fetchWorkers();
     }
   };
 
@@ -163,6 +166,8 @@ export default function WorkerDetail() {
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
   ];
 
+  const canPaySalary = cycleStats && cycleStats.totalDays > 0;
+
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
       <div className="bg-card p-6 rounded-lg shadow-sm">
@@ -201,6 +206,7 @@ export default function WorkerDetail() {
               size="md"
               className="flex items-center gap-2"
               onClick={() => setIsAdvanceModalOpen(true)}
+              disabled={!worker.isActive}
             >
               <DollarSign className="w-4 h-4" />
               Issue Advance
@@ -208,8 +214,16 @@ export default function WorkerDetail() {
             <Button
               variant="primary"
               size="md"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => setIsSalaryModalOpen(true)}
+              disabled={!canPaySalary || !worker.isActive}
+              title={
+                !canPaySalary
+                  ? 'No attendance found in current cycle'
+                  : !worker.isActive
+                    ? 'Worker is inactive'
+                    : 'Pay salary for current cycle'
+              }
             >
               <TrendingUp className="w-4 h-4" />
               Pay Salary
@@ -219,12 +233,10 @@ export default function WorkerDetail() {
 
         {loadingStats && !cycleStats ? (
           <div className="py-4">
-            <p className="text-sm text-text-secondary">Loading current cycle stats...</p>
-          </div>
-        ) : statsError ? (
-          <div className="bg-background rounded-lg p-4 border border-gray-200">
-            <p className="text-sm text-text-secondary">{statsError}</p>
-            <p className="text-xs text-text-disabled mt-1">Mark attendance to see cycle summary</p>
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
+              <p className="text-sm text-text-secondary">Loading current cycle stats...</p>
+            </div>
           </div>
         ) : cycleStats ? (
           <>
@@ -243,7 +255,6 @@ export default function WorkerDetail() {
               <button
                 type="button"
                 className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-                onClick={() => handleTabChange('history')}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="w-5 h-5 text-success" />
