@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <it should be like this> */
+/** biome-ignore-all lint/a11y/noLabelWithoutControl: <it should be like this> */
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <it should be like this> */
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import { attendanceAPI } from '../../services/api';
+import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import AttendanceTable from '../ui/AttendanceTable';
 
 interface AttendanceData {
@@ -34,8 +38,21 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
   const prevMonthRef = useRef(month);
   const prevYearRef = useRef(year);
 
+  const lockDataByWorker = useSalaryLockStore((state) => state.lockDataByWorker);
+  const fetchPaidPeriods = useSalaryLockStore((state) => state.fetchPaidPeriods);
+  const isDateLocked = useSalaryLockStore((state) => state.isDateLocked);
+  const lockLoading = useSalaryLockStore((state) => state.loading);
+  const lockErrors = useSalaryLockStore((state) => state.errors);
+
+  const lockError = lockErrors[workerId];
+
+  useEffect(() => {
+    fetchPaidPeriods(workerId);
+  }, [workerId, fetchPaidPeriods]);
+
   useEffect(() => {
     fetchAttendance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workerId, month, year]);
 
   useEffect(() => {
@@ -107,7 +124,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
       const existingRecord = attendanceMap[date];
       const backendStatus = data.attendanceStatus.toUpperCase();
 
-      if (existingRecord && existingRecord.id) {
+      if (existingRecord?.id) {
         const payload = {
           status: backendStatus,
           otUnits: data.otHours,
@@ -146,10 +163,26 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
       if (onAttendanceChange) {
         onAttendanceChange();
       }
+
+      toast.success('Attendance saved successfully');
     } catch (err: unknown) {
+      console.error('Save failed:', err);
+
       const error = err as { response?: { data?: { message?: string } } };
-      const errorMsg = error.response?.data?.message || 'Failed to save attendance';
-      alert(errorMsg);
+      const errorMessage = error.response?.data?.message || 'Failed to save attendance';
+
+      if (
+        errorMessage.toLowerCase().includes('locked') ||
+        errorMessage.toLowerCase().includes('salary') ||
+        errorMessage.toLowerCase().includes('paid')
+      ) {
+        toast.error('Cannot edit - salary has been paid for this period');
+        fetchPaidPeriods(workerId, true);
+      } else {
+        toast.error(errorMessage);
+      }
+
+      fetchAttendance();
     }
   };
 
@@ -160,16 +193,63 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     setSearchParams(newParams);
   };
 
+  const getAllDaysInMonth = (month: number, year: number): string[] => {
+    const days: string[] = [];
+    const date = new Date(year, month - 1, 1);
+    while (date.getMonth() === month - 1) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      days.push(`${y}-${m}-${d}`);
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
+  };
+
+  const lockedDates = useMemo(() => {
+    const locked = new Set<string>();
+    const dates = getAllDaysInMonth(month, year);
+
+    console.log('🔄 Recomputing locked dates for worker', workerId);
+
+    dates.forEach((date) => {
+      if (isDateLocked(workerId, date)) {
+        locked.add(date);
+        console.log('🔒 Date locked:', date);
+      }
+    });
+
+    console.log('✅ Total locked dates:', locked.size);
+    return locked;
+  }, [lockDataByWorker, workerId, month, year]);
+
+  const lockedPeriods = useMemo(() => {
+    const workerData = lockDataByWorker[workerId];
+    if (!workerData) return [];
+
+    return workerData.periods
+      .filter((p) => p.isPaid)
+      .map((p) => ({
+        startDate: p.startDate,
+        endDate: p.endDate,
+      }));
+  }, [lockDataByWorker, workerId]);
+
+  const isLoading = loading || lockLoading[workerId];
+  const combinedError = error || lockError;
+
   return (
     <div>
       <AttendanceTable
         month={month}
         year={year}
         attendanceMap={attendanceMap}
-        loading={loading}
-        error={error}
+        loading={isLoading}
+        error={combinedError}
         onMonthYearChange={handleMonthYearChange}
         onSaveAttendance={handleSaveAttendance}
+        lockedDates={lockedDates}
+        lockedPeriods={lockedPeriods}
       />
     </div>
   );

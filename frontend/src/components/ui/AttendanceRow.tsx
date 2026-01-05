@@ -1,9 +1,11 @@
+import { Lock } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Button from './Button';
 import OTInputStepper from './OTInputStepper';
 import RadioGroup, { type RadioOption } from './RadioGroup';
 import Textarea from './Textarea';
+import Tooltip from './Tooltip';
 
 interface AttendanceData {
   attendanceStatus: string;
@@ -15,6 +17,8 @@ interface AttendanceRowProps {
   date: string;
   initialData?: AttendanceData;
   onSave?: (data: AttendanceData) => void;
+  isLocked?: boolean;
+  lockReason?: string;
 }
 
 const attendanceOptions: RadioOption[] = [
@@ -31,7 +35,13 @@ const formatDate = (dateString: string) => {
   return `${day}-${month}-${year}`;
 };
 
-const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave }) => {
+const AttendanceRow: React.FC<AttendanceRowProps> = ({
+  date,
+  initialData,
+  onSave,
+  isLocked = false,
+  lockReason,
+}) => {
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isDirty, setIsDirty] = useState<boolean>(false);
 
@@ -107,6 +117,15 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
     const hasSavedData =
       savedData.attendanceStatus !== '' || savedData.otHours !== 0 || savedData.notes !== '';
 
+    if (isLocked) {
+      return (
+        <div className="flex items-center gap-2 text-text-secondary">
+          <Lock className="w-4 h-4" />
+          <span className="text-sm font-medium">Locked</span>
+        </div>
+      );
+    }
+
     if (!isEditing) {
       return (
         <Button className="border-2 font-semibold" variant="outline" size="md" onClick={handleEdit}>
@@ -140,8 +159,22 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
     return null;
   };
 
-  return (
-    <div className="flex flex-nowrap items-center gap-x-8 px-3 py-1 bg-card ">
+  const tooltipContent = lockReason && (
+    <div>
+      <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
+        <Lock className="w-3.5 h-3.5" />
+        <span>Locked</span>
+      </div>
+      <div className="text-xs text-text-secondary leading-relaxed">{lockReason}</div>
+    </div>
+  );
+
+  const rowContent = (
+    <div
+      className={`flex flex-nowrap items-center gap-x-8 px-3 py-1 bg-card transition-all duration-200 rounded-lg ${
+        isLocked ? 'opacity-60 cursor-not-allowed' : ''
+      }`}
+    >
       <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
       <RadioGroup
@@ -150,7 +183,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         options={attendanceOptions}
         value={formData.attendanceStatus}
         onChange={handleAttendanceChange}
-        disabled={!isEditing}
+        disabled={!isEditing || isLocked}
         showLabels={false}
       />
 
@@ -158,16 +191,17 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
         className="shrink-0"
         value={formData.otHours}
         onChange={handleOtChange}
-        disabled={!isEditing}
+        disabled={!isEditing || isLocked}
         min={0}
         max={2}
         step={0.5}
       />
+
       <div className="max-w-xs flex-1 min-w-0 relative" style={{ top: '-3px' }}>
         <Textarea
           value={formData.notes}
           onChange={handleNotesChange}
-          disabled={!isEditing}
+          disabled={!isEditing || isLocked}
           placeholder="Add notes..."
         />
       </div>
@@ -175,6 +209,16 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, initialData, onSave
       <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
     </div>
   );
+
+  if (isLocked && tooltipContent) {
+    return (
+      <Tooltip content={tooltipContent} position="cursor">
+        {rowContent}
+      </Tooltip>
+    );
+  }
+
+  return rowContent;
 };
 
 export default AttendanceRow;

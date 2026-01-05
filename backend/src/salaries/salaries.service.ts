@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, SalaryStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DateService } from '../shared/date.service';
@@ -10,6 +10,51 @@ export class SalariesService {
     private prisma: PrismaService,
     private dateService: DateService,
   ) {}
+
+  
+  async getPaidPeriods(workerId: number) {
+
+    const worker = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+      select: { id: true, name: true }, 
+    });
+
+    if (!worker) {
+      throw new NotFoundException(`Worker with ID ${workerId} not found`);
+    }
+
+
+    const paidSalaries = await this.prisma.salary.findMany({
+      where: {
+        workerId,
+        status: SalaryStatus.PAID, 
+      },
+      select: {
+        id: true,
+        cycleStart: true,
+        cycleEnd: true,
+        status: true,
+      },
+      orderBy: {
+        cycleStart: 'desc', 
+      },
+    });
+
+
+    const periods = paidSalaries.map((salary) => ({
+      id: salary.id,
+      startDate: salary.cycleStart.toISOString().split('T')[0],
+      endDate: salary.cycleEnd.toISOString().split('T')[0], 
+      isPaid: salary.status === SalaryStatus.PAID,
+    }));
+
+    return {
+      workerId,
+      workerName: worker.name,
+      periods,
+      count: periods.length,
+    };
+  }
 
   private async calculateBreakdown(workerId: number, payDate?: Date) {
     const worker = await this.prisma.worker.findUnique({

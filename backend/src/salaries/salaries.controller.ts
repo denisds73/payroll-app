@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { FilterSalariesDto } from './dto/filter-salaries.dto';
 import { IssueSalaryDto } from './dto/issue-salary.dto';
 import { SalariesService } from './salaries.service';
@@ -7,10 +7,31 @@ import { SalariesService } from './salaries.service';
 export class SalariesController {
   constructor(private readonly salariesService: SalariesService) {}
 
+  @Get('paid-periods')
+  async getPaidPeriods(@Query('workerId') workerId: string) {
+    if (!workerId) {
+      throw new BadRequestException('workerId query parameter is required');
+    }
+
+    const workerIdNum = parseInt(workerId, 10);
+
+    if (Number.isNaN(workerIdNum)) {
+      throw new BadRequestException('Invalid workerId');
+    }
+
+    return this.salariesService.getPaidPeriods(workerIdNum);
+  }
+
+  @Get('pending')
+  async getPendingSalaries() {
+    return this.salariesService.getPendingSalaries();
+  }
+
   @Get('debug/:workerId')
   async debugSalary(@Param('workerId', ParseIntPipe) workerId: number) {
     return this.salariesService.debugSalary(workerId);
   }
+
 
   @Get('calculate/:workerId')
   async calculateSalary(
@@ -21,11 +42,6 @@ export class SalariesController {
     return this.salariesService.calculateSalary(workerId, payDate);
   }
 
-  @Get('pending')
-  async getPendingSalaries() {
-    return this.salariesService.getPendingSalaries();
-  }
-
   @Get('worker/:workerId')
   async getWorkerSalaries(
     @Param('workerId', ParseIntPipe) workerId: number,
@@ -33,6 +49,7 @@ export class SalariesController {
   ) {
     return this.salariesService.getWorkerSalaries(workerId, filter);
   }
+
 
   @Post(':workerId')
   async createSalary(
