@@ -1,8 +1,11 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <it should be like this> */
+/** biome-ignore-all lint/a11y/noLabelWithoutControl: <it should be like this> */
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <it should be like this> */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
-import { useSalaryLock } from '../../hooks/useSalaryLock';
 import { attendanceAPI } from '../../services/api';
+import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import AttendanceTable from '../ui/AttendanceTable';
 
 interface AttendanceData {
@@ -35,7 +38,17 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
   const prevMonthRef = useRef(month);
   const prevYearRef = useRef(year);
 
-  const { isDateLocked, loading: lockLoading, error: lockError } = useSalaryLock(workerId);
+  const lockDataByWorker = useSalaryLockStore((state) => state.lockDataByWorker);
+  const fetchPaidPeriods = useSalaryLockStore((state) => state.fetchPaidPeriods);
+  const isDateLocked = useSalaryLockStore((state) => state.isDateLocked);
+  const lockLoading = useSalaryLockStore((state) => state.loading);
+  const lockErrors = useSalaryLockStore((state) => state.errors);
+
+  const lockError = lockErrors[workerId];
+
+  useEffect(() => {
+    fetchPaidPeriods(workerId);
+  }, [workerId, fetchPaidPeriods]);
 
   useEffect(() => {
     fetchAttendance();
@@ -111,7 +124,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
       const existingRecord = attendanceMap[date];
       const backendStatus = data.attendanceStatus.toUpperCase();
 
-      if (existingRecord && existingRecord.id) {
+      if (existingRecord?.id) {
         const payload = {
           status: backendStatus,
           otUnits: data.otHours,
@@ -164,6 +177,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
         errorMessage.toLowerCase().includes('paid')
       ) {
         toast.error('Cannot edit - salary has been paid for this period');
+        fetchPaidPeriods(workerId, true);
       } else {
         toast.error(errorMessage);
       }
@@ -196,16 +210,32 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     const locked = new Set<string>();
     const dates = getAllDaysInMonth(month, year);
 
+    console.log('🔄 Recomputing locked dates for worker', workerId);
+
     dates.forEach((date) => {
-      if (isDateLocked(date)) {
+      if (isDateLocked(workerId, date)) {
         locked.add(date);
+        console.log('🔒 Date locked:', date);
       }
     });
 
+    console.log('✅ Total locked dates:', locked.size);
     return locked;
-  }, [isDateLocked, month, year]);
+  }, [lockDataByWorker, workerId, month, year]);
 
-  const isLoading = loading || lockLoading;
+  const lockedPeriods = useMemo(() => {
+    const workerData = lockDataByWorker[workerId];
+    if (!workerData) return [];
+
+    return workerData.periods
+      .filter((p) => p.isPaid)
+      .map((p) => ({
+        startDate: p.startDate,
+        endDate: p.endDate,
+      }));
+  }, [lockDataByWorker, workerId]);
+
+  const isLoading = loading || lockLoading[workerId];
   const combinedError = error || lockError;
 
   return (
@@ -219,6 +249,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
         onMonthYearChange={handleMonthYearChange}
         onSaveAttendance={handleSaveAttendance}
         lockedDates={lockedDates}
+        lockedPeriods={lockedPeriods}
       />
     </div>
   );

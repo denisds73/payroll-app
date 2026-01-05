@@ -5,6 +5,7 @@ import Button from './Button';
 import OTInputStepper from './OTInputStepper';
 import RadioGroup, { type RadioOption } from './RadioGroup';
 import Textarea from './Textarea';
+import Tooltip from './Tooltip';
 
 interface AttendanceData {
   attendanceStatus: string;
@@ -17,6 +18,7 @@ interface AttendanceRowProps {
   initialData?: AttendanceData;
   onSave?: (data: AttendanceData) => void;
   isLocked?: boolean;
+  lockReason?: string;
 }
 
 const attendanceOptions: RadioOption[] = [
@@ -38,6 +40,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
   initialData,
   onSave,
   isLocked = false,
+  lockReason,
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isDirty, setIsDirty] = useState<boolean>(false);
@@ -156,10 +159,20 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
     return null;
   };
 
-  return (
+  const tooltipContent = lockReason && (
+    <div>
+      <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
+        <Lock className="w-3.5 h-3.5" />
+        <span>Locked</span>
+      </div>
+      <div className="text-xs text-text-secondary leading-relaxed">{lockReason}</div>
+    </div>
+  );
+
+  const rowContent = (
     <div
-      className={`flex flex-nowrap items-center gap-x-8 px-3 py-1 bg-card ${
-        isLocked ? 'opacity-60' : ''
+      className={`flex flex-nowrap items-center gap-x-8 px-3 py-1 bg-card transition-all duration-200 rounded-lg ${
+        isLocked ? 'opacity-60 cursor-not-allowed' : ''
       }`}
     >
       <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
@@ -196,6 +209,16 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
       <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
     </div>
   );
+
+  if (isLocked && tooltipContent) {
+    return (
+      <Tooltip content={tooltipContent} position="cursor">
+        {rowContent}
+      </Tooltip>
+    );
+  }
+
+  return rowContent;
 };
 
 export default AttendanceRow;

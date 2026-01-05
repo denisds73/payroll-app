@@ -16,6 +16,7 @@ interface AttendanceTableProps {
   onMonthYearChange: (month: number, year: number) => void;
   onSaveAttendance: (date: string, data: AttendanceData) => void;
   lockedDates?: Set<string>;
+  lockedPeriods?: Array<{ startDate: string; endDate: string }>; // NEW
 }
 
 function formatDateLocal(date: Date): string {
@@ -35,6 +36,39 @@ function getAllDaysInMonth(month: number, year: number): string[] {
   return days;
 }
 
+function formatDateRange(startDate: string, endDate: string): string {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  };
+
+  return `${start.toLocaleDateString('en-IN', formatOptions)} - ${end.toLocaleDateString('en-IN', formatOptions)}`;
+}
+
+function getLockReason(
+  date: string,
+  lockedPeriods?: Array<{ startDate: string; endDate: string }>,
+): string | undefined {
+  if (!lockedPeriods) return undefined;
+
+  const dateOnly = date.split('T')[0];
+
+  for (const period of lockedPeriods) {
+    const startDate = period.startDate.split('T')[0];
+    const endDate = period.endDate.split('T')[0];
+
+    if (dateOnly >= startDate && dateOnly <= endDate) {
+      return `Salary has been paid for the period ${formatDateRange(period.startDate, period.endDate)}.`;
+    }
+  }
+
+  return undefined;
+}
+
 const AttendanceTable: React.FC<AttendanceTableProps> = ({
   month,
   year,
@@ -44,6 +78,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   onMonthYearChange,
   onSaveAttendance,
   lockedDates = new Set(),
+  lockedPeriods = [],
 }) => {
   const [candidateMonth, setCandidateMonth] = useState(month);
   const [candidateYear, setCandidateYear] = useState(year);
@@ -121,6 +156,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 initialData={attendanceMap[date]}
                 onSave={(data) => onSaveAttendance(date, data)}
                 isLocked={lockedDates.has(date)}
+                lockReason={getLockReason(date, lockedPeriods)} // NEW
               />
             ))}
             {dates.every((date) => !attendanceMap[date]) && (
