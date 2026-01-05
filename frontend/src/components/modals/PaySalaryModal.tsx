@@ -66,7 +66,6 @@ export default function PaySalaryModal({
     }
   }, [isOpen, workerId]);
 
-
   useEffect(() => {
     if (salaryData && !isPartialPayment) {
       setFormData((prev) => ({
@@ -81,7 +80,6 @@ export default function PaySalaryModal({
     setError(null);
 
     try {
-
       console.log('🔍 Fetching calculation with payDate:', payDate);
       const calcResponse = await salariesAPI.calculate(workerId, payDate);
       setSalaryData(calcResponse.data);
@@ -102,11 +100,9 @@ export default function PaySalaryModal({
     }
   };
 
-
   const handlePaymentDateChange = async (newDate: string): Promise<void> => {
     console.log('🔍 Payment date changed to:', newDate);
     setFormData((prev) => ({ ...prev, paymentDate: newDate }));
-
 
     if (newDate) {
       console.log('🔍 Calling API with payDate:', newDate);
@@ -125,7 +121,6 @@ export default function PaySalaryModal({
 
     const paymentAmount = Number.parseFloat(formData.paymentAmount);
 
-
     if (Number.isNaN(paymentAmount) || paymentAmount <= 0) {
       setError('Please enter a valid payment amount');
       return;
@@ -141,12 +136,10 @@ export default function PaySalaryModal({
     setLoading(true);
 
     try {
-
       console.log('Creating salary record for pay date:', formData.paymentDate);
       const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
       const salaryId = createResponse.data.id;
       console.log('Salary record created:', salaryId);
-
 
       console.log('Issuing payment...');
       await salariesAPI.issue(salaryId, {
@@ -229,7 +222,6 @@ export default function PaySalaryModal({
 
   if (!isOpen) return null;
 
-
   const isRetroactive = formData.paymentDate !== today;
 
   return (
@@ -285,7 +277,6 @@ export default function PaySalaryModal({
             </div>
           ) : salaryData ? (
             <>
-              {/* ✅ Retroactive Warning */}
               {isRetroactive && (
                 <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg">
                   <p className="text-sm font-medium text-warning flex items-center gap-2">
@@ -298,7 +289,6 @@ export default function PaySalaryModal({
                 </div>
               )}
 
-              {/* Salary Breakdown */}
               <div className="bg-background rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-gray-300">
                   <span className="text-sm font-semibold text-text-primary">Salary Cycle</span>
@@ -307,7 +297,6 @@ export default function PaySalaryModal({
                   </span>
                 </div>
 
-                {/* Earnings */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-text-secondary">
@@ -333,7 +322,6 @@ export default function PaySalaryModal({
                   </div>
                 </div>
 
-                {/* Deductions */}
                 <div className="space-y-2 pt-2 border-t border-gray-300">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-text-secondary">Advances</span>
@@ -349,7 +337,6 @@ export default function PaySalaryModal({
                   </div>
                 </div>
 
-                {/* Net Pay */}
                 <div className="flex items-center justify-between pt-3 border-t-2 border-gray-400">
                   <span className="text-base font-bold text-text-primary">Net Payable</span>
                   <span
@@ -365,10 +352,8 @@ export default function PaySalaryModal({
                 )}
               </div>
 
-              {/* Only show payment fields if netPay > 0 */}
               {salaryData.netPay > 0 && (
                 <>
-                  {/* Payment Date - MOVED UP */}
                   <div>
                     <label
                       htmlFor={paymentDateId}
@@ -380,6 +365,11 @@ export default function PaySalaryModal({
                       type="date"
                       id={paymentDateId}
                       value={formData.paymentDate}
+                      min={
+                        salaryData
+                          ? new Date(salaryData.cycleStart).toISOString().split('T')[0]
+                          : undefined
+                      }
                       max={today}
                       onChange={(e) => handlePaymentDateChange(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
@@ -393,7 +383,6 @@ export default function PaySalaryModal({
                     </p>
                   </div>
 
-                  {/* Payment Type Toggle */}
                   <div>
                     <label className="block text-sm font-medium text-text-primary mb-3">
                       Payment Type
@@ -426,7 +415,6 @@ export default function PaySalaryModal({
                     </div>
                   </div>
 
-                  {/* Payment Amount */}
                   <div>
                     <label
                       htmlFor={paymentAmountId}
@@ -461,7 +449,6 @@ export default function PaySalaryModal({
                     )}
                   </div>
 
-                  {/* Payment Proof/Note */}
                   <div>
                     <label
                       htmlFor={paymentProofId}
@@ -482,7 +469,6 @@ export default function PaySalaryModal({
                 </>
               )}
 
-              {/* Actions */}
               <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
