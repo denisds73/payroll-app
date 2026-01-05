@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
+import { useSalaryLock } from '../../hooks/useSalaryLock';
 import { attendanceAPI } from '../../services/api';
 import AttendanceTable from '../ui/AttendanceTable';
 
@@ -34,8 +35,11 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
   const prevMonthRef = useRef(month);
   const prevYearRef = useRef(year);
 
+  const { isDateLocked, loading: lockLoading, error: lockError } = useSalaryLock(workerId);
+
   useEffect(() => {
     fetchAttendance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workerId, month, year]);
 
   useEffect(() => {
@@ -146,10 +150,25 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
       if (onAttendanceChange) {
         onAttendanceChange();
       }
+
+      toast.success('Attendance saved successfully');
     } catch (err: unknown) {
+      console.error('Save failed:', err);
+
       const error = err as { response?: { data?: { message?: string } } };
-      const errorMsg = error.response?.data?.message || 'Failed to save attendance';
-      alert(errorMsg);
+      const errorMessage = error.response?.data?.message || 'Failed to save attendance';
+
+      if (
+        errorMessage.toLowerCase().includes('locked') ||
+        errorMessage.toLowerCase().includes('salary') ||
+        errorMessage.toLowerCase().includes('paid')
+      ) {
+        toast.error('Cannot edit - salary has been paid for this period');
+      } else {
+        toast.error(errorMessage);
+      }
+
+      fetchAttendance();
     }
   };
 
@@ -160,16 +179,46 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     setSearchParams(newParams);
   };
 
+  const getAllDaysInMonth = (month: number, year: number): string[] => {
+    const days: string[] = [];
+    const date = new Date(year, month - 1, 1);
+    while (date.getMonth() === month - 1) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      days.push(`${y}-${m}-${d}`);
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
+  };
+
+  const lockedDates = useMemo(() => {
+    const locked = new Set<string>();
+    const dates = getAllDaysInMonth(month, year);
+
+    dates.forEach((date) => {
+      if (isDateLocked(date)) {
+        locked.add(date);
+      }
+    });
+
+    return locked;
+  }, [isDateLocked, month, year]);
+
+  const isLoading = loading || lockLoading;
+  const combinedError = error || lockError;
+
   return (
     <div>
       <AttendanceTable
         month={month}
         year={year}
         attendanceMap={attendanceMap}
-        loading={loading}
-        error={error}
+        loading={isLoading}
+        error={combinedError}
         onMonthYearChange={handleMonthYearChange}
         onSaveAttendance={handleSaveAttendance}
+        lockedDates={lockedDates}
       />
     </div>
   );

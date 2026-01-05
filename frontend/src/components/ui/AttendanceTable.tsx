@@ -15,6 +15,7 @@ interface AttendanceTableProps {
   error?: string;
   onMonthYearChange: (month: number, year: number) => void;
   onSaveAttendance: (date: string, data: AttendanceData) => void;
+  lockedDates?: Set<string>;
 }
 
 function formatDateLocal(date: Date): string {
@@ -42,6 +43,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   error,
   onMonthYearChange,
   onSaveAttendance,
+  lockedDates = new Set(),
 }) => {
   const [candidateMonth, setCandidateMonth] = useState(month);
   const [candidateYear, setCandidateYear] = useState(year);
@@ -118,6 +120,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 date={date}
                 initialData={attendanceMap[date]}
                 onSave={(data) => onSaveAttendance(date, data)}
+                isLocked={lockedDates.has(date)}
               />
             ))}
             {dates.every((date) => !attendanceMap[date]) && (

@@ -170,4 +170,9 @@ export const salariesAPI = {
 
   issue: (salaryId: number, data: { amount: number; paymentProof?: string }) =>
     api.post(`/salaries/${salaryId}/issue`, data),
+
+  getPaidPeriods: (workerId: number) => {
+    console.log('🔍 salariesAPI.getPaidPeriods called:', { workerId });
+    return api.get('/salaries/paid-periods', { params: { workerId } });
+  },
 };
