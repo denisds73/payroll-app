@@ -82,13 +82,29 @@ export default function WorkerDetail() {
     try {
       const response = await salariesAPI.calculate(workerId);
       setCycleStats(response.data);
-      console.log('Cycle stats loaded:', response.data);
+      console.log('✅ Cycle stats loaded:', response.data);
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
+
+      console.log('❌ Cycle stats error:', err.response);
+
+      const today = new Date().toISOString();
+      setCycleStats({
+        cycleStart: today,
+        cycleEnd: today,
+        totalDays: 0,
+        totalOtUnits: 0,
+        basePay: 0,
+        otPay: 0,
+        grossPay: 0,
+        totalAdvance: 0,
+        totalExpense: 0,
+        netPay: 0,
+      });
+
       if (err.response?.status !== 400) {
-        setStatsError('Error loading cycle stats');
+        setStatsError(err.response?.data?.message || 'Failed to load cycle stats');
       }
-      console.log('Cycle stats error:', err.response?.data?.message);
     } finally {
       if (!silent) {
         setLoadingStats(false);
@@ -166,7 +182,7 @@ export default function WorkerDetail() {
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
   ];
 
-  const canPaySalary = cycleStats && cycleStats.totalDays > 0;
+  const canPaySalary = cycleStats && cycleStats.grossPay > 0;
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
@@ -219,7 +235,7 @@ export default function WorkerDetail() {
               disabled={!canPaySalary || !worker.isActive}
               title={
                 !canPaySalary
-                  ? 'No attendance found in current cycle'
+                  ? 'No earnings in current cycle'
                   : !worker.isActive
                     ? 'Worker is inactive'
                     : 'Pay salary for current cycle'
@@ -231,96 +247,104 @@ export default function WorkerDetail() {
           </div>
         </div>
 
+        {/* Cycle Stats Cards - Always Visible */}
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
+            Current Cycle Summary
+          </h3>
+          {cycleStats && (
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <Calendar className="w-4 h-4" />
+              <span>
+                {formatDate(cycleStats.cycleStart)} - {formatDate(cycleStats.cycleEnd)}
+              </span>
+            </div>
+          )}
+        </div>
+
         {loadingStats && !cycleStats ? (
-          <div className="py-4">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
-              <p className="text-sm text-text-secondary">Loading current cycle stats...</p>
+          <div className="grid grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-28" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-4">
+            <button
+              type="button"
+              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-5 h-5 text-success" />
+                <p className="text-sm font-semibold text-text-primary">Earned</p>
+              </div>
+              <p className="text-2xl font-bold text-text-primary mb-1">
+                {formatCurrency(cycleStats?.grossPay ?? 0)}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {cycleStats?.totalDays ?? 0} days • {cycleStats?.totalOtUnits ?? 0} OT units
+              </p>
+            </button>
+
+            <button
+              type="button"
+              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
+              onClick={() => handleTabChange('history')}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <DollarSign className="w-5 h-5 text-warning" />
+                <p className="text-sm font-semibold text-text-primary">Advances</p>
+              </div>
+              <p className="text-2xl font-bold text-text-primary mb-1">
+                {formatCurrency(cycleStats?.totalAdvance ?? 0)}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {(cycleStats?.totalAdvance ?? 0) > 0 ? 'Deducted from salary' : 'No advances taken'}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
+              onClick={() => handleTabChange('history')}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Receipt className="w-5 h-5 text-info" />
+                <p className="text-sm font-semibold text-text-primary">Expenses</p>
+              </div>
+              <p className="text-2xl font-bold text-text-primary mb-1">
+                {formatCurrency(cycleStats?.totalExpense ?? 0)}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {(cycleStats?.totalExpense ?? 0) > 0 ? 'Deducted from salary' : 'No expenses'}
+              </p>
+            </button>
+
+            <div className="bg-white rounded-lg p-4 border-2 border-primary">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText
+                  className={`w-5 h-5 ${(cycleStats?.netPay ?? 0) >= 0 ? 'text-success' : 'text-error'}`}
+                />
+                <p className="text-sm font-semibold text-text-primary">Net Payable</p>
+              </div>
+              <p className="text-2xl font-bold text-text-primary mb-1">
+                {formatCurrency(Math.abs(cycleStats?.netPay ?? 0))}
+              </p>
+              <p
+                className={`text-xs font-medium ${(cycleStats?.netPay ?? 0) >= 0 ? 'text-success' : 'text-error'}`}
+              >
+                {(cycleStats?.netPay ?? 0) >= 0 ? 'To Pay Worker' : 'Worker Owes Company'}
+              </p>
             </div>
           </div>
-        ) : cycleStats ? (
-          <>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">
-                Current Cycle Summary
-              </h3>
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  {formatDate(cycleStats.cycleStart)} - {formatDate(cycleStats.cycleEnd)}
-                </span>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              <button
-                type="button"
-                className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="w-5 h-5 text-success" />
-                  <p className="text-sm font-semibold text-text-primary">Earned</p>
-                </div>
-                <p className="text-2xl font-bold text-text-primary mb-1">
-                  {formatCurrency(cycleStats.grossPay)}
-                </p>
-                <p className="text-xs text-text-secondary">
-                  {cycleStats.totalDays} days • {cycleStats.totalOtUnits} OT units
-                </p>
-              </button>
+        )}
 
-              <button
-                type="button"
-                className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-                onClick={() => handleTabChange('history')}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-5 h-5 text-warning" />
-                  <p className="text-sm font-semibold text-text-primary">Advances</p>
-                </div>
-                <p className="text-2xl font-bold text-text-primary mb-1">
-                  {formatCurrency(cycleStats.totalAdvance)}
-                </p>
-                <p className="text-xs text-text-secondary">
-                  {cycleStats.totalAdvance > 0 ? 'Deducted from salary' : 'No advances taken'}
-                </p>
-              </button>
-
-              <button
-                type="button"
-                className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-                onClick={() => handleTabChange('history')}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <Receipt className="w-5 h-5 text-info" />
-                  <p className="text-sm font-semibold text-text-primary">Expenses</p>
-                </div>
-                <p className="text-2xl font-bold text-text-primary mb-1">
-                  {formatCurrency(cycleStats.totalExpense)}
-                </p>
-                <p className="text-xs text-text-secondary">
-                  {cycleStats.totalExpense > 0 ? 'Deducted from salary' : 'No expenses'}
-                </p>
-              </button>
-
-              <div className="bg-white rounded-lg p-4 border-2 border-primary">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText
-                    className={`w-5 h-5 ${cycleStats.netPay >= 0 ? 'text-success' : 'text-error'}`}
-                  />
-                  <p className="text-sm font-semibold text-text-primary">Net Payable</p>
-                </div>
-                <p className="text-2xl font-bold text-text-primary mb-1">
-                  {formatCurrency(Math.abs(cycleStats.netPay))}
-                </p>
-                <p
-                  className={`text-xs font-medium ${cycleStats.netPay >= 0 ? 'text-success' : 'text-error'}`}
-                >
-                  {cycleStats.netPay >= 0 ? 'To Pay Worker' : 'Worker Owes Company'}
-                </p>
-              </div>
-            </div>
-          </>
-        ) : null}
+        {/* Error message below cards */}
+        {statsError && (
+          <div className="mt-4 p-3 bg-error/10 border border-error/20 rounded-lg">
+            <p className="text-sm text-error">{statsError}</p>
+          </div>
+        )}
       </div>
 
       <div className="bg-card rounded-lg shadow-sm">
