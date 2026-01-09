@@ -61,7 +61,7 @@ export const useSalaryLockStore = create<SalaryLockStore>((set, get) => ({
       console.log('📅 Fetched paid periods:', {
         workerId,
         count: periods.length,
-        periods: periods.map((p) => ({
+        periods: periods.map((p: any) => ({
           id: p.id,
           start: p.startDate,
           end: p.endDate,

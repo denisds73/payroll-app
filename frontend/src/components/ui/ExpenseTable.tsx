@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ExpenseRow from './ExpenseRow';
 
-interface ExpenseData {
+export interface ExpenseData {
   id?: number | string;
   typeId: number;
   amount: number;
@@ -21,6 +21,8 @@ interface ExpenseTableProps {
   onSaveExpense: (date: string, data: ExpenseData) => void;
   onDeleteExpense: (expenseId: number | string) => void;
   onAddNewExpense: (date: string) => void;
+  lockedDates?: Set<string>;
+  lockedPeriods?: Array<{ startDate: string; endDate: string }>;
 }
 
 function formatDateLocal(date: Date): string {
@@ -40,6 +42,39 @@ function getAllDaysInMonth(month: number, year: number): string[] {
   return days;
 }
 
+function formatDateRange(startDate: string, endDate: string): string {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  };
+
+  return `${start.toLocaleDateString('en-IN', formatOptions)} - ${end.toLocaleDateString('en-IN', formatOptions)}`;
+}
+
+function getLockReason(
+  date: string,
+  lockedPeriods?: Array<{ startDate: string; endDate: string }>,
+): string | undefined {
+  if (!lockedPeriods) return undefined;
+
+  const dateOnly = date.split('T')[0];
+
+  for (const period of lockedPeriods) {
+    const startDate = period.startDate.split('T')[0];
+    const endDate = period.endDate.split('T')[0];
+
+    if (dateOnly >= startDate && dateOnly <= endDate) {
+      return `Salary has been paid for the period ${formatDateRange(period.startDate, period.endDate)}.`;
+    }
+  }
+
+  return undefined;
+}
+
 const ExpenseTable: React.FC<ExpenseTableProps> = ({
   month,
   year,
@@ -51,6 +86,8 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
   onSaveExpense,
   onDeleteExpense,
   onAddNewExpense,
+  lockedDates = new Set(),
+  lockedPeriods = [],
 }) => {
   const [candidateMonth, setCandidateMonth] = useState(month);
   const [candidateYear, setCandidateYear] = useState(year);
@@ -123,6 +160,8 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
           <>
             {dates.map((date) => {
               const expensesForDate = expenseMap[date] || [];
+              const isLocked = lockedDates.has(date);
+              const lockReason = getLockReason(date, lockedPeriods);
 
               if (expensesForDate.length === 0) {
                 return (
@@ -134,6 +173,8 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
                     showAddButton={false}
                     canDelete={false}
                     isNew={false}
+                    isLocked={isLocked}
+                    lockReason={lockReason}
                   />
                 );
               }
@@ -152,11 +193,12 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
                     onAddNew={() => onAddNewExpense(date)}
                     canDelete={true}
                     isNew={isTemp}
+                    isLocked={isLocked}
+                    lockReason={lockReason}
                   />
                 );
               });
             })}
-
             {dates.every((date) => !expenseMap[date] || expenseMap[date].length === 0) && (
               <div className="mt-6 text-text-secondary text-center text-sm">
                 No expense records for this month yet.

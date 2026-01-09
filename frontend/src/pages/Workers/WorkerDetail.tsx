@@ -233,13 +233,6 @@ export default function WorkerDetail() {
               className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => setIsSalaryModalOpen(true)}
               disabled={!canPaySalary || !worker.isActive}
-              title={
-                !canPaySalary
-                  ? 'No earnings in current cycle'
-                  : !worker.isActive
-                    ? 'Worker is inactive'
-                    : 'Pay salary for current cycle'
-              }
             >
               <TrendingUp className="w-4 h-4" />
               Pay Salary

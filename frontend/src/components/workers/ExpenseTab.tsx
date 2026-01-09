@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import { expensesAPI, expenseTypesAPI } from '../../services/api';
-import ExpenseTable from '../ui/ExpenseTable';
+import { useSalaryLockStore } from '../../store/useSalaryLockStore';
+import ExpenseTable, { type ExpenseData } from '../ui/ExpenseTable';
 
 interface ExpenseTabProps {
   workerId: number;
@@ -24,7 +25,7 @@ interface Expense {
   typeId: number;
 }
 
-export default function ExpenseTab({ workerId, workerName, onExpenseChange }: ExpenseTabProps) {
+export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date();
 
@@ -39,6 +40,19 @@ export default function ExpenseTab({ workerId, workerName, onExpenseChange }: Ex
   const isInitialMount = useRef(true);
   const prevMonthRef = useRef(selectedMonth);
   const prevYearRef = useRef(selectedYear);
+
+  // Lock store integration
+  const lockDataByWorker = useSalaryLockStore((state) => state.lockDataByWorker);
+  const fetchPaidPeriods = useSalaryLockStore((state) => state.fetchPaidPeriods);
+  const isDateLocked = useSalaryLockStore((state) => state.isDateLocked);
+  const lockLoading = useSalaryLockStore((state) => state.loading);
+  const lockErrors = useSalaryLockStore((state) => state.errors);
+
+  const lockError = lockErrors[workerId];
+
+  useEffect(() => {
+    fetchPaidPeriods(workerId);
+  }, [workerId, fetchPaidPeriods]);
 
   useEffect(() => {
     fetchExpenseTypes();
@@ -126,7 +140,17 @@ export default function ExpenseTab({ workerId, workerName, onExpenseChange }: Ex
     }
   };
 
-  const handleSaveExpense = async (date: string, data: Expense) => {
+  const handleSaveExpense = (date: string, data: ExpenseData): void => {
+    const expenseWithMetadata: Expense = {
+      id: data.id || `temp-${Date.now()}`,
+      ...data,
+      workerId,
+      date,
+    };
+    handleSaveExpenseInternal(date, expenseWithMetadata);
+  };
+
+  const handleSaveExpenseInternal = async (date: string, data: Expense) => {
     try {
       const isTempId = typeof data.id === 'string' && data.id.startsWith('temp-');
 
@@ -160,13 +184,25 @@ export default function ExpenseTab({ workerId, workerName, onExpenseChange }: Ex
       }
 
       onExpenseChange();
+      toast.success('Expense saved successfully');
     } catch (err: unknown) {
       console.error('Save failed:', err);
       const errorMessage =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : undefined;
-      alert(errorMessage || 'Failed to save expense');
+
+      if (
+        errorMessage?.toLowerCase().includes('locked') ||
+        errorMessage?.toLowerCase().includes('salary') ||
+        errorMessage?.toLowerCase().includes('paid')
+      ) {
+        toast.error('Cannot edit - salary has been paid for this period');
+        fetchPaidPeriods(workerId, true);
+      } else {
+        toast.error(errorMessage || 'Failed to save expense');
+      }
+
       fetchExpenses();
     }
   };
@@ -183,13 +219,25 @@ export default function ExpenseTab({ workerId, workerName, onExpenseChange }: Ex
       await expensesAPI.delete(expenseId as number);
 
       onExpenseChange();
+      toast.success('Expense deleted successfully');
     } catch (err: unknown) {
       console.error('Delete failed:', err);
       const errorMessage =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : undefined;
-      alert(errorMessage || 'Failed to delete expense');
+
+      if (
+        errorMessage?.toLowerCase().includes('locked') ||
+        errorMessage?.toLowerCase().includes('salary') ||
+        errorMessage?.toLowerCase().includes('paid')
+      ) {
+        toast.error('Cannot delete - salary has been paid for this period');
+        fetchPaidPeriods(workerId, true);
+      } else {
+        toast.error(errorMessage || 'Failed to delete expense');
+      }
+
       fetchExpenses();
     }
   };
@@ -214,6 +262,51 @@ export default function ExpenseTab({ workerId, workerName, onExpenseChange }: Ex
     setSearchParams(newParams);
   };
 
+  const getAllDaysInMonth = (month: number, year: number): string[] => {
+    const days: string[] = [];
+    const date = new Date(year, month - 1, 1);
+    while (date.getMonth() === month - 1) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      days.push(`${y}-${m}-${d}`);
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
+  };
+
+  const lockedDates = useMemo(() => {
+    const locked = new Set<string>();
+    const dates = getAllDaysInMonth(selectedMonth, selectedYear);
+
+    console.log('🔄 Recomputing locked dates for worker', workerId);
+
+    dates.forEach((date) => {
+      if (isDateLocked(workerId, date)) {
+        locked.add(date);
+        console.log('🔒 Date locked:', date);
+      }
+    });
+
+    console.log('Total locked dates:', locked.size);
+    return locked;
+  }, [lockDataByWorker, workerId, selectedMonth, selectedYear, isDateLocked]);
+
+  const lockedPeriods = useMemo(() => {
+    const workerData = lockDataByWorker[workerId];
+    if (!workerData) return [];
+
+    return workerData.periods
+      .filter((p) => p.isPaid)
+      .map((p) => ({
+        startDate: p.startDate,
+        endDate: p.endDate,
+      }));
+  }, [lockDataByWorker, workerId]);
+
+  const isLoading = loading || lockLoading[workerId];
+  const combinedError = error || lockError || undefined;
+
   const expenseMap: Record<string, Expense[]> = {};
   for (const exp of expenses) {
     const dateKey = exp.date.split('T')[0];
@@ -236,12 +329,14 @@ export default function ExpenseTab({ workerId, workerName, onExpenseChange }: Ex
       year={selectedYear}
       expenseTypes={expenseTypes}
       expenseMap={expenseMap}
-      loading={loading}
-      error={error}
+      loading={isLoading}
+      error={combinedError}
       onMonthYearChange={handleMonthYearChange}
       onSaveExpense={handleSaveExpense}
       onDeleteExpense={handleDeleteExpense}
       onAddNewExpense={handleAddNewExpense}
+      lockedDates={lockedDates}
+      lockedPeriods={lockedPeriods}
     />
   );
 }

@@ -5,6 +5,10 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": "22.x",
+    "npm": ">=10.x"
+  },
   "scripts": {
     "backfill": "tsx src/scripts/backfill-wage-data.ts",
     "build": "nest build",
@@ -58,7 +62,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.x",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {

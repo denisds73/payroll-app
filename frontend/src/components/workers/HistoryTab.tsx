@@ -1,9 +1,12 @@
-import { DollarSign, Edit2, Receipt, Trash2, TrendingUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { DollarSign, Edit2, Lock, Receipt, Trash2, TrendingUp } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { advancesAPI, expensesAPI, salariesAPI } from '../../services/api';
+import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import ConfirmModal from '../modals/ConfirmModal';
 import EditAdvanceModal from '../modals/EditAdvanceModal';
 import EditExpenseModal from '../modals/EditExpenseModal';
+import Tooltip from '../ui/Tooltip';
 
 interface HistoryTabProps {
   workerId: number;
@@ -20,6 +23,7 @@ interface HistoryItem {
   cycleInfo?: string;
   typeId?: number;
   typeName?: string;
+  issuedAt?: string;
 }
 
 export default function HistoryTab({ workerId, workerName, onDataChange }: HistoryTabProps) {
@@ -31,6 +35,18 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+
+  const lockDataByWorker = useSalaryLockStore((state) => state.lockDataByWorker);
+  const fetchPaidPeriods = useSalaryLockStore((state) => state.fetchPaidPeriods);
+  const isDateLocked = useSalaryLockStore((state) => state.isDateLocked);
+  const lockLoading = useSalaryLockStore((state) => state.loading);
+  const lockErrors = useSalaryLockStore((state) => state.errors);
+
+  const lockError = lockErrors[workerId];
+
+  useEffect(() => {
+    fetchPaidPeriods(workerId);
+  }, [workerId, fetchPaidPeriods]);
 
   useEffect(() => {
     fetchHistory();
@@ -54,12 +70,13 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
       const salaries: HistoryItem[] = salariesResponse.data.map((sal: any) => ({
         id: sal.id,
         type: 'salary' as const,
-        date: sal.issuedAt || sal.cycleEnd,
+        date: sal.cycleEnd,
         amount: sal.totalPaid,
         description:
           sal.paymentProof ||
           `Salary for ${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
         cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+        issuedAt: sal.issuedAt,
       }));
 
       const expensesResponse = await expensesAPI.getByWorker(workerId);
@@ -91,6 +108,12 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   };
 
   const handleEdit = (item: HistoryItem): void => {
+    const dateOnly = item.date.split('T')[0];
+    if (isDateLocked(workerId, dateOnly)) {
+      toast.error('Cannot edit - salary has been paid for this period');
+      return;
+    }
+
     setSelectedItem(item);
     if (item.type === 'advance') {
       setEditAdvanceModalOpen(true);
@@ -100,6 +123,12 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   };
 
   const handleDeleteClick = (item: HistoryItem): void => {
+    const dateOnly = item.date.split('T')[0];
+    if (isDateLocked(workerId, dateOnly)) {
+      toast.error('Cannot delete - salary has been paid for this period');
+      return;
+    }
+
     setSelectedItem(item);
     setConfirmDeleteOpen(true);
   };
@@ -120,6 +149,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         onDataChange();
       }
 
+      toast.success(`${selectedItem.type} deleted successfully`);
       setConfirmDeleteOpen(false);
       setSelectedItem(null);
     } catch (err) {
@@ -128,7 +158,17 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : `Failed to delete ${selectedItem.type}`;
 
-      alert(errorMessage || `Failed to delete ${selectedItem.type}`);
+      if (
+        errorMessage?.toLowerCase().includes('locked') ||
+        errorMessage?.toLowerCase().includes('salary') ||
+        errorMessage?.toLowerCase().includes('paid')
+      ) {
+        toast.error('Cannot delete - salary has been paid for this period');
+        fetchPaidPeriods(workerId, true);
+      } else {
+        toast.error(errorMessage || `Failed to delete ${selectedItem.type}`);
+      }
+
       setConfirmDeleteOpen(false);
     }
   };
@@ -179,7 +219,49 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
     }
   };
 
-  if (loading) {
+  const formatDateRange = (startDate: string, endDate: string): string => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const formatOptions: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    };
+
+    return `${start.toLocaleDateString('en-IN', formatOptions)} - ${end.toLocaleDateString('en-IN', formatOptions)}`;
+  };
+
+  const getLockReason = (date: string): string | undefined => {
+    const workerData = lockDataByWorker[workerId];
+    if (!workerData) return undefined;
+
+    const dateOnly = date.split('T')[0];
+
+    for (const period of workerData.periods) {
+      if (!period.isPaid) continue;
+
+      const startDate = period.startDate.split('T')[0];
+      const endDate = period.endDate.split('T')[0];
+
+      if (dateOnly >= startDate && dateOnly <= endDate) {
+        return `Salary has been paid for the period ${formatDateRange(period.startDate, period.endDate)}.`;
+      }
+    }
+
+    return undefined;
+  };
+
+  const isItemLocked = (item: HistoryItem): boolean => {
+    if (item.type === 'salary') return true;
+    const dateOnly = item.date.split('T')[0];
+    return isDateLocked(workerId, dateOnly);
+  };
+
+  const isLoading = loading || lockLoading[workerId];
+  const combinedError = error || lockError || null;
+
+  if (isLoading) {
     return (
       <div className="py-12 text-center">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -188,13 +270,13 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
     );
   }
 
-  if (error) {
+  if (combinedError) {
     return (
       <div
         className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg"
         role="alert"
       >
-        {error}
+        {combinedError}
       </div>
     );
   }
@@ -222,82 +304,134 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         </div>
 
         <div className="space-y-3">
-          {history.map((item) => (
-            <div
-              key={`${item.type}-${item.id}`}
-              className={`border-l-4 ${getItemColor(item.type)} rounded-lg p-4 hover:shadow-md transition-shadow`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="mt-0.5">{getItemIcon(item.type)}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-text-primary capitalize">
-                        {item.type}
-                      </span>
-                      {/* Show expense type */}
-                      {item.type === 'expense' && item.typeName && (
-                        <>
-                          <span className="text-xs text-text-disabled">•</span>
-                          <span className="text-xs font-medium text-info bg-info/10 px-2 py-0.5 rounded">
-                            {item.typeName}
+          {history.map((item) => {
+            const locked = isItemLocked(item);
+            const lockReason = locked ? getLockReason(item.date) : undefined;
+
+            const itemContent = (
+              <div
+                key={`${item.type}-${item.id}`}
+                className={`border-l-4 ${getItemColor(item.type)} rounded-lg p-4 hover:shadow-md transition-all ${
+                  locked && item.type !== 'salary' ? 'opacity-70' : ''
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="mt-0.5">{getItemIcon(item.type)}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-text-primary capitalize">
+                          {item.type}
+                        </span>
+
+                        {item.type === 'expense' && item.typeName && (
+                          <>
+                            <span className="text-xs text-text-disabled">•</span>
+                            <span className="text-xs font-medium text-info bg-info/10 px-2 py-0.5 rounded">
+                              {item.typeName}
+                            </span>
+                          </>
+                        )}
+                        <span className="text-xs text-text-disabled">•</span>
+                        {item.type === 'salary' && item.cycleInfo ? (
+                          <span className="text-xs text-text-secondary">{item.cycleInfo}</span>
+                        ) : (
+                          <span className="text-xs text-text-secondary">
+                            {formatDate(item.date)}
                           </span>
-                        </>
+                        )}
+                      </div>
+
+                      {item.type === 'salary' && item.issuedAt ? (
+                        <p className="text-xs text-success flex items-center gap-1">
+                          <span className="font-medium">Processed on:</span>
+                          <span>{formatDate(item.issuedAt)}</span>
+
+                          {item.issuedAt.split('T')[0] !== item.date.split('T')[0] && (
+                            <span className="text-warning ml-1">(Retroactive)</span>
+                          )}
+                        </p>
+                      ) : (
+                        item.type !== 'salary' && (
+                          <p className="text-sm text-text-secondary">{item.description}</p>
+                        )
                       )}
-                      <span className="text-xs text-text-disabled">•</span>
-                      <span className="text-xs text-text-secondary">{formatDate(item.date)}</span>
                     </div>
-                    <p className="text-sm text-text-secondary">{item.description}</p>
-                    {item.cycleInfo && (
-                      <p className="text-xs text-text-disabled mt-1">Cycle: {item.cycleInfo}</p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p
+                        className={`text-lg font-bold ${
+                          item.type === 'salary' && item.amount >= 0
+                            ? 'text-success'
+                            : item.type === 'advance' || item.type === 'expense'
+                              ? 'text-warning'
+                              : 'text-text-primary'
+                        }`}
+                      >
+                        {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
+                        {formatCurrency(item.amount)}
+                      </p>
+                    </div>
+
+                    {(item.type === 'advance' || item.type === 'expense') && (
+                      <>
+                        {locked ? (
+                          <div className="flex items-center gap-2 text-text-secondary px-2">
+                            <Lock className="w-4 h-4" />
+                            <span className="text-sm font-medium">Locked</span>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(item)}
+                              className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
+                              aria-label="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(item)}
+                              className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p
-                      className={`text-lg font-bold ${
-                        item.type === 'salary' && item.amount >= 0
-                          ? 'text-success'
-                          : item.type === 'advance' || item.type === 'expense'
-                            ? 'text-warning'
-                            : 'text-text-primary'
-                      }`}
-                    >
-                      {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
-                      {formatCurrency(item.amount)}
-                    </p>
-                  </div>
-
-                  {(item.type === 'advance' || item.type === 'expense') && (
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(item)}
-                        className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
-                        aria-label="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClick(item)}
-                        className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
-            </div>
-          ))}
+            );
+
+            if (locked && lockReason && item.type !== 'salary') {
+              const tooltipContent = (
+                <div>
+                  <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Locked</span>
+                  </div>
+                  <div className="text-xs text-text-secondary leading-relaxed">{lockReason}</div>
+                </div>
+              );
+
+              return (
+                <Tooltip key={`${item.type}-${item.id}`} content={tooltipContent} position="cursor">
+                  {itemContent}
+                </Tooltip>
+              );
+            }
+
+            return itemContent;
+          })}
         </div>
       </div>
 
-      {/* Edit Advance Modal */}
       <EditAdvanceModal
         advance={
           selectedItem?.type === 'advance'
@@ -318,7 +452,6 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         onSuccess={handleSuccess}
       />
 
-      {/* Edit Expense Modal */}
       <EditExpenseModal
         expense={
           selectedItem?.type === 'expense'
@@ -340,7 +473,6 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         onSuccess={handleSuccess}
       />
 
-      {/* Confirm Delete Modal */}
       <ConfirmModal
         isOpen={confirmDeleteOpen}
         title={`Delete ${selectedItem?.type}?`}
