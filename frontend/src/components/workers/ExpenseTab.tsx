@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import { expensesAPI, expenseTypesAPI } from '../../services/api';
-import ExpenseTable from '../ui/ExpenseTable';
+import ExpenseTable, { type ExpenseData } from '../ui/ExpenseTable';
 
 interface ExpenseTabProps {
   workerId: number;
@@ -24,7 +24,7 @@ interface Expense {
   typeId: number;
 }
 
-export default function ExpenseTab({ workerId, workerName, onExpenseChange }: ExpenseTabProps) {
+export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date();
 
@@ -126,7 +126,17 @@ export default function ExpenseTab({ workerId, workerName, onExpenseChange }: Ex
     }
   };
 
-  const handleSaveExpense = async (date: string, data: Expense) => {
+  const handleSaveExpense = (date: string, data: ExpenseData): void => {
+    const expenseWithMetadata: Expense = {
+      id: data.id || `temp-${Date.now()}`,
+      ...data,
+      workerId,
+      date,
+    };
+    handleSaveExpenseInternal(date, expenseWithMetadata);
+  };
+
+  const handleSaveExpenseInternal = async (date: string, data: Expense) => {
     try {
       const isTempId = typeof data.id === 'string' && data.id.startsWith('temp-');
 

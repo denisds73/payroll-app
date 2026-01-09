@@ -8,7 +8,7 @@ interface SearchBarProps {
   className?: string;
 }
 
-export const SearchBar = ({ value, onChange, placeholder, className }: SearchBarProps) => {
+export const SearchBar = ({ value, onChange, placeholder }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (

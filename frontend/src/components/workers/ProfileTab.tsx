@@ -107,23 +107,19 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
 
     try {
       if (editMode === 'effectiveDate') {
-        // Only update effective dates (send current wage/OT rate with new dates)
+        // Only update effective dates (send current wage/OT rate)
         await workersAPI.update(worker.id, {
           wage: Number(formData.wage),
           otRate: Number(formData.otRate),
-          wageEffectiveDate: formData.wageEffectiveDate,
-          otRateEffectiveDate: formData.otRateEffectiveDate,
         });
       } else {
-        // Normal update (values or values + effective dates)
+        // Normal update (values)
         await workersAPI.update(worker.id, {
           name: formData.name.trim(),
           phone: formData.phone.trim() || undefined,
           wage: Number(formData.wage),
           otRate: Number(formData.otRate),
           isActive: formData.isActive,
-          wageEffectiveDate: wageChanged ? formData.wageEffectiveDate : undefined,
-          otRateEffectiveDate: otRateChanged ? formData.otRateEffectiveDate : undefined,
         });
       }
 

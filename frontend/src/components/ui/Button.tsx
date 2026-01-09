@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import { Plus } from 'lucide-react';
 
 interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'danger' | 'dangerLight' | 'outline';

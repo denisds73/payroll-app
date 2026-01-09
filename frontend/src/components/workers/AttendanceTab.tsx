@@ -119,7 +119,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     }
   };
 
-  const handleSaveAttendance = async (date: string, data: AttendanceData) => {
+  const handleSaveAttendance = async (date: string, data: AttendanceData): Promise<void> => {
     try {
       const existingRecord = attendanceMap[date];
       const backendStatus = data.attendanceStatus.toUpperCase();
@@ -236,7 +236,7 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
   }, [lockDataByWorker, workerId]);
 
   const isLoading = loading || lockLoading[workerId];
-  const combinedError = error || lockError;
+  const combinedError = (error || lockError) || undefined;
 
   return (
     <div>

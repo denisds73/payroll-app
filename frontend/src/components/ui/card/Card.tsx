@@ -7,7 +7,7 @@ interface CardProps {
   className?: string;
 }
 
-export const Card = ({ title, children, variant = 'default', className }: CardProps) => {
+export const Card = ({ children, variant = 'default', className }: CardProps) => {
   const cardClasses = clsx(
     'bg-card rounded-lg shadow-md transition-shadow duration-200',
     {

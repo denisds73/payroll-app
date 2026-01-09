@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ExpenseRow from './ExpenseRow';
 
-interface ExpenseData {
+export interface ExpenseData {
   id?: number | string;
   typeId: number;
   amount: number;
