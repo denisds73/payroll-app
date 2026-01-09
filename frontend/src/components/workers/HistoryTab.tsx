@@ -1,4 +1,4 @@
-import { DollarSign, Edit2, Lock, Receipt, Trash2, TrendingUp } from 'lucide-react';
+import { DollarSign, Edit2, Filter, Lock, Receipt, Trash2, TrendingUp, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { advancesAPI, expensesAPI, salariesAPI } from '../../services/api';
@@ -26,15 +26,40 @@ interface HistoryItem {
   issuedAt?: string;
 }
 
+interface FilterState {
+  types: {
+    advance: boolean;
+    salary: boolean;
+    expense: boolean;
+  };
+  dateFrom: string;
+  dateTo: string;
+  amountMin: string;
+  amountMax: string;
+}
+
 export default function HistoryTab({ workerId, workerName, onDataChange }: HistoryTabProps) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
 
   const [editAdvanceModalOpen, setEditAdvanceModalOpen] = useState(false);
   const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+
+  const [filters, setFilters] = useState<FilterState>({
+    types: {
+      advance: true,
+      salary: true,
+      expense: true,
+    },
+    dateFrom: '',
+    dateTo: '',
+    amountMin: '',
+    amountMax: '',
+  });
 
   const lockDataByWorker = useSalaryLockStore((state) => state.lockDataByWorker);
   const fetchPaidPeriods = useSalaryLockStore((state) => state.fetchPaidPeriods);
@@ -105,6 +130,49 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
     } finally {
       setLoading(false);
     }
+  };
+
+  const filteredHistory = useMemo(() => {
+    return history.filter((item) => {
+      if (!filters.types[item.type]) return false;
+
+      const itemDate = new Date(item.date).getTime();
+      if (filters.dateFrom) {
+        const fromDate = new Date(filters.dateFrom).getTime();
+        if (itemDate < fromDate) return false;
+      }
+      if (filters.dateTo) {
+        const toDate = new Date(filters.dateTo).setHours(23, 59, 59, 999);
+        if (itemDate > toDate) return false;
+      }
+
+      if (filters.amountMin && item.amount < Number(filters.amountMin)) return false;
+      if (filters.amountMax && item.amount > Number(filters.amountMax)) return false;
+
+      return true;
+    });
+  }, [history, filters]);
+
+  const hasActiveFilters = useMemo(() => {
+    const allTypesSelected = filters.types.advance && filters.types.salary && filters.types.expense;
+    const hasDateFilter = filters.dateFrom || filters.dateTo;
+    const hasAmountFilter = filters.amountMin || filters.amountMax;
+
+    return !allTypesSelected || hasDateFilter || hasAmountFilter;
+  }, [filters]);
+
+  const clearFilters = () => {
+    setFilters({
+      types: {
+        advance: true,
+        salary: true,
+        expense: true,
+      },
+      dateFrom: '',
+      dateTo: '',
+      amountMin: '',
+      amountMax: '',
+    });
   };
 
   const handleEdit = (item: HistoryItem): void => {
@@ -298,137 +366,231 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-text-primary">Transaction History</h3>
-          <span className="text-sm text-text-secondary">{history.length} transactions</span>
+          <span className="text-sm text-text-secondary">
+            {filteredHistory.length} of {history.length} transactions
+          </span>
         </div>
 
-        <div className="space-y-3">
-          {history.map((item) => {
-            const locked = isItemLocked(item);
-            const lockReason = locked ? getLockReason(item.date) : undefined;
+        <div className="flex items-center gap-4 flex-wrap justify-end">
+          <button
+            type="button"
+            onClick={clearFilters}
+            className={`text-sm transition-all flex items-center gap-1 font-medium ${
+              hasActiveFilters
+                ? 'text-error hover:text-error/80 cursor-pointer'
+                : 'text-error/0 pointer-events-none'
+            }`}
+          >
+            <X className="w-4 h-4" />
+            Clear
+          </button>
 
-            const itemContent = (
-              <div
-                key={`${item.type}-${item.id}`}
-                className={`border-l-4 ${getItemColor(item.type)} rounded-lg p-4 hover:shadow-md transition-all ${
-                  locked && item.type !== 'salary' ? 'opacity-70' : ''
+          <div className="flex items-center gap-2">
+            {(['salary', 'advance', 'expense'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    types: {
+                      ...prev.types,
+                      [type]: !prev.types[type],
+                    },
+                  }))
+                }
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all capitalize border ${
+                  filters.types[type]
+                    ? type === 'advance'
+                      ? 'bg-warning/10 text-warning border-warning/30 hover:bg-warning/20'
+                      : type === 'salary'
+                        ? 'bg-success/10 text-success border-success/30 hover:bg-success/20'
+                        : 'bg-info/10 text-info border-info/30 hover:bg-info/20'
+                    : 'bg-background text-text-disabled border-gray-300 opacity-60 hover:opacity-80'
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="mt-0.5">{getItemIcon(item.type)}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-text-primary capitalize">
-                          {item.type}
-                        </span>
+                {filters.types[type] && <span className="mr-1">✓</span>}
+                {type}
+              </button>
+            ))}
+          </div>
 
-                        {item.type === 'expense' && item.typeName && (
-                          <>
-                            <span className="text-xs text-text-disabled">•</span>
-                            <span className="text-xs font-medium text-info bg-info/10 px-2 py-0.5 rounded">
-                              {item.typeName}
-                            </span>
-                          </>
-                        )}
-                        <span className="text-xs text-text-disabled">•</span>
-                        {item.type === 'salary' && item.cycleInfo ? (
-                          <span className="text-xs text-text-secondary">{item.cycleInfo}</span>
-                        ) : (
-                          <span className="text-xs text-text-secondary">
-                            {formatDate(item.date)}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-text-secondary shrink-0">From:</label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                className="w-32 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-text-secondary shrink-0">To:</label>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                className="w-32 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3 min-h-96">
+          {filteredHistory.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4">
+                <Filter className="w-8 h-8 text-text-disabled" />
+              </div>
+              <h3 className="text-lg font-semibold text-text-primary mb-2">
+                No Matching Transactions
+              </h3>
+              <p className="text-sm text-text-secondary mb-4">
+                Try adjusting your filters to see more results
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium"
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            filteredHistory.map((item) => {
+              const locked = isItemLocked(item);
+              const lockReason = locked ? getLockReason(item.date) : undefined;
+
+              const itemContent = (
+                <div
+                  key={`${item.type}-${item.id}`}
+                  className={`border-l-4 ${getItemColor(item.type)} rounded-lg p-4 hover:shadow-md transition-all ${
+                    locked && item.type !== 'salary' ? 'opacity-70' : ''
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="mt-0.5">{getItemIcon(item.type)}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-text-primary capitalize">
+                            {item.type}
                           </span>
+
+                          {item.type === 'expense' && item.typeName && (
+                            <>
+                              <span className="text-xs text-text-disabled">•</span>
+                              <span className="text-xs font-medium text-info bg-info/10 px-2 py-0.5 rounded">
+                                {item.typeName}
+                              </span>
+                            </>
+                          )}
+                          <span className="text-xs text-text-disabled">•</span>
+                          {item.type === 'salary' && item.cycleInfo ? (
+                            <span className="text-xs text-text-secondary">{item.cycleInfo}</span>
+                          ) : (
+                            <span className="text-xs text-text-secondary">
+                              {formatDate(item.date)}
+                            </span>
+                          )}
+                        </div>
+
+                        {item.type === 'salary' && item.issuedAt ? (
+                          <p className="text-xs text-success flex items-center gap-1">
+                            <span className="font-medium">Processed on:</span>
+                            <span>{formatDate(item.issuedAt)}</span>
+
+                            {item.issuedAt.split('T')[0] !== item.date.split('T')[0] && (
+                              <span className="text-warning ml-1">(Retroactive)</span>
+                            )}
+                          </p>
+                        ) : (
+                          item.type !== 'salary' && (
+                            <p className="text-sm text-text-secondary">{item.description}</p>
+                          )
                         )}
                       </div>
+                    </div>
 
-                      {item.type === 'salary' && item.issuedAt ? (
-                        <p className="text-xs text-success flex items-center gap-1">
-                          <span className="font-medium">Processed on:</span>
-                          <span>{formatDate(item.issuedAt)}</span>
-
-                          {item.issuedAt.split('T')[0] !== item.date.split('T')[0] && (
-                            <span className="text-warning ml-1">(Retroactive)</span>
-                          )}
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p
+                          className={`text-lg font-bold ${
+                            item.type === 'salary' && item.amount >= 0
+                              ? 'text-success'
+                              : item.type === 'advance' || item.type === 'expense'
+                                ? 'text-warning'
+                                : 'text-text-primary'
+                          }`}
+                        >
+                          {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
+                          {formatCurrency(item.amount)}
                         </p>
-                      ) : (
-                        item.type !== 'salary' && (
-                          <p className="text-sm text-text-secondary">{item.description}</p>
-                        )
+                      </div>
+
+                      {(item.type === 'advance' || item.type === 'expense') && (
+                        <>
+                          {locked ? (
+                            <div className="flex items-center gap-2 text-text-secondary px-2">
+                              <Lock className="w-4 h-4" />
+                              <span className="text-sm font-medium">Locked</span>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(item)}
+                                className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
+                                aria-label="Edit"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClick(item)}
+                                className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
+                                aria-label="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
+                </div>
+              );
 
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p
-                        className={`text-lg font-bold ${
-                          item.type === 'salary' && item.amount >= 0
-                            ? 'text-success'
-                            : item.type === 'advance' || item.type === 'expense'
-                              ? 'text-warning'
-                              : 'text-text-primary'
-                        }`}
-                      >
-                        {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
-                        {formatCurrency(item.amount)}
-                      </p>
+              if (locked && lockReason && item.type !== 'salary') {
+                const tooltipContent = (
+                  <div>
+                    <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Locked</span>
                     </div>
-
-                    {(item.type === 'advance' || item.type === 'expense') && (
-                      <>
-                        {locked ? (
-                          <div className="flex items-center gap-2 text-text-secondary px-2">
-                            <Lock className="w-4 h-4" />
-                            <span className="text-sm font-medium">Locked</span>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(item)}
-                              className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
-                              aria-label="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteClick(item)}
-                              className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
-                              aria-label="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
+                    <div className="text-xs text-text-secondary leading-relaxed">{lockReason}</div>
                   </div>
-                </div>
-              </div>
-            );
+                );
 
-            if (locked && lockReason && item.type !== 'salary') {
-              const tooltipContent = (
-                <div>
-                  <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Locked</span>
-                  </div>
-                  <div className="text-xs text-text-secondary leading-relaxed">{lockReason}</div>
-                </div>
-              );
+                return (
+                  <Tooltip
+                    key={`${item.type}-${item.id}`}
+                    content={tooltipContent}
+                    position="cursor"
+                  >
+                    {itemContent}
+                  </Tooltip>
+                );
+              }
 
-              return (
-                <Tooltip key={`${item.type}-${item.id}`} content={tooltipContent} position="cursor">
-                  {itemContent}
-                </Tooltip>
-              );
-            }
-
-            return itemContent;
-          })}
+              return itemContent;
+            })
+          )}
         </div>
       </div>
 
