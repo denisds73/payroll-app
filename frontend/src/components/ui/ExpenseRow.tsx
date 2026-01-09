@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Lock, Plus } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../modals/ConfirmModal';
@@ -6,6 +6,7 @@ import Button from './Button';
 import Input from './Input';
 import RadioGroup, { type RadioOption } from './RadioGroup';
 import Textarea from './Textarea';
+import Tooltip from './Tooltip';
 
 interface ExpenseData {
   id?: number | string;
@@ -24,6 +25,8 @@ interface ExpenseRowProps {
   onAddNew?: () => void;
   canDelete?: boolean;
   isNew?: boolean;
+  isLocked?: boolean;
+  lockReason?: string;
 }
 
 const formatDate = (dateString: string) => {
@@ -44,6 +47,8 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   onAddNew,
   canDelete = true,
   isNew = false,
+  isLocked = false,
+  lockReason,
 }) => {
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(isNew || !initialData);
@@ -178,6 +183,15 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   const renderActionButtons = () => {
     const hasSavedData = savedData.typeId !== 0 || savedData.amount !== 0 || savedData.note !== '';
 
+    if (isLocked) {
+      return (
+        <div className="flex items-center gap-2 text-text-secondary">
+          <Lock className="w-4 h-4" />
+          <span className="text-sm font-medium">Locked</span>
+        </div>
+      );
+    }
+
     if (!isEditing) {
       return (
         <div className="flex gap-2">
@@ -228,17 +242,27 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
     return null;
   };
 
-  return (
+  const tooltipContent = lockReason && (
+    <div>
+      <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
+        <Lock className="w-3.5 h-3.5" />
+        <span>Locked</span>
+      </div>
+      <div className="text-xs text-text-secondary leading-relaxed">{lockReason}</div>
+    </div>
+  );
+
+  const rowContent = (
     <div
-      className={`flex flex-nowrap items-center gap-x-6 px-3 py-1 bg-card transition-opacity duration-300 ${
+      className={`flex flex-nowrap items-center gap-x-6 px-3 py-1 bg-card transition-all duration-200 rounded-lg ${
         isNew ? 'animate-fadeIn' : ''
-      }`}
+      } ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       role="row"
     >
       <div className="w-8 shrink-0 flex items-center justify-center">
-        {showAddButton && isHovered && !isEditing && (
+        {showAddButton && isHovered && !isEditing && !isLocked && (
           <button
             type="button"
             onClick={onAddNew}
@@ -252,26 +276,23 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
         )}
       </div>
 
-      {/* Date */}
       <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
-      {/* Expense Type Radio */}
       <RadioGroup
         className="shrink-0"
         name={`expense-type-${date}-${initialData?.id || 'new'}`}
         options={expenseOptions}
         value={String(formData.typeId)}
         onChange={handleTypeChange}
-        disabled={!isEditing}
+        disabled={!isEditing || isLocked}
       />
 
-      {/* Amount Input */}
       <div className="shrink-0 w-32">
         <Input
           type="number"
           value={formData.amount || ''}
           onChange={handleAmountChange}
-          disabled={!isEditing}
+          disabled={!isEditing || isLocked}
           placeholder="₹ Amount"
           min="0"
           step="0.01"
@@ -279,20 +300,17 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
         />
       </div>
 
-      {/* Notes */}
       <div className="max-w-xs flex-1 min-w-0 relative">
         <Textarea
           value={formData.note}
           onChange={handleNoteChange}
-          disabled={!isEditing}
+          disabled={!isEditing || isLocked}
           placeholder="Add notes..."
         />
       </div>
 
-      {/* Action Buttons */}
       <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <ConfirmModal
           isOpen={showDeleteModal}
@@ -307,6 +325,16 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       )}
     </div>
   );
+
+  if (isLocked && tooltipContent) {
+    return (
+      <Tooltip content={tooltipContent} position="cursor">
+        {rowContent}
+      </Tooltip>
+    );
+  }
+
+  return rowContent;
 };
 
 export default ExpenseRow;
