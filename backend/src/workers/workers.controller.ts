@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { CreateWorkerDto } from './dto/create-worker.dto';
+import { DisableWorkerDto } from './dto/disable-worker.dto';
 import { UpdateWorkerDto } from './dto/update-worker.dto';
 import { WorkersService } from './workers.service';
 
@@ -30,5 +31,15 @@ export class WorkersController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.workersService.remove(id);
+  }
+
+  @Post(':id/disable')
+  disableWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: DisableWorkerDto) {
+    return this.workersService.disableWorker(id, dto);
+  }
+
+  @Post(':id/activate')
+  activateWorker(@Param('id', ParseIntPipe) id: number) {
+    return this.workersService.activateWorker(id);
   }
 }

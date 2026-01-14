@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Worker } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateWorkerDto } from './dto/create-worker.dto';
+import { DisableWorkerDto } from './dto/disable-worker.dto';
 import { UpdateWorkerDto } from './dto/update-worker.dto';
 
 @Injectable()
@@ -25,7 +27,6 @@ export class WorkersService {
     const { joinedAt, ...rest } = data;
 
     return this.prisma.$transaction(async (tx) => {
-      // Create worker
       const worker = await tx.worker.create({
         data: {
           ...rest,
@@ -33,7 +34,6 @@ export class WorkersService {
         },
       });
 
-      // Create initial wage history
       await tx.wageHistory.create({
         data: {
           workerId: worker.id,
@@ -73,7 +73,6 @@ export class WorkersService {
             ? wageEffectiveDate
             : otRateEffectiveDate;
 
-      // Check if any salaries have been paid that include the effective date
       const paidSalaries = await this.prisma.salary.findFirst({
         where: {
           workerId: id,
@@ -94,7 +93,6 @@ export class WorkersService {
       }
 
       await this.prisma.$transaction(async (tx) => {
-        // 1. Create wage history record
         await tx.wageHistory.create({
           data: {
             workerId: id,
@@ -105,7 +103,6 @@ export class WorkersService {
           },
         });
 
-        // 2. Update attendance records from wage effective date onwards
         if (wageChanged) {
           await tx.attendance.updateMany({
             where: {
@@ -120,7 +117,6 @@ export class WorkersService {
           });
         }
 
-        // 3. Update attendance records from OT rate effective date onwards
         if (otRateChanged) {
           await tx.attendance.updateMany({
             where: {
@@ -135,7 +131,6 @@ export class WorkersService {
           });
         }
 
-        // 4. Update the worker record
         await tx.worker.update({
           where: { id },
           data: {
@@ -151,7 +146,6 @@ export class WorkersService {
       return this.prisma.worker.findUnique({ where: { id } });
     }
 
-    // If no wage/OT rate change, simple update
     return this.prisma.worker.update({
       where: { id },
       data: {
@@ -171,24 +165,17 @@ export class WorkersService {
       throw new NotFoundException(`Worker with ID ${id} not found`);
     }
 
-    // Delete all related records in a transaction
     await this.prisma.$transaction(async (tx) => {
-      // Delete attendance records
       await tx.attendance.deleteMany({ where: { workerId: id } });
 
-      // Delete advances
       await tx.advance.deleteMany({ where: { workerId: id } });
 
-      // Delete expenses
       await tx.expense.deleteMany({ where: { workerId: id } });
 
-      // Delete salaries
       await tx.salary.deleteMany({ where: { workerId: id } });
 
-      // Delete wage history (if exists)
       await tx.wageHistory.deleteMany({ where: { workerId: id } });
 
-      // Finally delete the worker
       await tx.worker.delete({ where: { id } });
     });
 
@@ -198,7 +185,6 @@ export class WorkersService {
     };
   }
 
-  // Helper method to get wage that was active on a specific date
   async getWageAtDate(workerId: number, date: Date) {
     const wageHistory = await this.prisma.wageHistory.findFirst({
       where: {
@@ -224,7 +210,6 @@ export class WorkersService {
     };
   }
 
-  // Manual wage update with specific effective date (for admin use)
   async updateCurrentWage(id: number, wage: number, otRate: number, effectiveDate?: string | Date) {
     const worker = await this.prisma.worker.findUnique({ where: { id } });
 
@@ -237,7 +222,6 @@ export class WorkersService {
       : new Date();
 
     return this.prisma.$transaction(async (tx) => {
-      // Add wage history entry
       await tx.wageHistory.create({
         data: {
           workerId: id,
@@ -248,7 +232,6 @@ export class WorkersService {
         },
       });
 
-      // Update worker's current wage
       return tx.worker.update({
         where: { id },
         data: { wage, otRate },
@@ -256,7 +239,6 @@ export class WorkersService {
     });
   }
 
-  // Get worker with complete wage history
   async getWorkerWithWageHistory(id: number) {
     const worker = await this.prisma.worker.findUnique({
       where: { id },
@@ -274,7 +256,6 @@ export class WorkersService {
     return worker;
   }
 
-  // Get all workers with their latest wage
   async findAllWithCurrentWage() {
     return this.prisma.worker.findMany({
       include: {
@@ -284,6 +265,80 @@ export class WorkersService {
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async disableWorker(id: number, dto: DisableWorkerDto): Promise<Worker> {
+    const worker = await this.prisma.worker.findUnique({ where: { id } });
+    if (!worker) {
+      throw new NotFoundException(`Worker with ID ${id} not found`);
+    }
+
+    if (!worker.isActive) {
+      throw new BadRequestException(
+        `Worker is already inactive since ${worker.inactiveFrom?.toISOString().split('T')[0]}`,
+      );
+    }
+
+    const effectiveDate = new Date(`${dto.effectiveFrom}T00:00:00Z`);
+
+    if (effectiveDate < worker.joinedAt) {
+      throw new BadRequestException(
+        `Cannot disable worker before their join date (${worker.joinedAt.toISOString().split('T')[0]})`,
+      );
+    }
+
+    const attendanceOnDate = await this.prisma.attendance.findFirst({
+      where: {
+        workerId: id,
+        date: effectiveDate,
+      },
+    });
+
+    if (attendanceOnDate) {
+      throw new BadRequestException(
+        `Cannot disable worker on ${dto.effectiveFrom} - attendance record exists. Please choose a different date.`,
+      );
+    }
+
+    const expenseOnDate = await this.prisma.expense.findFirst({
+      where: {
+        workerId: id,
+        date: effectiveDate,
+      },
+    });
+
+    if (expenseOnDate) {
+      throw new BadRequestException(
+        `Cannot disable worker on ${dto.effectiveFrom} - expense record exists. Please choose a different date.`,
+      );
+    }
+
+    return this.prisma.worker.update({
+      where: { id },
+      data: {
+        isActive: false,
+        inactiveFrom: effectiveDate,
+      },
+    });
+  }
+
+  async activateWorker(id: number): Promise<Worker> {
+    const worker = await this.prisma.worker.findUnique({ where: { id } });
+    if (!worker) {
+      throw new NotFoundException(`Worker with ID ${id} not found`);
+    }
+
+    if (worker.isActive) {
+      throw new BadRequestException('Worker is already active');
+    }
+
+    return this.prisma.worker.update({
+      where: { id },
+      data: {
+        isActive: true,
+        inactiveFrom: null,
+      },
     });
   }
 }

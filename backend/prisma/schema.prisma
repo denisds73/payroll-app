@@ -14,10 +14,13 @@ model Worker {
   wage      Float
   otRate    Float    @default(0)
   isActive  Boolean  @default(true)
+  inactiveFrom DateTime?
   balance   Float    @default(0)
   joinedAt  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([inactiveFrom])
 
   // relations
   attendances Attendance[]
