@@ -10,7 +10,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-
     const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : '';
     console.log('API Request:', config.method?.toUpperCase(), config.url + params);
     return config;
@@ -84,7 +83,6 @@ export const attendanceAPI = {
   delete: (id: number) => api.delete(`/attendance/${id}`),
 };
 
-
 export const advancesAPI = {
   create: (data: { workerId: number; date: string; amount: number; reason?: string }) =>
     api.post('/advances', data),
@@ -137,10 +135,15 @@ export const workersAPI = {
   ) => api.patch(`/workers/${id}`, data),
 
   delete: (id: number) => api.delete(`/workers/${id}`),
+
+  disable: (id: number, effectiveFrom: string) =>
+    api.post(`/workers/${id}/disable`, { effectiveFrom }),
+
+  activate: (id: number, effectiveFrom: string) =>
+    api.post(`/workers/${id}/activate`, { effectiveFrom }),
 };
 
 export const salariesAPI = {
-
   calculate: (workerId: number, payDate?: string) => {
     console.log('🔍 salariesAPI.calculate called:', { workerId, payDate });
     return api.get(
@@ -148,7 +151,6 @@ export const salariesAPI = {
       payDate ? { params: { payDate } } : undefined,
     );
   },
-
 
   create: (workerId: number, payDate?: string) => {
     console.log('🔍 salariesAPI.create called:', { workerId, payDate });
@@ -164,9 +166,7 @@ export const salariesAPI = {
     },
   ) => api.get(`/salaries/worker/${workerId}`, { params }),
 
-
   getPending: () => api.get('/salaries/pending'),
-
 
   issue: (salaryId: number, data: { amount: number; paymentProof?: string }) =>
     api.post(`/salaries/${salaryId}/issue`, data),

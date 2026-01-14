@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Worker } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ActivateWorkerDto } from './dto/activate-worker.dto';
 import { CreateWorkerDto } from './dto/create-worker.dto';
 import { DisableWorkerDto } from './dto/disable-worker.dto';
 import { UpdateWorkerDto } from './dto/update-worker.dto';
@@ -323,21 +324,39 @@ export class WorkersService {
     });
   }
 
-  async activateWorker(id: number): Promise<Worker> {
+  /**
+   * Reactivate a worker from a specific effective date
+   * - Sets isActive = true and inactiveFrom = null
+   * - Can specify when the activation takes effect
+   */
+  async activateWorker(id: number, dto: ActivateWorkerDto): Promise<Worker> {
+    // 1. Check if worker exists
     const worker = await this.prisma.worker.findUnique({ where: { id } });
     if (!worker) {
       throw new NotFoundException(`Worker with ID ${id} not found`);
     }
 
+    // 2. Check if already active
     if (worker.isActive) {
       throw new BadRequestException('Worker is already active');
     }
 
+    // 3. Parse effective date
+    const effectiveDate = new Date(`${dto.effectiveFrom}T00:00:00Z`);
+
+    // 4. Validate: effective date should be after inactiveFrom
+    if (worker.inactiveFrom && effectiveDate < worker.inactiveFrom) {
+      throw new BadRequestException(
+        `Activation date cannot be before the worker was disabled (${worker.inactiveFrom.toISOString().split('T')[0]})`,
+      );
+    }
+
+    // 5. Reactivate: set isActive=true, inactiveFrom=null
     return this.prisma.worker.update({
       where: { id },
       data: {
         isActive: true,
-        inactiveFrom: null,
+        inactiveFrom: null, // Clear the inactive date
       },
     });
   }

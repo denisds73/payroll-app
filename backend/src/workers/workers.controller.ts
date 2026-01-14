@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { ActivateWorkerDto } from './dto/activate-worker.dto';
 import { CreateWorkerDto } from './dto/create-worker.dto';
 import { DisableWorkerDto } from './dto/disable-worker.dto';
 import { UpdateWorkerDto } from './dto/update-worker.dto';
@@ -39,7 +40,7 @@ export class WorkersController {
   }
 
   @Post(':id/activate')
-  activateWorker(@Param('id', ParseIntPipe) id: number) {
-    return this.workersService.activateWorker(id);
+  activateWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: ActivateWorkerDto) {
+    return this.workersService.activateWorker(id, dto);
   }
 }

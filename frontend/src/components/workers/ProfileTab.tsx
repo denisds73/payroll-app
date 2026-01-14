@@ -1,9 +1,12 @@
+/** biome-ignore-all lint/a11y/noLabelWithoutControl: <we need labels without input> */
 import { AlertCircle, Calendar, Phone, Trash2, Wallet } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { workersAPI } from '../../services/api';
 import ConfirmModal from '../modals/ConfirmModal';
+import WorkerStatusModal from '../modals/WorkerStatusModal';
 import Button from '../ui/Button';
 
 interface ProfileTabProps {
@@ -26,7 +29,6 @@ interface WorkerFormData {
   otRate: string;
   wageEffectiveDate: string;
   otRateEffectiveDate: string;
-  isActive: boolean;
 }
 
 export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
@@ -38,7 +40,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   const otRateId = useId();
   const wageEffectiveDateId = useId();
   const otRateEffectiveDateId = useId();
-  const isActiveId = useId();
 
   const [formData, setFormData] = useState<WorkerFormData>({
     name: '',
@@ -47,7 +48,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
     otRate: '',
     wageEffectiveDate: today,
     otRateEffectiveDate: today,
-    isActive: true,
   });
   const [originalWage, setOriginalWage] = useState<number>(0);
   const [originalOtRate, setOriginalOtRate] = useState<number>(0);
@@ -58,6 +58,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [editMode, setEditMode] = useState<'values' | 'effectiveDate'>('values');
   const [warningVisible, setWarningVisible] = useState(false);
+  const [statusModalMode, setStatusModalMode] = useState<'disable' | 'activate' | null>(null);
 
   useEffect(() => {
     setFormData({
@@ -67,7 +68,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
       otRate: worker.otRate.toString(),
       wageEffectiveDate: today,
       otRateEffectiveDate: today,
-      isActive: worker.isActive,
     });
     setOriginalWage(worker.wage);
     setOriginalOtRate(worker.otRate);
@@ -119,7 +119,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
           phone: formData.phone.trim() || undefined,
           wage: Number(formData.wage),
           otRate: Number(formData.otRate),
-          isActive: formData.isActive,
         });
       }
 
@@ -168,6 +167,14 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  const handleStatusChangeSuccess = () => {
+    const action = statusModalMode === 'disable' ? 'disabled' : 'activated';
+    console.log(`✅ Worker ${action} successfully`);
+    toast.success(`Worker ${action} successfully!`);
+    setStatusModalMode(null); // Close modal
+    onUpdate(); // Refresh data
   };
 
   return (
@@ -258,35 +265,53 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                 </div>
               </div>
 
-              {/* Active Status Toggle */}
-              <div className="flex items-center justify-between pt-2">
-                <div>
-                  <label
-                    htmlFor={isActiveId}
-                    className="text-sm font-medium text-text-primary block mb-1"
-                  >
-                    Worker Status
-                  </label>
-                  <p className="text-xs text-text-secondary">
-                    {formData.isActive
-                      ? 'Worker is currently active'
-                      : 'Worker is currently inactive'}
-                  </p>
+              <div className="pt-2">
+                <label className="text-sm font-medium text-text-primary block mb-2">
+                  Worker Status
+                </label>
+
+                <div className="flex items-center justify-between bg-background rounded-lg p-4">
+                  <div>
+                    <p className="text-sm font-medium text-text-primary mb-1">
+                      {worker.isActive ? 'Active' : 'Inactive'}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {worker.isActive
+                        ? 'Worker can have attendance and expenses recorded'
+                        : `Inactive since ${
+                            worker.inactiveFrom
+                              ? new Date(worker.inactiveFrom).toLocaleDateString('en-IN', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })
+                              : 'N/A'
+                          }`}
+                    </p>
+                  </div>
+
+                  {worker.isActive ? (
+                    <Button
+                      type="button"
+                      variant="dangerLight"
+                      size="sm"
+                      onClick={() => setStatusModalMode('disable')}
+                      disabled={loading}
+                    >
+                      Disable Worker
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setStatusModalMode('activate')}
+                      disabled={loading}
+                    >
+                      Activate Worker
+                    </Button>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formData.isActive ? 'bg-success' : 'bg-gray-300'
-                  }`}
-                  disabled={loading}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      formData.isActive ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
               </div>
             </div>
           </div>
@@ -531,7 +556,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
         </form>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={deleteModalOpen}
         title="Delete Worker?"
@@ -542,6 +566,17 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
         onConfirm={handleDelete}
         onCancel={() => setDeleteModalOpen(false)}
       />
+
+      {statusModalMode && (
+        <WorkerStatusModal
+          workerId={worker.id}
+          workerName={worker.name}
+          mode={statusModalMode}
+          isOpen={statusModalMode !== null}
+          onClose={() => setStatusModalMode(null)}
+          onSuccess={handleStatusChangeSuccess}
+        />
+      )}
     </>
   );
 }
