@@ -43,4 +43,9 @@ export class WorkersController {
   activateWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: ActivateWorkerDto) {
     return this.workersService.activateWorker(id, dto);
   }
+
+  @Get(':id/blocked-dates')
+  getBlockedDates(@Param('id', ParseIntPipe) id: number) {
+    return this.workersService.getBlockedDates(id);
+  }
 }

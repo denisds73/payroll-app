@@ -1,13 +1,17 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { AlertCircle, Calendar, CheckCircle, X, XCircle } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import './DatePickerStyles.css';
 import { workersAPI } from '../../services/api';
 import Button from '../ui/Button';
 
 interface WorkerStatusModalProps {
   workerId: number;
   workerName: string;
-  mode: 'disable' | 'activate'; // NEW: Toggle between disable/activate
+  mode: 'disable' | 'activate';
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -30,12 +34,32 @@ export default function WorkerStatusModal({
   const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Reset date when mode changes
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const [loadingDates, setLoadingDates] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && mode === 'disable') {
+      fetchBlockedDates();
+    }
+  }, [isOpen, mode, workerId]);
+
+  const fetchBlockedDates = async () => {
+    setLoadingDates(true);
+    try {
+      const response = await workersAPI.getBlockedDates(workerId);
+      setBlockedDates(response.data.blockedDates);
+      console.log('📅 Blocked dates loaded:', response.data.blockedDates);
+    } catch (err) {
+      console.error('Failed to load blocked dates:', err);
+    } finally {
+      setLoadingDates(false);
+    }
+  };
+
   useEffect(() => {
     setEffectiveFrom(today);
   }, [mode, today]);
 
-  // Animation effect
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsAnimating(true), 10);
@@ -85,6 +109,7 @@ export default function WorkerStatusModal({
       setTimeout(() => {
         setError(null);
         setEffectiveFrom(today);
+        setBlockedDates([]);
         onClose();
       }, 200);
     }
@@ -102,9 +127,18 @@ export default function WorkerStatusModal({
     }
   };
 
+  const blockedDateObjects = blockedDates.map((dateStr) => new Date(`${dateStr}T00:00:00`));
+
+  const handleDateChange = (date: Date | null) => {
+    if (date) {
+      const dateStr = date.toISOString().split('T')[0];
+      setEffectiveFrom(dateStr);
+      setError(null);
+    }
+  };
+
   if (!isOpen) return null;
 
-  // Dynamic content based on mode
   const isDisableMode = mode === 'disable';
   const title = isDisableMode ? 'Disable Worker' : 'Activate Worker';
   const Icon = isDisableMode ? XCircle : CheckCircle;
@@ -129,7 +163,6 @@ export default function WorkerStatusModal({
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <Icon className={`w-6 h-6 ${iconColor}`} />
@@ -152,10 +185,9 @@ export default function WorkerStatusModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Warning/Info Message */}
           {isDisableMode ? (
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
               <div className="text-sm text-text-primary">
                 <p className="font-medium mb-1">This action will:</p>
                 <ul className="list-disc list-inside space-y-1 text-text-secondary">
@@ -167,7 +199,7 @@ export default function WorkerStatusModal({
             </div>
           ) : (
             <div className="bg-success/10 border border-success/20 rounded-lg p-4 flex gap-3">
-              <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-success shrink-0 mt-0.5" />
               <div className="text-sm text-text-primary">
                 <p className="font-medium mb-1">This action will:</p>
                 <ul className="list-disc list-inside space-y-1 text-text-secondary">
@@ -179,38 +211,54 @@ export default function WorkerStatusModal({
             </div>
           )}
 
-          {/* Date Picker */}
           <div>
             <label htmlFor={dateId} className="block text-sm font-medium text-text-primary mb-2">
               Effective From Date <span className="text-error">*</span>
             </label>
+
+            {loadingDates && isDisableMode && (
+              <div className="mb-2 text-xs text-text-secondary flex items-center gap-2">
+                <div className="inline-block animate-spin rounded-full h-3 w-3 border-b border-primary" />
+                Loading available dates...
+              </div>
+            )}
+
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-              <input
-                type="date"
-                id={dateId}
-                value={effectiveFrom}
-                onChange={(e) => setEffectiveFrom(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                required
-                disabled={loading}
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary z-10 pointer-events-none" />
+              <DatePicker
+                selected={new Date(`${effectiveFrom}T00:00:00`)}
+                onChange={handleDateChange}
+                excludeDates={isDisableMode ? blockedDateObjects : []}
+                dateFormat="yyyy-MM-dd"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || loadingDates}
+                placeholderText="Select date"
+                showPopperArrow={false}
+                popperPlacement="bottom-start"
               />
             </div>
-            <p className="text-xs text-text-secondary mt-2">
-              {isDisableMode
-                ? 'Worker will be inactive from this date onwards.'
-                : 'Worker will be active from this date onwards.'}
-            </p>
+
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-text-secondary">
+                {isDisableMode
+                  ? 'Worker will be inactive from this date onwards.'
+                  : 'Worker will be active from this date onwards.'}
+              </p>
+              {isDisableMode && blockedDates.length > 0 && (
+                <p className="text-xs text-warning flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Dates with attendance/expense are grayed out and cannot be selected
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          {/* Buttons */}
           <div className="flex gap-3">
             <Button
               type="button"
@@ -226,7 +274,7 @@ export default function WorkerStatusModal({
               type="submit"
               variant={buttonVariant}
               size="md"
-              disabled={loading}
+              disabled={loading || loadingDates}
               className="flex-1"
             >
               {loading ? loadingText : buttonText}

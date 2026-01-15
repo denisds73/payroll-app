@@ -141,6 +141,9 @@ export const workersAPI = {
 
   activate: (id: number, effectiveFrom: string) =>
     api.post(`/workers/${id}/activate`, { effectiveFrom }),
+
+  getBlockedDates: (id: number) =>
+    api.get<{ blockedDates: string[] }>(`/workers/${id}/blocked-dates`),
 };
 
 export const salariesAPI = {
