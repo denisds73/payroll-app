@@ -34,7 +34,8 @@ const formatDate = (dateString: string) => {
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear());
-  return `${day}-${month}-${year}`;
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+  return `${day}-${month}-${year} (${weekday})`;
 };
 
 const ExpenseRow: React.FC<ExpenseRowProps> = ({
@@ -275,7 +276,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
         )}
       </div>
 
-      <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
+      <div className="w-36 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
       <ExpenseTypeGroup
         className="shrink-0"

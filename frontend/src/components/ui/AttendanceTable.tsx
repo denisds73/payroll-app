@@ -116,9 +116,9 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     <div className="rounded-xl bg-card shadow-md w-full">
       <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
         <div className="grid grid-cols-5 gap-x-8 font-semibold text-text-primary text-base w-full">
-          <div className="w-28 ml-8">Date</div>
-          <div className="w-28 ml-13">Status</div>
-          <div className="w-28 ml-18">OT Hours</div>
+          <div className="w-36 ml-12">Date</div>
+          <div className="w-28 ml-21">Status</div>
+          <div className="w-28 ml-26">OT Hours</div>
           <div className="flex-1 ml-40">Notes</div>
         </div>
         <div className="flex items-center gap-2 ml-6">
