@@ -35,11 +35,20 @@ export class AttendanceService {
       throw new NotFoundException('Worker not found');
     }
 
+    const date = this.dateService.parseDate(dto.date);
+
+    // Check if worker is inactive
     if (!worker.isActive) {
       throw new BadRequestException('Cannot mark attendance for inactive worker');
     }
 
-    const date = this.dateService.parseDate(dto.date);
+    // Check if worker has scheduled inactivation and the attendance date falls on or after that date
+    if (worker.inactiveFrom && date >= worker.inactiveFrom) {
+      throw new BadRequestException(
+        `Cannot mark attendance on or after worker's scheduled inactivation date (${worker.inactiveFrom.toISOString().split('T')[0]})`,
+      );
+    }
+
     if (date > this.dateService.startOfToday()) {
       throw new BadRequestException('Cannot mark attendance for future dates');
     }

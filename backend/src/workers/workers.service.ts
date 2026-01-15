@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Worker } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DateService } from 'src/shared/date.service';
 import { ActivateWorkerDto } from './dto/activate-worker.dto';
 import { CreateWorkerDto } from './dto/create-worker.dto';
 import { DisableWorkerDto } from './dto/disable-worker.dto';
@@ -8,7 +9,10 @@ import { UpdateWorkerDto } from './dto/update-worker.dto';
 
 @Injectable()
 export class WorkersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private dateService: DateService,
+  ) {}
 
   findAll() {
     return this.prisma.worker.findMany({
@@ -271,13 +275,24 @@ export class WorkersService {
       throw new NotFoundException(`Worker with ID ${id} not found`);
     }
 
+    // Check if worker is already inactive or has scheduled inactivation
     if (!worker.isActive) {
       throw new BadRequestException(
         `Worker is already inactive since ${worker.inactiveFrom?.toISOString().split('T')[0]}`,
       );
     }
 
+    if (worker.inactiveFrom) {
+      throw new BadRequestException(
+        `Worker already has scheduled inactivation from ${worker.inactiveFrom.toISOString().split('T')[0]}`,
+      );
+    }
+
     const effectiveDate = new Date(`${dto.effectiveFrom}T00:00:00Z`);
+    const today = this.dateService.startOfToday();
+
+    // Determine if this is a future scheduled inactivation or immediate
+    const isFutureDate = effectiveDate > today;
 
     if (effectiveDate < worker.joinedAt) {
       throw new BadRequestException(
@@ -313,10 +328,11 @@ export class WorkersService {
 
     return this.prisma.$transaction(async (tx) => {
       // Update worker status
+      // Only set isActive to false if the date is today or in the past
       const updatedWorker = await tx.worker.update({
         where: { id },
         data: {
-          isActive: false,
+          isActive: isFutureDate ? true : false,
           inactiveFrom: effectiveDate,
         },
       });
@@ -327,7 +343,9 @@ export class WorkersService {
           workerId: id,
           isActive: false,
           effectiveFrom: effectiveDate,
-          reason: 'Worker disabled by admin',
+          reason: isFutureDate
+            ? `Worker scheduled for inactivation on ${dto.effectiveFrom}`
+            : 'Worker disabled by admin',
         },
       });
 
@@ -341,13 +359,17 @@ export class WorkersService {
       throw new NotFoundException(`Worker with ID ${id} not found`);
     }
 
-    if (worker.isActive) {
+    // Handle cancelling scheduled inactivation (worker is still active but has inactiveFrom set)
+    const isCancellingScheduled = worker.isActive && worker.inactiveFrom !== null;
+
+    if (worker.isActive && !worker.inactiveFrom) {
       throw new BadRequestException('Worker is already active');
     }
 
     const effectiveDate = new Date(`${dto.effectiveFrom}T00:00:00Z`);
 
-    if (worker.inactiveFrom && effectiveDate < worker.inactiveFrom) {
+    // Only validate effectiveDate >= inactiveFrom when reactivating an inactive worker
+    if (!isCancellingScheduled && worker.inactiveFrom && effectiveDate < worker.inactiveFrom) {
       throw new BadRequestException(
         `Activation date cannot be before the worker was disabled (${worker.inactiveFrom.toISOString().split('T')[0]})`,
       );
@@ -369,7 +391,9 @@ export class WorkersService {
           workerId: id,
           isActive: true,
           effectiveFrom: effectiveDate,
-          reason: 'Worker activated by admin',
+          reason: isCancellingScheduled
+            ? 'Scheduled inactivation cancelled by admin'
+            : 'Worker activated by admin',
         },
       });
 

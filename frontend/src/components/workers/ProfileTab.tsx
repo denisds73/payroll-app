@@ -58,7 +58,9 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [wageEditMode, setWageEditMode] = useState<'values' | 'effectiveDate'>('values');
-  const [statusModalMode, setStatusModalMode] = useState<'disable' | 'activate' | null>(null);
+  const [statusModalMode, setStatusModalMode] = useState<
+    'disable' | 'activate' | 'cancel-scheduled' | null
+  >(null);
 
   useEffect(() => {
     resetForm();
@@ -183,7 +185,14 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   };
 
   const handleStatusChangeSuccess = () => {
-    const action = statusModalMode === 'disable' ? 'disabled' : 'activated';
+    let action: string;
+    if (statusModalMode === 'disable') {
+      action = 'disabled';
+    } else if (statusModalMode === 'cancel-scheduled') {
+      action = 'scheduled inactivation cancelled';
+    } else {
+      action = 'activated';
+    }
     toast.success(`Worker ${action} successfully!`);
     setStatusModalMode(null);
     onUpdate();
@@ -554,28 +563,61 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                   <div>
                     <p className="text-xs text-text-secondary">Status</p>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full ${worker.isActive ? 'bg-success' : 'bg-error'}`}
-                      />
-                      <p
-                        className={`text-sm font-medium ${worker.isActive ? 'text-success' : 'text-error'}`}
-                      >
-                        {worker.isActive ? 'Active' : 'Inactive'}
-                        {!worker.isActive && worker.inactiveFrom && (
-                          <span className="text-text-secondary font-normal ml-1">
-                            {' '}
-                            since{' '}
-                            {new Date(worker.inactiveFrom).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </span>
-                        )}
-                      </p>
+                      {/* Determine status: Active, Scheduled Inactivation, or Inactive */}
+                      {worker.isActive && !worker.inactiveFrom ? (
+                        <>
+                          <span className="w-2 h-2 rounded-full bg-success" />
+                          <p className="text-sm font-medium text-success">Active</p>
+                        </>
+                      ) : worker.isActive && worker.inactiveFrom ? (
+                        <>
+                          <span className="w-2 h-2 rounded-full bg-warning" />
+                          <p className="text-sm font-medium text-warning">
+                            Active
+                            <span className="text-text-secondary font-normal ml-1">
+                              {' '}
+                              (inactive from{' '}
+                              {new Date(worker.inactiveFrom).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                              )
+                            </span>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-2 h-2 rounded-full bg-error" />
+                          <p className="text-sm font-medium text-error">
+                            Inactive
+                            {worker.inactiveFrom && (
+                              <span className="text-text-secondary font-normal ml-1">
+                                {' '}
+                                since{' '}
+                                {new Date(worker.inactiveFrom).toLocaleDateString('en-IN', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                            )}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
-                  {worker.isActive ? (
+                  {/* Show Cancel button for scheduled inactivation, or Disable/Activate based on status */}
+                  {worker.isActive && worker.inactiveFrom ? (
+                    <Button
+                      type="button"
+                      variant="dangerLight"
+                      size="sm"
+                      onClick={() => setStatusModalMode('cancel-scheduled')}
+                    >
+                      Cancel Scheduled Inactivation
+                    </Button>
+                  ) : worker.isActive ? (
                     <Button
                       type="button"
                       variant="dangerLight"

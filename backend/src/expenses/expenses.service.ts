@@ -24,6 +24,14 @@ export class ExpensesService {
     if (!worker.isActive) throw new BadRequestException('Cannot add expense for inactive worker');
 
     const expenseDate = this.dateService.parseDate(date);
+
+    // Check if worker has scheduled inactivation and the expense date falls on or after that date
+    if (worker.inactiveFrom && expenseDate >= worker.inactiveFrom) {
+      throw new BadRequestException(
+        `Cannot add expense on or after worker's scheduled inactivation date (${worker.inactiveFrom.toISOString().split('T')[0]})`,
+      );
+    }
+
     if (expenseDate > this.dateService.startOfToday()) {
       throw new BadRequestException('Expense date cannot be in the future');
     }
