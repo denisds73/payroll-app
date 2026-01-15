@@ -13,6 +13,7 @@ interface WorkerStatusModalProps {
   workerId: number;
   workerName: string;
   mode: 'disable' | 'activate';
+  inactiveFrom?: string | null;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -22,6 +23,7 @@ export default function WorkerStatusModal({
   workerId,
   workerName,
   mode,
+  inactiveFrom,
   isOpen,
   onClose,
   onSuccess,
@@ -58,8 +60,13 @@ export default function WorkerStatusModal({
   }, [isOpen, mode, fetchBlockedDates]);
 
   useEffect(() => {
-    setEffectiveFrom(today);
-  }, [today]);
+    // When activating, default to inactiveFrom date; otherwise use today
+    if (mode === 'activate' && inactiveFrom) {
+      setEffectiveFrom(inactiveFrom.split('T')[0]);
+    } else {
+      setEffectiveFrom(today);
+    }
+  }, [today, mode, inactiveFrom]);
 
   useEffect(() => {
     if (isOpen) {
@@ -238,6 +245,11 @@ export default function WorkerStatusModal({
                 selected={new Date(`${effectiveFrom}T00:00:00`)}
                 onChange={handleDateChange}
                 excludeDates={isDisableMode ? blockedDateObjects : []}
+                minDate={
+                  !isDisableMode && inactiveFrom
+                    ? new Date(`${inactiveFrom.split('T')[0]}T00:00:00`)
+                    : undefined
+                }
                 dateFormat="yyyy-MM-dd"
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading || loadingDates}
