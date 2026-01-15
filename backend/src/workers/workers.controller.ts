@@ -14,6 +14,26 @@ export class WorkersController {
     return this.workersService.findAll();
   }
 
+  @Get(':id/inactive-periods')
+  getInactivePeriods(@Param('id', ParseIntPipe) id: number) {
+    return this.workersService.getInactivePeriods(id);
+  }
+
+  @Get(':id/blocked-dates')
+  getBlockedDates(@Param('id', ParseIntPipe) id: number) {
+    return this.workersService.getBlockedDates(id);
+  }
+
+  @Post(':id/disable')
+  disableWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: DisableWorkerDto) {
+    return this.workersService.disableWorker(id, dto);
+  }
+
+  @Post(':id/activate')
+  activateWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: ActivateWorkerDto) {
+    return this.workersService.activateWorker(id, dto);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.workersService.findOne(+id);
@@ -32,20 +52,5 @@ export class WorkersController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.workersService.remove(id);
-  }
-
-  @Post(':id/disable')
-  disableWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: DisableWorkerDto) {
-    return this.workersService.disableWorker(id, dto);
-  }
-
-  @Post(':id/activate')
-  activateWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: ActivateWorkerDto) {
-    return this.workersService.activateWorker(id, dto);
-  }
-
-  @Get(':id/blocked-dates')
-  getBlockedDates(@Param('id', ParseIntPipe) id: number) {
-    return this.workersService.getBlockedDates(id);
   }
 }

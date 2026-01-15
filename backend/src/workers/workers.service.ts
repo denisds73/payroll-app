@@ -168,15 +168,11 @@ export class WorkersService {
 
     await this.prisma.$transaction(async (tx) => {
       await tx.attendance.deleteMany({ where: { workerId: id } });
-
       await tx.advance.deleteMany({ where: { workerId: id } });
-
       await tx.expense.deleteMany({ where: { workerId: id } });
-
       await tx.salary.deleteMany({ where: { workerId: id } });
-
       await tx.wageHistory.deleteMany({ where: { workerId: id } });
-
+      await tx.workerStatusHistory.deleteMany({ where: { workerId: id } });
       await tx.worker.delete({ where: { id } });
     });
 
@@ -315,12 +311,27 @@ export class WorkersService {
       );
     }
 
-    return this.prisma.worker.update({
-      where: { id },
-      data: {
-        isActive: false,
-        inactiveFrom: effectiveDate,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // Update worker status
+      const updatedWorker = await tx.worker.update({
+        where: { id },
+        data: {
+          isActive: false,
+          inactiveFrom: effectiveDate,
+        },
+      });
+
+      // Create status history record
+      await tx.workerStatusHistory.create({
+        data: {
+          workerId: id,
+          isActive: false,
+          effectiveFrom: effectiveDate,
+          reason: 'Worker disabled by admin',
+        },
+      });
+
+      return updatedWorker;
     });
   }
 
@@ -342,12 +353,27 @@ export class WorkersService {
       );
     }
 
-    return this.prisma.worker.update({
-      where: { id },
-      data: {
-        isActive: true,
-        inactiveFrom: null,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // Update worker status
+      const updatedWorker = await tx.worker.update({
+        where: { id },
+        data: {
+          isActive: true,
+          inactiveFrom: null,
+        },
+      });
+
+      // Create status history record
+      await tx.workerStatusHistory.create({
+        data: {
+          workerId: id,
+          isActive: true,
+          effectiveFrom: effectiveDate,
+          reason: 'Worker activated by admin',
+        },
+      });
+
+      return updatedWorker;
     });
   }
 
@@ -380,5 +406,62 @@ export class WorkersService {
     const blockedDates = Array.from(blockedDatesSet).sort();
 
     return { blockedDates };
+  }
+
+  async getInactivePeriods(workerId: number) {
+    const worker = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+      select: {
+        id: true,
+        name: true,
+        isActive: true,
+        inactiveFrom: true,
+      },
+    });
+
+    if (!worker) {
+      throw new NotFoundException(`Worker with ID ${workerId} not found`);
+    }
+
+
+    const statusHistory = await this.prisma.workerStatusHistory.findMany({
+      where: { workerId },
+      orderBy: { effectiveFrom: 'asc' },
+    });
+
+    const periods: Array<{ startDate: string; endDate: string; reason: string }> = [];
+    let inactivePeriodStart: Date | null = null;
+
+    for (const record of statusHistory) {
+      if (!record.isActive) {
+
+        inactivePeriodStart = record.effectiveFrom;
+      } else if (inactivePeriodStart) {
+
+        const endDate = new Date(record.effectiveFrom.getTime() - 86400000); 
+        periods.push({
+          startDate: inactivePeriodStart.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+          reason: 'Worker was inactive during this period',
+        });
+        inactivePeriodStart = null;
+      }
+    }
+
+    if (!worker.isActive && worker.inactiveFrom) {
+      periods.push({
+        startDate: worker.inactiveFrom.toISOString().split('T')[0],
+        endDate: '9999-12-31',
+        reason: 'Worker is currently inactive',
+      });
+    }
+
+    return {
+      workerId: worker.id,
+      workerName: worker.name,
+      isActive: worker.isActive,
+      periods,
+      count: periods.length,
+    };
   }
 }

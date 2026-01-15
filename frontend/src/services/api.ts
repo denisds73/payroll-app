@@ -136,14 +136,15 @@ export const workersAPI = {
 
   delete: (id: number) => api.delete(`/workers/${id}`),
 
-  disable: (id: number, effectiveFrom: string) =>
-    api.post(`/workers/${id}/disable`, { effectiveFrom }),
+  getInactivePeriods: (workerId: number) => api.get(`/workers/${workerId}/inactive-periods`),
 
-  activate: (id: number, effectiveFrom: string) =>
-    api.post(`/workers/${id}/activate`, { effectiveFrom }),
+  disable: (workerId: number, effectiveFrom: string) =>
+    api.post(`/workers/${workerId}/disable`, { effectiveFrom }),
 
-  getBlockedDates: (id: number) =>
-    api.get<{ blockedDates: string[] }>(`/workers/${id}/blocked-dates`),
+  activate: (workerId: number, effectiveFrom: string) =>
+    api.post(`/workers/${workerId}/activate`, { effectiveFrom }),
+
+  getBlockedDates: (workerId: number) => api.get(`/workers/${workerId}/blocked-dates`),
 };
 
 export const salariesAPI = {

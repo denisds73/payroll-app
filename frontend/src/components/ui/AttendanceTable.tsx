@@ -15,8 +15,13 @@ interface AttendanceTableProps {
   error?: string;
   onMonthYearChange: (month: number, year: number) => void;
   onSaveAttendance: (date: string, data: AttendanceData) => void;
-  lockedDates?: Set<string>;
-  lockedPeriods?: Array<{ startDate: string; endDate: string }>; // NEW
+  lockedDates: Map<string, string[]>;
+  lockedPeriods?: Array<{
+    startDate: string;
+    endDate: string;
+    reason: string;
+    type: 'salary' | 'inactive';
+  }>;
 }
 
 function formatDateLocal(date: Date): string {
@@ -49,24 +54,41 @@ function formatDateRange(startDate: string, endDate: string): string {
   return `${start.toLocaleDateString('en-IN', formatOptions)} - ${end.toLocaleDateString('en-IN', formatOptions)}`;
 }
 
-function getLockReason(
+function getLockReasons(
   date: string,
-  lockedPeriods?: Array<{ startDate: string; endDate: string }>,
-): string | undefined {
-  if (!lockedPeriods) return undefined;
+  lockedDates: Map<string, string[]>,
+  lockedPeriods?: Array<{
+    startDate: string;
+    endDate: string;
+    reason: string;
+    type: 'salary' | 'inactive';
+  }>,
+): string[] {
+  const reasons = lockedDates.get(date) || [];
 
-  const dateOnly = date.split('T')[0];
+  if (lockedPeriods && reasons.length > 0) {
+    const dateOnly = date.split('T')[0];
+    const enhancedReasons: string[] = [];
 
-  for (const period of lockedPeriods) {
-    const startDate = period.startDate.split('T')[0];
-    const endDate = period.endDate.split('T')[0];
+    for (const period of lockedPeriods) {
+      const startDate = period.startDate.split('T')[0];
+      const endDate = period.endDate.split('T')[0];
 
-    if (dateOnly >= startDate && dateOnly <= endDate) {
-      return `Salary has been paid for the period ${formatDateRange(period.startDate, period.endDate)}.`;
+      if (dateOnly >= startDate && dateOnly <= endDate) {
+        if (period.type === 'salary') {
+          enhancedReasons.push(
+            `Salary paid for period ${formatDateRange(period.startDate, period.endDate)}`,
+          );
+        } else if (period.type === 'inactive') {
+          enhancedReasons.push(period.reason);
+        }
+      }
     }
+
+    return enhancedReasons.length > 0 ? enhancedReasons : reasons;
   }
 
-  return undefined;
+  return reasons;
 }
 
 const AttendanceTable: React.FC<AttendanceTableProps> = ({
@@ -77,7 +99,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   error,
   onMonthYearChange,
   onSaveAttendance,
-  lockedDates = new Set(),
+  lockedDates,
   lockedPeriods = [],
 }) => {
   const [candidateMonth, setCandidateMonth] = useState(month);
@@ -139,7 +161,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         </div>
       )}
 
-      <div className="overflow-y-auto max-h-[500px] rounded-b-xl px-6 py-3 space-y-2">
+      <div className="overflow-y-auto max-h-125 rounded-b-xl px-6 py-3 space-y-2">
         {loading ? (
           Array.from({ length: 5 }, (_, i) => (
             <div
@@ -149,16 +171,21 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           ))
         ) : (
           <>
-            {dates.map((date) => (
-              <AttendanceRow
-                key={date}
-                date={date}
-                initialData={attendanceMap[date]}
-                onSave={(data) => onSaveAttendance(date, data)}
-                isLocked={lockedDates.has(date)}
-                lockReason={getLockReason(date, lockedPeriods)} // NEW
-              />
-            ))}
+            {dates.map((date) => {
+              const isLocked = lockedDates.has(date);
+              const lockReasons = getLockReasons(date, lockedDates, lockedPeriods);
+
+              return (
+                <AttendanceRow
+                  key={date}
+                  date={date}
+                  initialData={attendanceMap[date]}
+                  onSave={(data) => onSaveAttendance(date, data)}
+                  isLocked={isLocked}
+                  lockReasons={lockReasons}
+                />
+              );
+            })}
             {dates.every((date) => !attendanceMap[date]) && (
               <div className="mt-6 text-text-secondary text-center text-sm">
                 No attendance records for this month yet.

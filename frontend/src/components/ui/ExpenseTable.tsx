@@ -21,8 +21,13 @@ interface ExpenseTableProps {
   onSaveExpense: (date: string, data: ExpenseData) => void;
   onDeleteExpense: (expenseId: number | string) => void;
   onAddNewExpense: (date: string) => void;
-  lockedDates?: Set<string>;
-  lockedPeriods?: Array<{ startDate: string; endDate: string }>;
+  lockedDates: Map<string, string[]>;
+  lockedPeriods?: Array<{
+    startDate: string;
+    endDate: string;
+    reason: string;
+    type: 'salary' | 'inactive';
+  }>;
 }
 
 function formatDateLocal(date: Date): string {
@@ -55,24 +60,41 @@ function formatDateRange(startDate: string, endDate: string): string {
   return `${start.toLocaleDateString('en-IN', formatOptions)} - ${end.toLocaleDateString('en-IN', formatOptions)}`;
 }
 
-function getLockReason(
+function getLockReasons(
   date: string,
-  lockedPeriods?: Array<{ startDate: string; endDate: string }>,
-): string | undefined {
-  if (!lockedPeriods) return undefined;
+  lockedDates: Map<string, string[]>,
+  lockedPeriods?: Array<{
+    startDate: string;
+    endDate: string;
+    reason: string;
+    type: 'salary' | 'inactive';
+  }>,
+): string[] {
+  const reasons = lockedDates.get(date) || [];
 
-  const dateOnly = date.split('T')[0];
+  if (lockedPeriods && reasons.length > 0) {
+    const dateOnly = date.split('T')[0];
+    const enhancedReasons: string[] = [];
 
-  for (const period of lockedPeriods) {
-    const startDate = period.startDate.split('T')[0];
-    const endDate = period.endDate.split('T')[0];
+    for (const period of lockedPeriods) {
+      const startDate = period.startDate.split('T')[0];
+      const endDate = period.endDate.split('T')[0];
 
-    if (dateOnly >= startDate && dateOnly <= endDate) {
-      return `Salary has been paid for the period ${formatDateRange(period.startDate, period.endDate)}.`;
+      if (dateOnly >= startDate && dateOnly <= endDate) {
+        if (period.type === 'salary') {
+          enhancedReasons.push(
+            `Salary paid for period ${formatDateRange(period.startDate, period.endDate)}`,
+          );
+        } else if (period.type === 'inactive') {
+          enhancedReasons.push(period.reason);
+        }
+      }
     }
+
+    return enhancedReasons.length > 0 ? enhancedReasons : reasons;
   }
 
-  return undefined;
+  return reasons;
 }
 
 const ExpenseTable: React.FC<ExpenseTableProps> = ({
@@ -86,7 +108,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
   onSaveExpense,
   onDeleteExpense,
   onAddNewExpense,
-  lockedDates = new Set(),
+  lockedDates,
   lockedPeriods = [],
 }) => {
   const [candidateMonth, setCandidateMonth] = useState(month);
@@ -148,7 +170,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
         </div>
       )}
 
-      <div className="overflow-y-auto max-h-[500px] rounded-b-xl px-6 py-3 space-y-1">
+      <div className="overflow-y-auto max-h-125 rounded-b-xl px-6 py-3 space-y-1">
         {loading ? (
           Array.from({ length: 5 }, (_, i) => (
             <div
@@ -161,7 +183,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
             {dates.map((date) => {
               const expensesForDate = expenseMap[date] || [];
               const isLocked = lockedDates.has(date);
-              const lockReason = getLockReason(date, lockedPeriods);
+              const lockReasons = getLockReasons(date, lockedDates, lockedPeriods);
 
               if (expensesForDate.length === 0) {
                 return (
@@ -174,7 +196,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
                     canDelete={false}
                     isNew={false}
                     isLocked={isLocked}
-                    lockReason={lockReason}
+                    lockReasons={lockReasons}
                   />
                 );
               }
@@ -194,7 +216,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
                     canDelete={true}
                     isNew={isTemp}
                     isLocked={isLocked}
-                    lockReason={lockReason}
+                    lockReasons={lockReasons}
                   />
                 );
               });

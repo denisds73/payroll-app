@@ -28,6 +28,7 @@ model Worker {
   advances    Advance[]
   expenses    Expense[]
   wageHistory WageHistory[]
+  statusHistory   WorkerStatusHistory[]
 }
 
 enum AttendanceStatus {
@@ -130,4 +131,17 @@ model Expense {
   updatedAt DateTime    @updatedAt
 
   @@index([workerId, date])
+}
+
+model WorkerStatusHistory {
+  id            Int      @id @default(autoincrement())
+  workerId      Int
+  isActive      Boolean
+  effectiveFrom DateTime
+  reason        String?
+  createdAt     DateTime @default(now())
+  
+  worker        Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  
+  @@index([workerId, effectiveFrom])
 }

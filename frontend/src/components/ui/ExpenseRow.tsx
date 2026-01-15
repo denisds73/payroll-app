@@ -26,7 +26,7 @@ interface ExpenseRowProps {
   canDelete?: boolean;
   isNew?: boolean;
   isLocked?: boolean;
-  lockReason?: string;
+  lockReasons?: string[];
 }
 
 const formatDate = (dateString: string) => {
@@ -48,7 +48,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   canDelete = true,
   isNew = false,
   isLocked = false,
-  lockReason,
+  lockReasons = [],
 }) => {
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(isNew || !initialData);
@@ -242,13 +242,17 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
     return null;
   };
 
-  const tooltipContent = lockReason && (
+  const tooltipContent = lockReasons.length > 0 && (
     <div>
       <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
         <Lock className="w-3.5 h-3.5" />
         <span>Locked</span>
       </div>
-      <div className="text-xs text-text-secondary leading-relaxed">{lockReason}</div>
+      <div className="text-xs text-text-secondary leading-relaxed">
+        {lockReasons.map((reason) => (
+          <div key={reason}>{reason}</div>
+        ))}
+      </div>
     </div>
   );
 

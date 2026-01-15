@@ -1,11 +1,12 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: Modal requires click handlers on backdrop */
 import { AlertCircle, Calendar, CheckCircle, X, XCircle } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
-import { useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import './DatePickerStyles.css';
 import { workersAPI } from '../../services/api';
+import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
 import Button from '../ui/Button';
 
 interface WorkerStatusModalProps {
@@ -37,13 +38,7 @@ export default function WorkerStatusModal({
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
   const [loadingDates, setLoadingDates] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && mode === 'disable') {
-      fetchBlockedDates();
-    }
-  }, [isOpen, mode, workerId]);
-
-  const fetchBlockedDates = async () => {
+  const fetchBlockedDates = useCallback(async () => {
     setLoadingDates(true);
     try {
       const response = await workersAPI.getBlockedDates(workerId);
@@ -54,11 +49,17 @@ export default function WorkerStatusModal({
     } finally {
       setLoadingDates(false);
     }
-  };
+  }, [workerId]);
+
+  useEffect(() => {
+    if (isOpen && mode === 'disable') {
+      fetchBlockedDates();
+    }
+  }, [isOpen, mode, fetchBlockedDates]);
 
   useEffect(() => {
     setEffectiveFrom(today);
-  }, [mode, today]);
+  }, [today]);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,6 +68,8 @@ export default function WorkerStatusModal({
       setIsAnimating(false);
     }
   }, [isOpen]);
+
+  const markWorkerStatusChanged = useWorkerStatusStore((state) => state.markWorkerStatusChanged);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -85,17 +88,20 @@ export default function WorkerStatusModal({
         await workersAPI.activate(workerId, effectiveFrom);
       }
 
+      markWorkerStatusChanged(workerId);
+
       console.log(`✅ 1. Backend ${mode} successful`);
       onSuccess();
       console.log('✅ 2. Called onSuccess()');
       handleClose();
       console.log('✅ 3. Called handleClose()');
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || `Failed to ${mode} worker`;
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string }; status?: number } };
+      const errorMessage = error?.response?.data?.message || `Failed to ${mode} worker`;
       setError(errorMessage);
       console.error(`❌ ${mode} error:`, {
-        message: err?.response?.data?.message,
-        status: err?.response?.status,
+        message: error?.response?.data?.message,
+        status: error?.response?.status,
       });
     } finally {
       setLoading(false);

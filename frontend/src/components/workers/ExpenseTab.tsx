@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import { expensesAPI, expenseTypesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
+import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
 import ExpenseTable, { type ExpenseData } from '../ui/ExpenseTable';
 
 interface ExpenseTabProps {
@@ -41,18 +42,25 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
   const prevMonthRef = useRef(selectedMonth);
   const prevYearRef = useRef(selectedYear);
 
-  // Lock store integration
   const lockDataByWorker = useSalaryLockStore((state) => state.lockDataByWorker);
   const fetchPaidPeriods = useSalaryLockStore((state) => state.fetchPaidPeriods);
   const isDateLocked = useSalaryLockStore((state) => state.isDateLocked);
   const lockLoading = useSalaryLockStore((state) => state.loading);
   const lockErrors = useSalaryLockStore((state) => state.errors);
 
+  const statusDataByWorker = useWorkerStatusStore((state) => state.statusDataByWorker);
+  const fetchInactivePeriods = useWorkerStatusStore((state) => state.fetchInactivePeriods);
+  const isDateInactive = useWorkerStatusStore((state) => state.isDateInactive);
+  const statusLoading = useWorkerStatusStore((state) => state.loading);
+  const statusErrors = useWorkerStatusStore((state) => state.errors);
+
   const lockError = lockErrors[workerId];
+  const statusError = statusErrors[workerId];
 
   useEffect(() => {
     fetchPaidPeriods(workerId);
-  }, [workerId, fetchPaidPeriods]);
+    fetchInactivePeriods(workerId);
+  }, [workerId, fetchPaidPeriods, fetchInactivePeriods]);
 
   useEffect(() => {
     fetchExpenseTypes();
@@ -275,37 +283,84 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
     return days;
   };
 
+
   const lockedDates = useMemo(() => {
-    const locked = new Set<string>();
+    const locked = new Map<string, string[]>();
     const dates = getAllDaysInMonth(selectedMonth, selectedYear);
 
     console.log('🔄 Recomputing locked dates for worker', workerId);
 
     dates.forEach((date) => {
+      const reasons: string[] = [];
+
+
       if (isDateLocked(workerId, date)) {
-        locked.add(date);
-        console.log('🔒 Date locked:', date);
+        reasons.push('Salary paid for this period');
+        console.log('🔒 Date locked (salary):', date);
+      }
+
+
+      if (isDateInactive(workerId, date)) {
+        reasons.push('Worker was inactive on this date');
+        console.log('🔒 Date locked (inactive):', date);
+      }
+
+
+      if (reasons.length > 0) {
+        locked.set(date, reasons);
       }
     });
 
     console.log('Total locked dates:', locked.size);
     return locked;
-  }, [lockDataByWorker, workerId, selectedMonth, selectedYear, isDateLocked]);
+  }, [
+    lockDataByWorker,
+    statusDataByWorker,
+    workerId,
+    selectedMonth,
+    selectedYear,
+    isDateLocked,
+    isDateInactive,
+  ]);
+
 
   const lockedPeriods = useMemo(() => {
     const workerData = lockDataByWorker[workerId];
-    if (!workerData) return [];
+    const statusData = statusDataByWorker[workerId];
 
-    return workerData.periods
-      .filter((p) => p.isPaid)
-      .map((p) => ({
-        startDate: p.startDate,
-        endDate: p.endDate,
-      }));
-  }, [lockDataByWorker, workerId]);
+    const periods = [];
 
-  const isLoading = loading || lockLoading[workerId];
-  const combinedError = error || lockError || undefined;
+
+    if (workerData) {
+      periods.push(
+        ...workerData.periods
+          .filter((p) => p.isPaid)
+          .map((p) => ({
+            startDate: p.startDate,
+            endDate: p.endDate,
+            reason: 'Salary paid for this period',
+            type: 'salary' as const,
+          })),
+      );
+    }
+
+
+    if (statusData) {
+      periods.push(
+        ...statusData.periods.map((p) => ({
+          startDate: p.startDate,
+          endDate: p.endDate,
+          reason: p.reason || 'Worker was inactive during this period',
+          type: 'inactive' as const,
+        })),
+      );
+    }
+
+    return periods;
+  }, [lockDataByWorker, statusDataByWorker, workerId]);
+
+  const isLoading = loading || lockLoading[workerId] || statusLoading[workerId];
+  const combinedError = error || lockError || statusError || undefined;
 
   const expenseMap: Record<string, Expense[]> = {};
   for (const exp of expenses) {
