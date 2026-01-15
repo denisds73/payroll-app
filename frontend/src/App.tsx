@@ -1,20 +1,49 @@
 import './App.css';
 import { Toaster } from 'react-hot-toast';
-import { Link, Outlet } from 'react-router-dom';
-import Button from './components/ui/Button';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 function App() {
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Bar */}
-      <nav className="border-b border-gray-200 bg-card p-4">
-        <div className="flex gap-4">
-          <Link to="/">
-            <Button>Home</Button>
-          </Link>
-          <Link to="/test">
-            <Button>Test Component</Button>
-          </Link>
+      <nav className="border-b border-gray-200 bg-card px-6 py-3">
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
+          <div className="flex items-center gap-8">
+            <Link to="/" className="text-xl font-bold text-primary">
+              Payroll App
+            </Link>
+            <div className="flex gap-1">
+              <Link
+                to="/"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive('/')
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-gray-100'
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/workers"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive('/workers')
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-gray-100'
+                }`}
+              >
+                Workers
+              </Link>
+            </div>
+          </div>
         </div>
       </nav>
       <Toaster

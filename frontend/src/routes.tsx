@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router-dom';
 import App from './App';
+import Dashboard from './pages/Dashboard/Dashboard';
 import TestPage from './pages/TestPage';
 import { AddWorker } from './pages/Workers/AddWorker';
 import { UpdateWorker } from './pages/Workers/UpdateWorker';
@@ -13,11 +14,7 @@ export const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: (
-          <div className="p-6">
-            <h1>Welcome to Payroll App</h1>
-          </div>
-        ),
+        element: <Dashboard />,
       },
       {
         path: 'test',

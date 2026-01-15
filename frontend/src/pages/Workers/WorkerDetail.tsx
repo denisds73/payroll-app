@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   Calendar,
   Clock,
   DollarSign,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import PaySalaryModal from '../../components/modals/PaySalaryModal';
 import Button from '../../components/ui/Button';
@@ -186,6 +187,15 @@ export default function WorkerDetail() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
+      {/* Breadcrumb / Back Link */}
+      <Link
+        to="/workers"
+        className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Workers
+      </Link>
+
       <div className="bg-card p-6 rounded-lg shadow-sm">
         <div className="flex items-start justify-between mb-6">
           <div>
