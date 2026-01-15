@@ -57,17 +57,31 @@ export class WorkersService {
     const worker = await this.prisma.worker.findUnique({ where: { id } });
     if (!worker) throw new NotFoundException('Worker not found');
 
+    console.log('📝 Worker update request:', {
+      workerId: id,
+      dto,
+      currentWage: worker.wage,
+      currentOtRate: worker.otRate,
+    });
+
     const wageChanged = dto.wage !== undefined && dto.wage !== worker.wage;
     const otRateChanged = dto.otRate !== undefined && dto.otRate !== worker.otRate;
 
+    console.log('📊 Change detection:', { wageChanged, otRateChanged });
+
     if (wageChanged || otRateChanged) {
       const wageEffectiveDate = dto.wageEffectiveDate
-        ? new Date(dto.wageEffectiveDate)
-        : new Date();
+        ? this.dateService.parseDate(dto.wageEffectiveDate)
+        : this.dateService.startOfToday();
 
       const otRateEffectiveDate = dto.otRateEffectiveDate
-        ? new Date(dto.otRateEffectiveDate)
-        : new Date();
+        ? this.dateService.parseDate(dto.otRateEffectiveDate)
+        : this.dateService.startOfToday();
+
+      console.log('📅 Effective dates:', {
+        wageEffectiveDate: wageEffectiveDate.toISOString(),
+        otRateEffectiveDate: otRateEffectiveDate.toISOString(),
+      });
 
       const earliestEffectiveDate =
         wageChanged && otRateChanged
@@ -109,7 +123,7 @@ export class WorkersService {
         });
 
         if (wageChanged) {
-          await tx.attendance.updateMany({
+          const updateResult = await tx.attendance.updateMany({
             where: {
               workerId: id,
               date: {
@@ -120,10 +134,15 @@ export class WorkersService {
               wageAtTime: dto.wage,
             },
           });
+          console.log('✅ Updated attendance wageAtTime:', {
+            count: updateResult.count,
+            newWage: dto.wage,
+            fromDate: wageEffectiveDate.toISOString(),
+          });
         }
 
         if (otRateChanged) {
-          await tx.attendance.updateMany({
+          const updateResult = await tx.attendance.updateMany({
             where: {
               workerId: id,
               date: {

@@ -23,12 +23,6 @@ export class AttendanceService {
   async create(dto: CreateAttendanceDto) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: dto.workerId },
-      include: {
-        wageHistory: {
-          orderBy: { effectiveFrom: 'desc' },
-          take: 1,
-        },
-      },
     });
 
     if (!worker) {
@@ -68,7 +62,18 @@ export class AttendanceService {
       throw new ConflictException('Attendance for this date already exists');
     }
 
-    const latestWage = worker.wageHistory[0] || null;
+    // Get the wage history entry that was effective on the attendance date
+    const wageAtDate = await this.prisma.wageHistory.findFirst({
+      where: {
+        workerId: dto.workerId,
+        effectiveFrom: {
+          lte: date,
+        },
+      },
+      orderBy: {
+        effectiveFrom: 'desc',
+      },
+    });
 
     return this.prisma.attendance.create({
       data: {
@@ -77,9 +82,9 @@ export class AttendanceService {
         status: dto.status,
         otUnits: dto.otUnits,
         note: dto.note,
-        // snapshot wage & ot rate
-        wageAtTime: latestWage ? latestWage.wage : 0,
-        otRateAtTime: latestWage ? latestWage.otRate : 0,
+        // snapshot wage & ot rate from the wage effective on this date
+        wageAtTime: wageAtDate ? wageAtDate.wage : worker.wage,
+        otRateAtTime: wageAtDate ? wageAtDate.otRate : worker.otRate,
       },
       include: {
         worker: true,

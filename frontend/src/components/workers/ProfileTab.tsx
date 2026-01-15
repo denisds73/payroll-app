@@ -123,14 +123,33 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
         await workersAPI.update(worker.id, {
           wage: Number(formData.wage),
           otRate: Number(formData.otRate),
+          wageEffectiveDate: formData.wageEffectiveDate,
+          otRateEffectiveDate: formData.otRateEffectiveDate,
         });
       } else {
-        await workersAPI.update(worker.id, {
+        const payload: {
+          name: string;
+          phone?: string;
+          wage: number;
+          otRate: number;
+          wageEffectiveDate?: string;
+          otRateEffectiveDate?: string;
+        } = {
           name: formData.name.trim(),
           phone: formData.phone.trim() || undefined,
           wage: Number(formData.wage),
           otRate: Number(formData.otRate),
-        });
+        };
+
+        // Include effective dates if wage or OT rate changed
+        if (Number(formData.wage) !== originalWage) {
+          payload.wageEffectiveDate = formData.wageEffectiveDate;
+        }
+        if (Number(formData.otRate) !== originalOtRate) {
+          payload.otRateEffectiveDate = formData.otRateEffectiveDate;
+        }
+
+        await workersAPI.update(worker.id, payload);
       }
 
       setOriginalWage(Number(formData.wage));

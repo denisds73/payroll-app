@@ -131,7 +131,15 @@ export const workersAPI = {
 
   update: (
     id: number,
-    data: { name?: string; phone?: string; wage?: number; otRate?: number; isActive?: boolean },
+    data: {
+      name?: string;
+      phone?: string;
+      wage?: number;
+      otRate?: number;
+      isActive?: boolean;
+      wageEffectiveDate?: string;
+      otRateEffectiveDate?: string;
+    },
   ) => api.patch(`/workers/${id}`, data),
 
   delete: (id: number) => api.delete(`/workers/${id}`),
