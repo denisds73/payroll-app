@@ -393,6 +393,14 @@ export class WorkersService {
       select: { date: true },
     });
 
+    const paidSalaries = await this.prisma.salary.findMany({
+      where: {
+        workerId: id,
+        status: { in: ['PAID', 'PARTIAL'] },
+      },
+      select: { cycleStart: true, cycleEnd: true },
+    });
+
     const blockedDatesSet = new Set<string>();
 
     attendanceDates.forEach((record) => {
@@ -401,6 +409,17 @@ export class WorkersService {
 
     expenseDates.forEach((record) => {
       blockedDatesSet.add(record.date.toISOString().split('T')[0]);
+    });
+
+    paidSalaries.forEach((salary) => {
+      const start = new Date(salary.cycleStart);
+      const end = new Date(salary.cycleEnd);
+      const current = new Date(start);
+
+      while (current <= end) {
+        blockedDatesSet.add(current.toISOString().split('T')[0]);
+        current.setUTCDate(current.getUTCDate() + 1);
+      }
     });
 
     const blockedDates = Array.from(blockedDatesSet).sort();
@@ -423,7 +442,6 @@ export class WorkersService {
       throw new NotFoundException(`Worker with ID ${workerId} not found`);
     }
 
-
     const statusHistory = await this.prisma.workerStatusHistory.findMany({
       where: { workerId },
       orderBy: { effectiveFrom: 'asc' },
@@ -434,11 +452,9 @@ export class WorkersService {
 
     for (const record of statusHistory) {
       if (!record.isActive) {
-
         inactivePeriodStart = record.effectiveFrom;
       } else if (inactivePeriodStart) {
-
-        const endDate = new Date(record.effectiveFrom.getTime() - 86400000); 
+        const endDate = new Date(record.effectiveFrom.getTime() - 86400000);
         periods.push({
           startDate: inactivePeriodStart.toISOString().split('T')[0],
           endDate: endDate.toISOString().split('T')[0],

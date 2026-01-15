@@ -82,3 +82,5 @@ prisma/*.db-journal
 
 # Debug files
 .debugger/
+# AI instructions
+.github/copilot-instructions.md

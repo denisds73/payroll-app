@@ -17,6 +17,7 @@ interface ProfileTabProps {
     wage: number;
     otRate: number;
     isActive: boolean;
+    inactiveFrom: string | null;
     joinedAt: string;
   };
   onUpdate: () => void;
@@ -509,7 +510,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                 }`}
                 aria-hidden={!warningVisible}
               >
-                <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-warning mb-1">
                     {editMode === 'values' ? 'Wage Change Detected' : 'Change Effective Date'}
@@ -524,7 +525,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
             )}
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
               type="button"
@@ -538,7 +538,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                   otRate: worker.otRate.toString(),
                   wageEffectiveDate: today,
                   otRateEffectiveDate: today,
-                  isActive: worker.isActive,
                 });
                 setEditMode('values');
                 setError(null);

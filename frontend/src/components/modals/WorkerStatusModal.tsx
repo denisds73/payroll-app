@@ -137,7 +137,10 @@ export default function WorkerStatusModal({
 
   const handleDateChange = (date: Date | null) => {
     if (date) {
-      const dateStr = date.toISOString().split('T')[0];
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       setEffectiveFrom(dateStr);
       setError(null);
     }
@@ -241,6 +244,7 @@ export default function WorkerStatusModal({
                 placeholderText="Select date"
                 showPopperArrow={false}
                 popperPlacement="bottom-start"
+                fixedHeight
               />
             </div>
 
@@ -253,7 +257,7 @@ export default function WorkerStatusModal({
               {isDisableMode && blockedDates.length > 0 && (
                 <p className="text-xs text-warning flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
-                  Dates with attendance/expense are grayed out and cannot be selected
+                  Dates with attendance, expenses, or paid salaries are grayed out
                 </p>
               )}
             </div>
