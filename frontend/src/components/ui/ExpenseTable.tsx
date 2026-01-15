@@ -127,7 +127,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
         <div className="flex gap-x-15 font-semibold text-text-primary text-base w-full items-center">
           <div className="w-8 shrink-0" />
           <div className="w-28 shrink-0">Date</div>
-          <div className="w-48 shrink-0 ml-8">Expense Type</div>
+          <div className="w-48 shrink-0 ml-6">Expense Type</div>
           <div className="w-32 shrink-0">Amount</div>
         </div>
         <div className="flex items-center gap-2 ml-6 shrink-0">

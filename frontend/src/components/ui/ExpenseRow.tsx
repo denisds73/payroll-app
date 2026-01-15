@@ -3,8 +3,8 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../modals/ConfirmModal';
 import Button from './Button';
+import ExpenseTypeGroup from './ExpenseTypeGroup';
 import Input from './Input';
-import RadioGroup, { type RadioOption } from './RadioGroup';
 import Textarea from './Textarea';
 import Tooltip from './Tooltip';
 
@@ -68,13 +68,8 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
     note: '',
   });
 
-  const expenseOptions: RadioOption[] = expenseTypes.map((type) => ({
-    value: String(type.id),
-    label: type.name,
-  }));
-
-  const handleTypeChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, typeId: Number(value) }));
+  const handleTypeChange = (value: number) => {
+    setFormData((prev) => ({ ...prev, typeId: value }));
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -282,11 +277,10 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
 
       <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
-      <RadioGroup
+      <ExpenseTypeGroup
         className="shrink-0"
-        name={`expense-type-${date}-${initialData?.id || 'new'}`}
-        options={expenseOptions}
-        value={String(formData.typeId)}
+        expenseTypes={expenseTypes}
+        value={formData.typeId}
         onChange={handleTypeChange}
         disabled={!isEditing || isLocked}
       />
