@@ -24,6 +24,7 @@ interface HistoryItem {
   typeId?: number;
   typeName?: string;
   issuedAt?: string;
+  createdAt: string;
 }
 
 interface FilterState {
@@ -89,6 +90,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         date: adv.date,
         amount: adv.amount,
         description: adv.reason || 'Advance payment',
+        createdAt: adv.createdAt,
       }));
 
       const salariesResponse = await salariesAPI.getByWorker(workerId);
@@ -102,6 +104,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
           `Salary for ${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
         cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
         issuedAt: sal.issuedAt,
+        createdAt: sal.createdAt,
       }));
 
       const expensesResponse = await expensesAPI.getByWorker(workerId);
@@ -113,11 +116,16 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         description: exp.note || 'Expense',
         typeId: exp.typeId,
         typeName: exp.type?.name || 'Unknown',
+        createdAt: exp.createdAt,
       }));
 
-      const combined = [...advances, ...salaries, ...expenses].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
+      const combined = [...advances, ...salaries, ...expenses].sort((a, b) => {
+        // Primary sort by date (descending - newest first)
+        const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dateCompare !== 0) return dateCompare;
+        // Secondary sort by createdAt (descending - most recently recorded first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
 
       setHistory(combined);
     } catch (err) {
