@@ -346,16 +346,16 @@ export function DateRangePicker({
                   Chevron: ChevronIcon,
                 }}
                 classNames={{
-                  root: 'p-3',
+                  root: 'p-3 relative',
                   months: 'flex flex-col',
                   month: 'space-y-3',
-                  month_caption: 'flex justify-center items-center h-7 relative',
+                  month_caption: 'flex justify-center items-center h-7',
                   caption_label: 'text-sm font-semibold text-text-primary',
-                  nav: 'flex justify-between items-center h-7 w-full absolute inset-0 z-10',
+                  nav: 'absolute top-3 left-3 right-3 flex justify-between items-center h-7 z-10',
                   button_previous:
-                    'p-1 hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                    'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
                   button_next:
-                    'p-1 hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                    'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
                   weekdays: 'flex',
                   weekday: 'w-9 text-xs font-medium text-text-secondary text-center',
                   week: 'flex mt-1',

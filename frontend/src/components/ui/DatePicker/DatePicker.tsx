@@ -12,46 +12,23 @@ function ChevronIcon({ orientation }: { orientation?: 'left' | 'right' | 'up' | 
 }
 
 export interface DatePickerProps {
-  /** Selected date as ISO string (YYYY-MM-DD) or null */
   value: string | null;
-  /** Callback when date changes */
   onChange: (date: string | null) => void;
-
-  /** Minimum selectable date (ISO string) */
   minDate?: string;
-  /** Maximum selectable date (ISO string) */
   maxDate?: string;
-  /** Shorthand: set maxDate to today */
   disableFuture?: boolean;
-  /** Array of ISO date strings to disable */
   excludeDates?: string[];
-  /** Custom function to disable specific dates */
   isDateDisabled?: (date: Date) => boolean;
-
-  /** Input label */
   label?: string;
-  /** Placeholder text */
   placeholder?: string;
-  /** Error message */
   error?: string;
-  /** Show clear button when value exists */
   isClearable?: boolean;
-  /** Custom left icon (default: Calendar) */
   icon?: React.ReactNode;
-
-  /** Disable the input */
   disabled?: boolean;
-  /** Show loading spinner */
   loading?: boolean;
-
-  /** HTML id attribute */
   id?: string;
-  /** Aria label for accessibility */
   'aria-label'?: string;
-
-  /** Additional CSS classes for the input wrapper */
   className?: string;
-  /** Size variant */
   size?: 'sm' | 'md';
 }
 
@@ -97,7 +74,6 @@ export function DatePicker({
   const inputRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Convert string values to Date objects
   const selectedDate = toDate(value);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -105,7 +81,6 @@ export function DatePicker({
   const effectiveMaxDate = disableFuture ? today : toDate(maxDate);
   const effectiveMinDate = toDate(minDate);
 
-  // Build disabled days matcher for react-day-picker
   const disabledDays: Array<Date | ((date: Date) => boolean)> = [];
 
   if (effectiveMinDate) {
@@ -122,7 +97,6 @@ export function DatePicker({
     disabledDays.push(isDateDisabled);
   }
 
-  // Calculate popover position to avoid cutoff
   useEffect(() => {
     if (isOpen && inputRef.current) {
       const inputRect = inputRef.current.getBoundingClientRect();
@@ -138,7 +112,6 @@ export function DatePicker({
     }
   }, [isOpen]);
 
-  // Handle date selection
   const handleSelect = useCallback(
     (date: Date | undefined) => {
       onChange(toISOString(date));
@@ -148,7 +121,6 @@ export function DatePicker({
     [onChange],
   );
 
-  // Handle clear
   const handleClear = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -158,7 +130,6 @@ export function DatePicker({
     [onChange],
   );
 
-  // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
 
@@ -172,7 +143,6 @@ export function DatePicker({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
 
@@ -221,7 +191,6 @@ export function DatePicker({
             ${disabled || loading ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-white hover:border-gray-400'}
           `}
         >
-          {/* Icon */}
           <span className="text-text-secondary shrink-0">
             {loading ? (
               <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
@@ -230,14 +199,12 @@ export function DatePicker({
             )}
           </span>
 
-          {/* Value or placeholder */}
           <span
             className={`flex-1 truncate ${!displayValue ? 'text-text-disabled' : 'text-text-primary'}`}
           >
             {displayValue || placeholder}
           </span>
 
-          {/* Clear button */}
           {isClearable && value && !disabled && !loading && (
             <button
               type="button"
@@ -250,7 +217,6 @@ export function DatePicker({
           )}
         </button>
 
-        {/* Calendar popover */}
         {isOpen && (
           <div
             ref={popoverRef}
@@ -273,16 +239,16 @@ export function DatePicker({
                 Chevron: ChevronIcon,
               }}
               classNames={{
-                root: 'p-3',
+                root: 'p-3 relative',
                 months: 'flex flex-col',
                 month: 'space-y-3',
-                month_caption: 'flex justify-center items-center h-7 relative',
+                month_caption: 'flex justify-center items-center h-7',
                 caption_label: 'text-sm font-semibold text-text-primary',
-                nav: 'flex justify-between items-center h-7 w-full absolute inset-0 z-10',
+                nav: 'absolute top-3 left-3 right-3 flex justify-between items-center h-7 z-10',
                 button_previous:
-                  'p-1 hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                  'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
                 button_next:
-                  'p-1 hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                  'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
                 weekdays: 'flex',
                 weekday: 'w-9 text-xs font-medium text-text-secondary text-center',
                 week: 'flex mt-1',
