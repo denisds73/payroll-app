@@ -126,8 +126,13 @@ export const expenseTypesAPI = {
 export const workersAPI = {
   getAll: () => api.get('/workers'),
 
-  create: (data: { name: string; phone?: string; wage: number; otRate: number }) =>
-    api.post('/workers', data),
+  create: (data: {
+    name: string;
+    phone?: string;
+    wage: number;
+    otRate?: number;
+    joinedAt?: string;
+  }) => api.post('/workers', data),
 
   update: (
     id: number,

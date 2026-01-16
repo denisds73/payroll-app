@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AddWorkerModal from '../../components/modals/AddWorkerModal';
 import Button from '../../components/ui/Button';
 import { useWorkerStore } from '../../store/workerStore';
 
@@ -21,6 +22,7 @@ export default function WorkersDashboard() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   useEffect(() => {
     fetchWorkers();
@@ -96,7 +98,7 @@ export default function WorkersDashboard() {
             Manage your workforce, wages, and attendance
           </p>
         </div>
-        <Button onClick={() => navigate('/workers/add')} icon={<Plus className="w-4 h-4" />}>
+        <Button onClick={() => setAddModalOpen(true)} icon={<Plus className="w-4 h-4" />}>
           Add Worker
         </Button>
       </div>
@@ -271,7 +273,7 @@ export default function WorkersDashboard() {
                       {!searchQuery && (
                         <Button
                           size="sm"
-                          onClick={() => navigate('/workers/add')}
+                          onClick={() => setAddModalOpen(true)}
                           icon={<Plus className="w-4 h-4" />}
                         >
                           Add Worker
@@ -357,6 +359,9 @@ export default function WorkersDashboard() {
           </div>
         )}
       </div>
+
+      {/* Add Worker Modal */}
+      <AddWorkerModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>
   );
 }

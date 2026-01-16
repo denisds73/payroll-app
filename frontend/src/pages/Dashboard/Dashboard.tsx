@@ -1,11 +1,13 @@
-import { ArrowRight, Calendar, DollarSign, TrendingUp, Users } from 'lucide-react';
-import { useEffect } from 'react';
+import { ArrowRight, Calendar, Plus, TrendingUp, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import AddWorkerModal from '../../components/modals/AddWorkerModal';
 import Button from '../../components/ui/Button';
 import { useWorkerStore } from '../../store/workerStore';
 
 export default function Dashboard() {
   const { workers, loading, fetchWorkers } = useWorkerStore();
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   useEffect(() => {
     if (workers.length === 0) {
@@ -93,14 +95,15 @@ export default function Dashboard() {
             </div>
           </Link>
 
-          <Link
-            to="/workers/add"
-            className="group bg-card rounded-lg border border-gray-200 p-5 hover:border-success hover:shadow-md transition-all"
+          <button
+            type="button"
+            onClick={() => setAddModalOpen(true)}
+            className="group bg-card rounded-lg border border-gray-200 p-5 hover:border-success hover:shadow-md transition-all w-full text-left"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-success/10 rounded-lg group-hover:bg-success/20 transition-colors">
-                  <DollarSign className="w-6 h-6 text-success" />
+                  <Plus className="w-6 h-6 text-success" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-text-primary">Add New Worker</h3>
@@ -111,7 +114,7 @@ export default function Dashboard() {
               </div>
               <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-success transition-colors" />
             </div>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -126,11 +129,9 @@ export default function Dashboard() {
             You haven't added any workers yet. Add your first worker to start tracking attendance,
             advances, and salaries.
           </p>
-          <Link to="/workers/add">
-            <Button variant="primary" size="lg">
-              Add Your First Worker
-            </Button>
-          </Link>
+          <Button variant="primary" size="lg" onClick={() => setAddModalOpen(true)}>
+            Add Your First Worker
+          </Button>
         </div>
       )}
 
@@ -179,6 +180,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Add Worker Modal */}
+      <AddWorkerModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>
   );
 }
