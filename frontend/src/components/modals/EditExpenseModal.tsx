@@ -3,6 +3,7 @@ import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
 import { expensesAPI, expenseTypesAPI } from '../../services/api';
 import Button from '../ui/Button';
+import { DatePicker } from '../ui/DatePicker';
 
 interface EditExpenseModalProps {
   expense: {
@@ -83,50 +84,47 @@ export default function EditExpenseModal({
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-  e.preventDefault();
-  if (!expense) return;
+    e.preventDefault();
+    if (!expense) return;
 
-  setError(null);
+    setError(null);
 
-  if (!formData.amount || Number(formData.amount) <= 0) {
-    setError('Please enter a valid amount');
-    return;
-  }
+    if (!formData.amount || Number(formData.amount) <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
 
-  if (!formData.typeId) {
-    setError('Please select an expense type');
-    return;
-  }
+    if (!formData.typeId) {
+      setError('Please select an expense type');
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    await expensesAPI.update(expense.id, {
-      date: formData.date,
-      amount: Number(formData.amount),
-      typeId: Number(formData.typeId),
-      note: formData.note || undefined,
-    });
+    try {
+      await expensesAPI.update(expense.id, {
+        date: formData.date,
+        amount: Number(formData.amount),
+        typeId: Number(formData.typeId),
+        note: formData.note || undefined,
+      });
 
-    // First close the modal with animation
-    handleClose();
-    
-    // Then call onSuccess after animation completes
-    setTimeout(() => {
-      onSuccess();
-    }, 250); // Wait for animation to complete
-  } catch (err) {
-    const errorMessage =
-      err instanceof Error && 'response' in err
-        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-        : 'Failed to update expense';
+      handleClose();
 
-    setError(errorMessage || 'Failed to update expense');
-  } finally {
-    setLoading(false);
-  }
-};
+      setTimeout(() => {
+        onSuccess();
+      }, 250);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error && 'response' in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : 'Failed to update expense';
 
+      setError(errorMessage || 'Failed to update expense');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClose = (): void => {
     if (!loading) {
@@ -201,15 +199,13 @@ export default function EditExpenseModal({
             <label htmlFor={dateId} className="block text-sm font-medium text-text-primary mb-2">
               Date <span className="text-error">*</span>
             </label>
-            <input
-              type="date"
+            <DatePicker
               id={dateId}
               value={formData.date}
-              max={today}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-              required
+              onChange={(date) => setFormData({ ...formData, date: date || today })}
+              maxDate={today}
               disabled={loading}
+              placeholder="Select date"
             />
           </div>
 
@@ -239,7 +235,9 @@ export default function EditExpenseModal({
               Amount <span className="text-error">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">₹</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                ₹
+              </span>
               <input
                 type="number"
                 id={amountId}

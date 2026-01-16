@@ -7,6 +7,7 @@ import { useEffect, useId, useState } from 'react';
 import { salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import Button from '../ui/Button';
+import { DatePicker } from '../ui/DatePicker';
 
 interface PaySalaryModalProps {
   workerId: number;
@@ -379,20 +380,18 @@ export default function PaySalaryModal({
                     >
                       Payment Date <span className="text-error">*</span>
                     </label>
-                    <input
-                      type="date"
+                    <DatePicker
                       id={paymentDateId}
                       value={formData.paymentDate}
-                      min={
+                      onChange={(date) => handlePaymentDateChange(date || today)}
+                      minDate={
                         salaryData
                           ? new Date(salaryData.cycleStart).toISOString().split('T')[0]
                           : undefined
                       }
-                      max={today}
-                      onChange={(e) => handlePaymentDateChange(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                      required
+                      maxDate={today}
                       disabled={loading || calculating}
+                      placeholder="Select payment date"
                     />
                     <p className="text-xs text-text-secondary mt-1">
                       {isRetroactive

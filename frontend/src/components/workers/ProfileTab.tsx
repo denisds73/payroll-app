@@ -8,6 +8,7 @@ import { workersAPI } from '../../services/api';
 import ConfirmModal from '../modals/ConfirmModal';
 import WorkerStatusModal from '../modals/WorkerStatusModal';
 import Button from '../ui/Button';
+import { DatePicker } from '../ui/DatePicker';
 
 interface ProfileTabProps {
   worker: {
@@ -378,17 +379,15 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       >
                         Effective From
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         id={wageEffectiveDateId}
                         value={formData.wageEffectiveDate}
-                        max={today}
-                        onChange={(e) =>
-                          setFormData({ ...formData, wageEffectiveDate: e.target.value })
+                        onChange={(date) =>
+                          setFormData({ ...formData, wageEffectiveDate: date || today })
                         }
-                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                        required
+                        maxDate={today}
                         disabled={loading}
+                        size="sm"
                       />
                     </div>
                   )}
@@ -401,17 +400,15 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       >
                         Change Effective Date
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         id={wageEffectiveDateId}
                         value={formData.wageEffectiveDate}
-                        max={today}
-                        onChange={(e) =>
-                          setFormData({ ...formData, wageEffectiveDate: e.target.value })
+                        onChange={(date) =>
+                          setFormData({ ...formData, wageEffectiveDate: date || today })
                         }
-                        className="w-full px-3 py-1.5 text-sm border border-warning rounded-lg focus:outline-none focus:border-primary"
-                        required
+                        maxDate={today}
                         disabled={loading}
+                        size="sm"
                       />
                     </div>
                   )}
@@ -460,17 +457,15 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       >
                         Effective From
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         id={otRateEffectiveDateId}
                         value={formData.otRateEffectiveDate}
-                        max={today}
-                        onChange={(e) =>
-                          setFormData({ ...formData, otRateEffectiveDate: e.target.value })
+                        onChange={(date) =>
+                          setFormData({ ...formData, otRateEffectiveDate: date || today })
                         }
-                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                        required
+                        maxDate={today}
                         disabled={loading}
+                        size="sm"
                       />
                     </div>
                   )}
@@ -483,17 +478,15 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       >
                         Change Effective Date
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         id={otRateEffectiveDateId}
                         value={formData.otRateEffectiveDate}
-                        max={today}
-                        onChange={(e) =>
-                          setFormData({ ...formData, otRateEffectiveDate: e.target.value })
+                        onChange={(date) =>
+                          setFormData({ ...formData, otRateEffectiveDate: date || today })
                         }
-                        className="w-full px-3 py-1.5 text-sm border border-warning rounded-lg focus:outline-none focus:border-primary"
-                        required
+                        maxDate={today}
                         disabled={loading}
+                        size="sm"
                       />
                     </div>
                   )}

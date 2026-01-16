@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import Button from '../../components/ui/Button';
 import { Card } from '../../components/ui/card';
+import { DatePicker } from '../../components/ui/DatePicker';
 import Input from '../../components/ui/Input';
 import { workerAPI } from '../../services/api';
 
@@ -176,13 +177,10 @@ export const AddWorker = () => {
               </div>
 
               <div className="space-y-2">
-                <Input
+                <DatePicker
                   label="Joined Date"
-                  type="date"
-                  value={formData.joinedAt}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleChange('joinedAt', e.target.value)
-                  }
+                  value={formData.joinedAt || null}
+                  onChange={(date) => handleChange('joinedAt', date || '')}
                 />
               </div>
 

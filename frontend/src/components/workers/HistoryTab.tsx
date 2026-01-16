@@ -6,6 +6,7 @@ import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import ConfirmModal from '../modals/ConfirmModal';
 import EditAdvanceModal from '../modals/EditAdvanceModal';
 import EditExpenseModal from '../modals/EditExpenseModal';
+import { DateRangePicker } from '../ui/DatePicker';
 import Tooltip from '../ui/Tooltip';
 
 interface HistoryTabProps {
@@ -425,27 +426,14 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-text-secondary shrink-0">From:</label>
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                className="w-32 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-text-secondary shrink-0">To:</label>
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                className="w-32 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-          </div>
+          <DateRangePicker
+            value={{ start: filters.dateFrom || null, end: filters.dateTo || null }}
+            onChange={(range) =>
+              setFilters({ ...filters, dateFrom: range.start || '', dateTo: range.end || '' })
+            }
+            showPresets
+            className="w-64"
+          />
         </div>
 
         <div className="space-y-3 min-h-96">

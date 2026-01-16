@@ -1,13 +1,11 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: Modal requires click handlers on backdrop */
-import { AlertCircle, Calendar, CheckCircle, X, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, X, XCircle } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import './DatePickerStyles.css';
 import { workersAPI } from '../../services/api';
 import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
 import Button from '../ui/Button';
+import { DatePicker } from '../ui/DatePicker';
 
 interface WorkerStatusModalProps {
   workerId: number;
@@ -60,7 +58,6 @@ export default function WorkerStatusModal({
   }, [isOpen, mode, fetchBlockedDates]);
 
   useEffect(() => {
-    // When activating, default to inactiveFrom date; otherwise use today
     if (mode === 'activate' && inactiveFrom) {
       setEffectiveFrom(inactiveFrom.split('T')[0]);
     } else {
@@ -140,14 +137,8 @@ export default function WorkerStatusModal({
     }
   };
 
-  const blockedDateObjects = blockedDates.map((dateStr) => new Date(`${dateStr}T00:00:00`));
-
-  const handleDateChange = (date: Date | null) => {
-    if (date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
+  const handleDateChange = (dateStr: string | null) => {
+    if (dateStr) {
       setEffectiveFrom(dateStr);
       setError(null);
     }
@@ -285,33 +276,16 @@ export default function WorkerStatusModal({
                 Effective From Date <span className="text-error">*</span>
               </label>
 
-              {loadingDates && isDisableMode && (
-                <div className="mb-2 text-xs text-text-secondary flex items-center gap-2">
-                  <div className="inline-block animate-spin rounded-full h-3 w-3 border-b border-primary" />
-                  Loading available dates...
-                </div>
-              )}
-
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary z-10 pointer-events-none" />
-                <DatePicker
-                  selected={new Date(`${effectiveFrom}T00:00:00`)}
-                  onChange={handleDateChange}
-                  excludeDates={isDisableMode ? blockedDateObjects : []}
-                  minDate={
-                    isActivateMode && inactiveFrom
-                      ? new Date(`${inactiveFrom.split('T')[0]}T00:00:00`)
-                      : undefined
-                  }
-                  dateFormat="yyyy-MM-dd"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={loading || loadingDates}
-                  placeholderText="Select date"
-                  showPopperArrow={false}
-                  popperPlacement="bottom-start"
-                  fixedHeight
-                />
-              </div>
+              <DatePicker
+                value={effectiveFrom}
+                onChange={handleDateChange}
+                excludeDates={isDisableMode ? blockedDates : []}
+                minDate={isActivateMode && inactiveFrom ? inactiveFrom.split('T')[0] : undefined}
+                disabled={loading || loadingDates}
+                loading={loadingDates && isDisableMode}
+                placeholder="Select date"
+                id={dateId}
+              />
 
               <div className="mt-2 space-y-1">
                 <p className="text-xs text-text-secondary">
