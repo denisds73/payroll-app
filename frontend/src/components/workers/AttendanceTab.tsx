@@ -28,8 +28,8 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
   const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date();
 
-  const month = Number(searchParams.get('month')) || today.getMonth() + 1;
-  const year = Number(searchParams.get('year')) || today.getFullYear();
+  const month = Number(searchParams.get('attMonth')) || today.getMonth() + 1;
+  const year = Number(searchParams.get('attYear')) || today.getFullYear();
 
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceDataWithId>>({});
   const [loading, setLoading] = useState(false);
@@ -64,18 +64,18 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
   }, [workerId, month, year]);
 
   useEffect(() => {
-    const currentMonth = Number(searchParams.get('month'));
-    const currentYear = Number(searchParams.get('year'));
+    const currentMonth = Number(searchParams.get('attMonth'));
+    const currentYear = Number(searchParams.get('attYear'));
 
     if (currentMonth && (currentMonth < 1 || currentMonth > 12)) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('month', String(today.getMonth() + 1));
+      newParams.set('attMonth', String(today.getMonth() + 1));
       setSearchParams(newParams);
     }
 
     if (currentYear && (currentYear < 2000 || currentYear > 2100)) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('year', String(today.getFullYear()));
+      newParams.set('attYear', String(today.getFullYear()));
       setSearchParams(newParams);
     }
   }, [searchParams, setSearchParams, today]);
@@ -196,8 +196,11 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
 
   const handleMonthYearChange = (newMonth: number, newYear: number) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set('month', String(newMonth));
-    newParams.set('year', String(newYear));
+    newParams.set('attMonth', String(newMonth));
+    newParams.set('attYear', String(newYear));
+    // Clean up legacy params
+    newParams.delete('month');
+    newParams.delete('year');
     setSearchParams(newParams);
   };
 
@@ -214,7 +217,6 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     return days;
   };
 
-
   const lockedDates = useMemo(() => {
     const locked = new Map<string, string[]>();
     const dates = getAllDaysInMonth(month, year);
@@ -224,18 +226,15 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     dates.forEach((date) => {
       const reasons: string[] = [];
 
-
       if (isDateLocked(workerId, date)) {
         reasons.push('Salary paid for this period');
         console.log('🔒 Date locked (salary):', date);
       }
 
-
       if (isDateInactive(workerId, date)) {
         reasons.push('Worker was inactive on this date');
         console.log('🔒 Date locked (inactive):', date);
       }
-
 
       if (reasons.length > 0) {
         locked.set(date, reasons);
@@ -246,12 +245,10 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     return locked;
   }, [lockDataByWorker, statusDataByWorker, workerId, month, year, isDateLocked, isDateInactive]);
 
-
   const lockedPeriods = useMemo(() => {
     const workerData = lockDataByWorker[workerId];
     const statusData = statusDataByWorker[workerId];
     const periods = [];
-
 
     if (workerData) {
       periods.push(
@@ -265,7 +262,6 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
           })),
       );
     }
-
 
     if (statusData) {
       periods.push(
