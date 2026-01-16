@@ -1,6 +1,6 @@
 import { endOfMonth, format, isValid, parse, startOfMonth, subDays, subMonths } from 'date-fns';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { type MutableRefObject, useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { DayPicker } from 'react-day-picker';
 
@@ -23,38 +23,19 @@ export interface DateRangePreset {
 }
 
 export interface DateRangePickerProps {
-  /** Selected date range */
   value: DateRangeValue;
-  /** Callback when range changes */
   onChange: (range: DateRangeValue) => void;
-
-  /** Minimum selectable date (ISO string) */
   minDate?: string;
-  /** Maximum selectable date (ISO string) */
   maxDate?: string;
-  /** Shorthand: set maxDate to today */
   disableFuture?: boolean;
-
-  /** Input label */
   label?: string;
-  /** Placeholder for start date */
   placeholderStart?: string;
-  /** Placeholder for end date */
   placeholderEnd?: string;
-  /** Error message */
   error?: string;
-  /** Show clear button */
   isClearable?: boolean;
-
-  /** Disable the input */
   disabled?: boolean;
-
-  /** Show preset buttons */
   showPresets?: boolean;
-  /** Custom presets (overrides defaults) */
   presets?: DateRangePreset[];
-
-  /** Additional CSS classes */
   className?: string;
 }
 
@@ -143,6 +124,9 @@ export function DateRangePicker({
 
   const activePresets = presets || getDefaultPresets();
 
+  // Track selection count to ensure we wait for 2 clicks before closing
+  const selectionCountRef: MutableRefObject<number> = useRef(0);
+
   // Convert string values to Date objects
   const startDate = toDate(value.start);
   const endDate = toDate(value.end);
@@ -175,18 +159,25 @@ export function DateRangePicker({
         setPopoverPosition('bottom');
       }
     }
+
+    // Reset selection count when calendar opens
+    if (isOpen) {
+      selectionCountRef.current = 0;
+    }
   }, [isOpen]);
 
   // Handle range selection
   const handleSelect = useCallback(
     (range: DateRange | undefined) => {
+      selectionCountRef.current += 1;
+
       onChange({
         start: toISOString(range?.from),
         end: toISOString(range?.to),
       });
 
-      // Close after both dates selected
-      if (range?.from && range?.to) {
+      // Close after both dates selected (need at least 2 clicks)
+      if (range?.from && range?.to && selectionCountRef.current >= 2) {
         setTimeout(() => setIsOpen(false), 150);
       }
     },
