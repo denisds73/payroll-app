@@ -366,13 +366,18 @@ export default function WorkerDetail() {
 
         <div className="p-6">
           {activeTab === 'attendance' && (
-            <AttendanceTab workerId={worker.id} onAttendanceChange={handleAttendanceChange} />
+            <AttendanceTab
+              workerId={worker.id}
+              joinedAt={worker.joinedAt}
+              onAttendanceChange={handleAttendanceChange}
+            />
           )}
 
           {activeTab === 'expenses' && (
             <ExpenseTab
               workerId={worker.id}
               workerName={worker.name}
+              joinedAt={worker.joinedAt}
               onExpenseChange={handleExpenseChange}
             />
           )}
