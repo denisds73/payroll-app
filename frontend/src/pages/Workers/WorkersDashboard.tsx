@@ -19,18 +19,15 @@ export default function WorkersDashboard() {
     fetchWorkers();
   }, [fetchWorkers]);
 
-  // Filter workers based on search and tab
   const filteredWorkers = useMemo(() => {
     let result = workers;
 
-    // Filter by status
     if (activeFilter === 'active') {
       result = result.filter((w) => w.isActive);
     } else if (activeFilter === 'inactive') {
       result = result.filter((w) => !w.isActive);
     }
 
-    // Filter by search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -57,7 +54,6 @@ export default function WorkersDashboard() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Workers</h1>
@@ -70,10 +66,8 @@ export default function WorkersDashboard() {
         </Button>
       </div>
 
-      {/* Filter Tabs + Search */}
       <div className="bg-card rounded-lg border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between border-b border-gray-200 px-4">
-          {/* Tabs */}
           <div className="flex">
             {filterTabs.map((tab) => (
               <button
@@ -100,7 +94,6 @@ export default function WorkersDashboard() {
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
@@ -113,14 +106,12 @@ export default function WorkersDashboard() {
           </div>
         </div>
 
-        {/* Error State */}
         {error && (
           <div className="p-4 bg-error/10 border-b border-error/20">
             <p className="text-error text-sm font-medium">{error}</p>
           </div>
         )}
 
-        {/* Workers Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -131,15 +122,14 @@ export default function WorkersDashboard() {
                 <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-24">
                   Status
                 </th>
-                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-28">
-                  Balance
+                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-32">
+                  Net Payable
                 </th>
                 <th className="w-10 px-2 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                // Loading skeleton
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
                     <td className="px-4 py-3">
@@ -163,7 +153,6 @@ export default function WorkersDashboard() {
                   </tr>
                 ))
               ) : filteredWorkers.length === 0 ? (
-                // Empty state
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center">
@@ -189,7 +178,6 @@ export default function WorkersDashboard() {
                   </td>
                 </tr>
               ) : (
-                // Worker rows
                 filteredWorkers.map((worker) => (
                   <tr
                     key={worker.id}
@@ -231,14 +219,23 @@ export default function WorkersDashboard() {
                         {worker.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 w-28 text-right">
-                      <span
-                        className={`text-sm font-semibold ${
-                          worker.balance >= 0 ? 'text-success' : 'text-error'
-                        }`}
-                      >
-                        {formatCurrency(worker.balance)}
-                      </span>
+                    <td className="px-4 py-3 w-32 text-right">
+                      <div>
+                        <span
+                          className={`text-sm font-semibold ${
+                            (worker.netPayable ?? 0) >= 0 ? 'text-success' : 'text-error'
+                          }`}
+                        >
+                          {formatCurrency(Math.abs(worker.netPayable ?? 0))}
+                        </span>
+                        <p
+                          className={`text-xs mt-0.5 ${
+                            (worker.netPayable ?? 0) >= 0 ? 'text-success' : 'text-error'
+                          }`}
+                        >
+                          {(worker.netPayable ?? 0) >= 0 ? 'To Pay' : 'Owes'}
+                        </p>
+                      </div>
                     </td>
                     <td className="px-2 py-3 w-10">
                       <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors mx-auto" />
@@ -250,7 +247,6 @@ export default function WorkersDashboard() {
           </table>
         </div>
 
-        {/* Footer with count */}
         {!loading && filteredWorkers.length > 0 && (
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-sm text-text-secondary">
             Showing {filteredWorkers.length} of {workers.length} workers
@@ -258,7 +254,6 @@ export default function WorkersDashboard() {
         )}
       </div>
 
-      {/* Add Worker Modal */}
       <AddWorkerModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>
   );

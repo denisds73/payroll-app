@@ -9,6 +9,7 @@ export interface Worker {
   otRate: number;
   isActive: boolean;
   balance: number;
+  netPayable: number;
   joinedAt: string;
   createdAt: string;
   updatedAt: string;
