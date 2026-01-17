@@ -216,12 +216,23 @@ export default function WorkerDetail() {
                 <Phone className="w-3.5 h-3.5" />
                 {worker.phone || 'N/A'}
               </span>
-              <span className="flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5" />₹{worker.wage}/day
+              <span
+                className="flex items-center gap-1.5 group/wage cursor-default"
+                title="Hover to reveal"
+              >
+                <Wallet className="w-3.5 h-3.5" />
+                <span className="blur-sm group-hover/wage:blur-none transition-all duration-200 select-none">
+                  ₹{worker.wage}/day
+                </span>
               </span>
-              <span className="flex items-center gap-1.5">
+              <span
+                className="flex items-center gap-1.5 group/ot cursor-default"
+                title="Hover to reveal"
+              >
                 <Clock className="w-3.5 h-3.5" />
-                OT: ₹{worker.otRate}/unit
+                <span className="blur-sm group-hover/ot:blur-none transition-all duration-200 select-none">
+                  OT: ₹{worker.otRate}/unit
+                </span>
               </span>
             </div>
           </div>
