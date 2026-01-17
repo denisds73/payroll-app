@@ -30,8 +30,8 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
   const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date();
 
-  const selectedMonth = Number(searchParams.get('month')) || today.getMonth() + 1;
-  const selectedYear = Number(searchParams.get('year')) || today.getFullYear();
+  const selectedMonth = Number(searchParams.get('expMonth')) || today.getMonth() + 1;
+  const selectedYear = Number(searchParams.get('expYear')) || today.getFullYear();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
@@ -71,18 +71,18 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
   }, [workerId, selectedMonth, selectedYear]);
 
   useEffect(() => {
-    const currentMonth = Number(searchParams.get('month'));
-    const currentYear = Number(searchParams.get('year'));
+    const currentMonth = Number(searchParams.get('expMonth'));
+    const currentYear = Number(searchParams.get('expYear'));
 
     if (currentMonth && (currentMonth < 1 || currentMonth > 12)) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('month', String(today.getMonth() + 1));
+      newParams.set('expMonth', String(today.getMonth() + 1));
       setSearchParams(newParams);
     }
 
     if (currentYear && (currentYear < 2000 || currentYear > 2100)) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('year', String(today.getFullYear()));
+      newParams.set('expYear', String(today.getFullYear()));
       setSearchParams(newParams);
     }
   }, [searchParams, setSearchParams, today]);
@@ -265,8 +265,11 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
 
   const handleMonthYearChange = (newMonth: number, newYear: number) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set('month', String(newMonth));
-    newParams.set('year', String(newYear));
+    newParams.set('expMonth', String(newMonth));
+    newParams.set('expYear', String(newYear));
+    // Clean up legacy params
+    newParams.delete('month');
+    newParams.delete('year');
     setSearchParams(newParams);
   };
 
@@ -283,7 +286,6 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
     return days;
   };
 
-
   const lockedDates = useMemo(() => {
     const locked = new Map<string, string[]>();
     const dates = getAllDaysInMonth(selectedMonth, selectedYear);
@@ -293,18 +295,15 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
     dates.forEach((date) => {
       const reasons: string[] = [];
 
-
       if (isDateLocked(workerId, date)) {
         reasons.push('Salary paid for this period');
         console.log('🔒 Date locked (salary):', date);
       }
 
-
       if (isDateInactive(workerId, date)) {
         reasons.push('Worker was inactive on this date');
         console.log('🔒 Date locked (inactive):', date);
       }
-
 
       if (reasons.length > 0) {
         locked.set(date, reasons);
@@ -323,13 +322,11 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
     isDateInactive,
   ]);
 
-
   const lockedPeriods = useMemo(() => {
     const workerData = lockDataByWorker[workerId];
     const statusData = statusDataByWorker[workerId];
 
     const periods = [];
-
 
     if (workerData) {
       periods.push(
@@ -343,7 +340,6 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
           })),
       );
     }
-
 
     if (statusData) {
       periods.push(

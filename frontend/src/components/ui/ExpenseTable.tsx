@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ExpenseRow from './ExpenseRow';
 
 export interface ExpenseData {
@@ -111,56 +111,71 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
   lockedDates,
   lockedPeriods = [],
 }) => {
-  const [candidateMonth, setCandidateMonth] = useState(month);
-  const [candidateYear, setCandidateYear] = useState(year);
-
-  React.useEffect(() => {
-    setCandidateMonth(month);
-    setCandidateYear(year);
-  }, [month, year]);
-
   const dates = getAllDaysInMonth(month, year);
+  const today = new Date();
+  const isNotCurrentPeriod = month !== today.getMonth() + 1 || year !== today.getFullYear();
 
   return (
     <div className="rounded-xl bg-card shadow-md w-full">
       <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
         <div className="flex gap-x-15 font-semibold text-text-primary text-base w-full items-center">
           <div className="w-8 shrink-0" />
-          <div className="w-28 shrink-0">Date</div>
-          <div className="w-48 shrink-0 ml-8">Expense Type</div>
+          <div className="w-36 shrink-0 ml-4">Date</div>
+          <div className="w-48 shrink-0 ml-2">Expense Type</div>
           <div className="w-32 shrink-0">Amount</div>
         </div>
-        <div className="flex items-center gap-2 ml-6 shrink-0">
-          <select
-            className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
-            value={candidateMonth}
-            onChange={(e) => setCandidateMonth(Number(e.target.value))}
-            aria-label="Select month"
-          >
-            {Array.from({ length: 12 }, (_, idx) => {
-              const monthValue = idx + 1;
-              return (
-                <option key={monthValue} value={monthValue}>
-                  {new Date(0, idx).toLocaleString('default', { month: 'short' })}
-                </option>
-              );
-            })}
-          </select>
-          <input
-            type="number"
-            className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-20 focus:ring-2 focus:ring-primary transition-all outline-none"
-            value={candidateYear}
-            onChange={(e) => setCandidateYear(Number(e.target.value))}
-            aria-label="Select year"
-          />
-          <button
-            type="button"
-            className="ml-2 px-4 py-1 rounded bg-primary hover:bg-primary-hover text-card font-semibold transition-all shadow-sm active:scale-95 active:shadow-none"
-            onClick={() => onMonthYearChange(candidateMonth, candidateYear)}
-            aria-label="Apply month/year filter"
-          >
-            Apply
-          </button>
+        <div className="relative">
+          <div className="flex items-center gap-2 ml-6 shrink-0">
+            <select
+              className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
+              value={month}
+              onChange={(e) => onMonthYearChange(Number(e.target.value), year)}
+              aria-label="Select month"
+            >
+              {Array.from({ length: 12 }, (_, idx) => {
+                const monthValue = idx + 1;
+                return (
+                  <option key={monthValue} value={monthValue}>
+                    {new Date(0, idx).toLocaleString('default', { month: 'short' })}
+                  </option>
+                );
+              })}
+            </select>
+            <select
+              className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
+              value={year}
+              onChange={(e) => onMonthYearChange(month, Number(e.target.value))}
+              aria-label="Select year"
+            >
+              {Array.from({ length: 12 }, (_, idx) => {
+                const currentYear = new Date().getFullYear();
+                const yearValue = currentYear - 5 + idx;
+                return (
+                  <option key={yearValue} value={yearValue}>
+                    {yearValue}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          {isNotCurrentPeriod && (
+            <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-amber-100 border border-amber-400 rounded-md shadow-md text-amber-800 text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-3.5 w-3.5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Not viewing current month
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,9 +1,9 @@
 import { Lock } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import AttendanceStatusGroup from './AttendanceStatusGroup';
 import Button from './Button';
 import OTInputStepper from './OTInputStepper';
-import RadioGroup, { type RadioOption } from './RadioGroup';
 import Textarea from './Textarea';
 import Tooltip from './Tooltip';
 
@@ -21,18 +21,13 @@ interface AttendanceRowProps {
   lockReasons?: string[];
 }
 
-const attendanceOptions: RadioOption[] = [
-  { value: 'present', label: 'Present' },
-  { value: 'absent', label: 'Absent' },
-  { value: 'half', label: 'Half Day' },
-];
-
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear());
-  return `${day}-${month}-${year}`;
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+  return `${day}-${month}-${year} (${weekday})`;
 };
 
 const AttendanceRow: React.FC<AttendanceRowProps> = ({
@@ -179,16 +174,13 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
         isLocked ? 'opacity-60 cursor-not-allowed' : ''
       }`}
     >
-      <div className="w-28 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
+      <div className="w-36 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
 
-      <RadioGroup
+      <AttendanceStatusGroup
         className="shrink-0"
-        name={`attendance-${date}`}
-        options={attendanceOptions}
         value={formData.attendanceStatus}
         onChange={handleAttendanceChange}
         disabled={!isEditing || isLocked}
-        showLabels={false}
       />
 
       <OTInputStepper

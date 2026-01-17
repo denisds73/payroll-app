@@ -1,18 +1,17 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: Modal requires click handlers on backdrop */
-import { AlertCircle, Calendar, CheckCircle, X, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, X, XCircle } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import './DatePickerStyles.css';
 import { workersAPI } from '../../services/api';
 import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
 import Button from '../ui/Button';
+import { DatePicker } from '../ui/DatePicker';
 
 interface WorkerStatusModalProps {
   workerId: number;
   workerName: string;
-  mode: 'disable' | 'activate';
+  mode: 'disable' | 'activate' | 'cancel-scheduled';
+  inactiveFrom?: string | null;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -22,6 +21,7 @@ export default function WorkerStatusModal({
   workerId,
   workerName,
   mode,
+  inactiveFrom,
   isOpen,
   onClose,
   onSuccess,
@@ -58,8 +58,12 @@ export default function WorkerStatusModal({
   }, [isOpen, mode, fetchBlockedDates]);
 
   useEffect(() => {
-    setEffectiveFrom(today);
-  }, [today]);
+    if (mode === 'activate' && inactiveFrom) {
+      setEffectiveFrom(inactiveFrom.split('T')[0]);
+    } else {
+      setEffectiveFrom(today);
+    }
+  }, [today, mode, inactiveFrom]);
 
   useEffect(() => {
     if (isOpen) {
@@ -133,14 +137,8 @@ export default function WorkerStatusModal({
     }
   };
 
-  const blockedDateObjects = blockedDates.map((dateStr) => new Date(`${dateStr}T00:00:00`));
-
-  const handleDateChange = (date: Date | null) => {
-    if (date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
+  const handleDateChange = (dateStr: string | null) => {
+    if (dateStr) {
       setEffectiveFrom(dateStr);
       setError(null);
     }
@@ -149,12 +147,39 @@ export default function WorkerStatusModal({
   if (!isOpen) return null;
 
   const isDisableMode = mode === 'disable';
-  const title = isDisableMode ? 'Disable Worker' : 'Activate Worker';
-  const Icon = isDisableMode ? XCircle : CheckCircle;
-  const iconColor = isDisableMode ? 'text-error' : 'text-success';
-  const buttonVariant = isDisableMode ? 'danger' : 'primary';
-  const buttonText = isDisableMode ? 'Disable Worker' : 'Activate Worker';
-  const loadingText = isDisableMode ? 'Disabling...' : 'Activating...';
+  const isCancelScheduledMode = mode === 'cancel-scheduled';
+  const isActivateMode = mode === 'activate';
+
+  // Determine modal appearance based on mode
+  let title: string;
+  let Icon: typeof XCircle;
+  let iconColor: string;
+  let buttonVariant: 'danger' | 'primary' | 'secondary';
+  let buttonText: string;
+  let loadingText: string;
+
+  if (isDisableMode) {
+    title = 'Disable Worker';
+    Icon = XCircle;
+    iconColor = 'text-error';
+    buttonVariant = 'danger';
+    buttonText = 'Disable Worker';
+    loadingText = 'Disabling...';
+  } else if (isCancelScheduledMode) {
+    title = 'Cancel Scheduled Inactivation';
+    Icon = CheckCircle;
+    iconColor = 'text-warning';
+    buttonVariant = 'primary';
+    buttonText = 'Cancel Inactivation';
+    loadingText = 'Cancelling...';
+  } else {
+    title = 'Activate Worker';
+    Icon = CheckCircle;
+    iconColor = 'text-success';
+    buttonVariant = 'primary';
+    buttonText = 'Activate Worker';
+    loadingText = 'Activating...';
+  }
 
   return (
     <div
@@ -206,6 +231,30 @@ export default function WorkerStatusModal({
                 </ul>
               </div>
             </div>
+          ) : isCancelScheduledMode ? (
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+              <div className="text-sm text-text-primary">
+                <p className="font-medium mb-1">This action will:</p>
+                <ul className="list-disc list-inside space-y-1 text-text-secondary">
+                  <li>Cancel the scheduled inactivation</li>
+                  <li>Keep the worker as active</li>
+                  <li>Allow creating attendance/expenses for all dates</li>
+                </ul>
+                {inactiveFrom && (
+                  <p className="mt-2 text-text-secondary">
+                    Scheduled inactivation date:{' '}
+                    <span className="font-medium text-text-primary">
+                      {new Date(inactiveFrom).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
           ) : (
             <div className="bg-success/10 border border-success/20 rounded-lg p-4 flex gap-3">
               <CheckCircle className="w-5 h-5 text-success shrink-0 mt-0.5" />
@@ -220,48 +269,39 @@ export default function WorkerStatusModal({
             </div>
           )}
 
-          <div>
-            <label htmlFor={dateId} className="block text-sm font-medium text-text-primary mb-2">
-              Effective From Date <span className="text-error">*</span>
-            </label>
+          {/* Only show date picker for disable and activate modes, not for cancel-scheduled */}
+          {!isCancelScheduledMode && (
+            <div>
+              <label htmlFor={dateId} className="block text-sm font-medium text-text-primary mb-2">
+                Effective From Date <span className="text-error">*</span>
+              </label>
 
-            {loadingDates && isDisableMode && (
-              <div className="mb-2 text-xs text-text-secondary flex items-center gap-2">
-                <div className="inline-block animate-spin rounded-full h-3 w-3 border-b border-primary" />
-                Loading available dates...
-              </div>
-            )}
-
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary z-10 pointer-events-none" />
               <DatePicker
-                selected={new Date(`${effectiveFrom}T00:00:00`)}
+                value={effectiveFrom}
                 onChange={handleDateChange}
-                excludeDates={isDisableMode ? blockedDateObjects : []}
-                dateFormat="yyyy-MM-dd"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                excludeDates={isDisableMode ? blockedDates : []}
+                minDate={isActivateMode && inactiveFrom ? inactiveFrom.split('T')[0] : undefined}
                 disabled={loading || loadingDates}
-                placeholderText="Select date"
-                showPopperArrow={false}
-                popperPlacement="bottom-start"
-                fixedHeight
+                loading={loadingDates && isDisableMode}
+                placeholder="Select date"
+                id={dateId}
               />
-            </div>
 
-            <div className="mt-2 space-y-1">
-              <p className="text-xs text-text-secondary">
-                {isDisableMode
-                  ? 'Worker will be inactive from this date onwards.'
-                  : 'Worker will be active from this date onwards.'}
-              </p>
-              {isDisableMode && blockedDates.length > 0 && (
-                <p className="text-xs text-warning flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Dates with attendance, expenses, or paid salaries are grayed out
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-text-secondary">
+                  {isDisableMode
+                    ? 'Worker will be inactive from this date onwards.'
+                    : 'Worker will be active from this date onwards.'}
                 </p>
-              )}
+                {isDisableMode && blockedDates.length > 0 && (
+                  <p className="text-xs text-warning flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Dates with attendance, expenses, or paid salaries are grayed out
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {error && (
             <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm">

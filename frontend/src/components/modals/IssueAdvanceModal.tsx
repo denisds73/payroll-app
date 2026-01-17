@@ -4,6 +4,7 @@ import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
 import { advancesAPI } from '../../services/api';
 import Button from '../ui/Button';
+import { DatePicker } from '../ui/DatePicker';
 
 interface IssueAdvanceModalProps {
   workerId: number;
@@ -167,15 +168,13 @@ export default function IssueAdvanceModal({
             <label htmlFor={dateId} className="block text-sm font-medium text-text-primary mb-2">
               Date <span className="text-error">*</span>
             </label>
-            <input
-              type="date"
+            <DatePicker
               id={dateId}
               value={formData.date}
-              max={today}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-              required
+              onChange={(date) => setFormData({ ...formData, date: date || today })}
+              maxDate={today}
               disabled={loading}
+              placeholder="Select date"
             />
           </div>
 

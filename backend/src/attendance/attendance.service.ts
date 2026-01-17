@@ -23,23 +23,26 @@ export class AttendanceService {
   async create(dto: CreateAttendanceDto) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: dto.workerId },
-      include: {
-        wageHistory: {
-          orderBy: { effectiveFrom: 'desc' },
-          take: 1,
-        },
-      },
     });
 
     if (!worker) {
       throw new NotFoundException('Worker not found');
     }
 
+    const date = this.dateService.parseDate(dto.date);
+
+    // Check if worker is inactive
     if (!worker.isActive) {
       throw new BadRequestException('Cannot mark attendance for inactive worker');
     }
 
-    const date = this.dateService.parseDate(dto.date);
+    // Check if worker has scheduled inactivation and the attendance date falls on or after that date
+    if (worker.inactiveFrom && date >= worker.inactiveFrom) {
+      throw new BadRequestException(
+        `Cannot mark attendance on or after worker's scheduled inactivation date (${worker.inactiveFrom.toISOString().split('T')[0]})`,
+      );
+    }
+
     if (date > this.dateService.startOfToday()) {
       throw new BadRequestException('Cannot mark attendance for future dates');
     }
@@ -59,7 +62,18 @@ export class AttendanceService {
       throw new ConflictException('Attendance for this date already exists');
     }
 
-    const latestWage = worker.wageHistory[0] || null;
+    // Get the wage history entry that was effective on the attendance date
+    const wageAtDate = await this.prisma.wageHistory.findFirst({
+      where: {
+        workerId: dto.workerId,
+        effectiveFrom: {
+          lte: date,
+        },
+      },
+      orderBy: {
+        effectiveFrom: 'desc',
+      },
+    });
 
     return this.prisma.attendance.create({
       data: {
@@ -68,9 +82,9 @@ export class AttendanceService {
         status: dto.status,
         otUnits: dto.otUnits,
         note: dto.note,
-        // snapshot wage & ot rate
-        wageAtTime: latestWage ? latestWage.wage : 0,
-        otRateAtTime: latestWage ? latestWage.otRate : 0,
+        // snapshot wage & ot rate from the wage effective on this date
+        wageAtTime: wageAtDate ? wageAtDate.wage : worker.wage,
+        otRateAtTime: wageAtDate ? wageAtDate.otRate : worker.otRate,
       },
       include: {
         worker: true,
