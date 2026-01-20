@@ -27,6 +27,10 @@ interface HistoryItem {
   typeName?: string;
   issuedAt?: string;
   createdAt: string;
+  // 🆕 Partial payment fields
+  status?: 'PENDING' | 'PARTIAL' | 'PAID';
+  netPay?: number;
+  totalPaid?: number;
 }
 
 interface FilterState {
@@ -107,6 +111,10 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
         issuedAt: sal.issuedAt,
         createdAt: sal.createdAt,
+        // 🆕 Add status and payment fields
+        status: sal.status,
+        netPay: sal.netPay,
+        totalPaid: sal.totalPaid,
       }));
 
       const expensesResponse = await expensesAPI.getByWorker(workerId);
@@ -495,14 +503,30 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                         </div>
 
                         {item.type === 'salary' && item.issuedAt ? (
-                          <p className="text-xs text-success flex items-center gap-1">
-                            <span className="font-medium">Processed on:</span>
-                            <span>{formatDate(item.issuedAt)}</span>
+                          <div className="space-y-1">
+                            <p className="text-xs text-success flex items-center gap-1">
+                              <span className="font-medium">Processed on:</span>
+                              <span>{formatDate(item.issuedAt)}</span>
 
-                            {item.issuedAt.split('T')[0] !== item.date.split('T')[0] && (
-                              <span className="text-warning ml-1">(Retroactive)</span>
+                              {item.issuedAt.split('T')[0] !== item.date.split('T')[0] && (
+                                <span className="text-warning ml-1">(Retroactive)</span>
+                              )}
+                            </p>
+
+                            {/* 🆕 SHOW PARTIAL PAYMENT STATUS */}
+                            {item.status === 'PARTIAL' && item.netPay && item.totalPaid !== undefined && (
+                              <p className="text-xs flex items-center gap-1">
+                                <span className="font-medium text-warning">Partial Payment:</span>
+                                <span className="text-text-secondary">
+                                  {formatCurrency(item.totalPaid)} of {formatCurrency(item.netPay)}
+                                </span>
+                                <span className="text-text-disabled">•</span>
+                                <span className="text-warning">
+                                  Remaining: {formatCurrency(item.netPay - item.totalPaid)}
+                                </span>
+                              </p>
                             )}
-                          </p>
+                          </div>
                         ) : (
                           item.type !== 'salary' && (
                             <p className="text-sm text-text-secondary">{item.description}</p>
@@ -525,6 +549,11 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
                           {formatCurrency(item.amount)}
                         </p>
+                        
+                        {/* 🆕 SHOW PARTIAL STATUS BADGE */}
+                        {item.type === 'salary' && item.status === 'PARTIAL' && (
+                          <span className="text-xs text-warning font-medium">Partial</span>
+                        )}
                       </div>
 
                       {item.type === 'salary' && (

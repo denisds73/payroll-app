@@ -27,13 +27,17 @@ export class SalariesService {
     const paidSalaries = await this.prisma.salary.findMany({
       where: {
         workerId,
-        status: SalaryStatus.PAID, 
+        status: {
+          in: [SalaryStatus.PAID, SalaryStatus.PARTIAL],
+        },
       },
       select: {
         id: true,
         cycleStart: true,
         cycleEnd: true,
         status: true,
+        totalPaid: true,
+        netPay: true,
       },
       orderBy: {
         cycleStart: 'desc', 
@@ -45,7 +49,10 @@ export class SalariesService {
       id: salary.id,
       startDate: salary.cycleStart.toISOString().split('T')[0],
       endDate: salary.cycleEnd.toISOString().split('T')[0], 
-      isPaid: salary.status === SalaryStatus.PAID,
+      isPaid: true,
+      isPartial: salary.status === SalaryStatus.PARTIAL,
+      paidAmount: salary.totalPaid,
+      remainingAmount: salary.netPay - salary.totalPaid,
     }));
 
     return {
@@ -153,6 +160,7 @@ export class SalariesService {
 
     const totalAdvance = advanceResult._sum.amount ?? 0;
     const totalExpense = expenseResult._sum.amount ?? 0;
+    const unpaidBalance = await this.getUnpaidBalance(workerId);
     const netPay = grossPay - totalAdvance - totalExpense;
 
     return {
@@ -165,6 +173,7 @@ export class SalariesService {
       grossPay,
       totalAdvance,
       totalExpense,
+      unpaidBalance,
       netPay,
     };
   }
@@ -209,6 +218,7 @@ export class SalariesService {
           netPay: salaryNet,
           totalPaid: 0,
           status: SalaryStatus.PENDING,
+          unpaidBalance: breakdown.unpaidBalance || 0,
         },
       });
 
@@ -267,6 +277,26 @@ export class SalariesService {
       },
       orderBy: [{ status: 'asc' }, { cycleEnd: 'desc' }],
     });
+  }
+
+  private async getUnpaidBalance(workerId: number): Promise<number> {
+    const partialSalaries = await this.prisma.salary.findMany({
+      where: {
+        workerId,
+        status: SalaryStatus.PARTIAL,
+      },
+      select: {
+        netPay: true,
+        totalPaid: true,
+      },
+    });
+
+    const unpaidBalance = partialSalaries.reduce(
+      (sum, salary) => sum + (salary.netPay - salary.totalPaid),
+      0,
+    );
+
+    return unpaidBalance;
   }
 
   async issueSalary(salaryId: number, amount: number, paymentProof?: string) {
