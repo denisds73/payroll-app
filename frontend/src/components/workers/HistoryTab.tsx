@@ -508,16 +508,6 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                             <p className="text-sm text-text-secondary">{item.description}</p>
                           )
                         )}
-
-                        {item.type === 'salary' && (
-                          <div className="mt-3 pt-3 border-t border-gray-200">
-                            <SalaryPdfExportButton
-                              salaryId={item.id}
-                              workerName={workerName}
-                              variant="ghost"
-                            />
-                          </div>
-                        )}
                       </div>
                     </div>
 
@@ -536,6 +526,14 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           {formatCurrency(item.amount)}
                         </p>
                       </div>
+
+                      {item.type === 'salary' && (
+                        <SalaryPdfExportButton
+                          salaryId={item.id}
+                          workerName={workerName}
+                          variant="ghost"
+                        />
+                      )}
 
                       {(item.type === 'advance' || item.type === 'expense') && (
                         <>

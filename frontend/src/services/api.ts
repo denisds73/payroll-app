@@ -126,6 +126,8 @@ export const expenseTypesAPI = {
 export const workersAPI = {
   getAll: () => api.get('/workers'),
 
+  getById: (id: number) => api.get(`/workers/${id}`),
+
   create: (data: {
     name: string;
     phone?: string;

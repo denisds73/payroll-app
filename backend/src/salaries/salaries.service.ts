@@ -359,4 +359,29 @@ export class SalariesService {
       filteredAttendanceDates: filteredAttendance.map((a) => a.date.toISOString()),
     };
   }
+
+  async findOne(id: number) {
+  const salary = await this.prisma.salary.findUnique({
+    where: { id },
+    include: {
+      worker: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          wage: true,
+          otRate: true,
+          joinedAt: true,
+          isActive: true,
+        },
+      },
+    },
+  });
+
+  if (!salary) {
+    throw new NotFoundException(`Salary with ID ${id} not found`);
+  }
+
+  return salary;
+}
 }
