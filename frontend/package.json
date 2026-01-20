@@ -16,6 +16,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.16",
     "date-fns": "^4.1.0",
+    "pdfmake": "^0.3.3",
     "react": "^19.1.1",
     "react-day-picker": "^9.13.0",
     "react-dom": "^19.1.1",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.6.0",
+    "@types/pdfmake": "^0.2.12",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.4",

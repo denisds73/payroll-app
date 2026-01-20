@@ -183,6 +183,11 @@ export const salariesAPI = {
     },
   ) => api.get(`/salaries/worker/${workerId}`, { params }),
 
+  getById: (salaryId: number) => {
+    console.log('🔍 salariesAPI.getById called:', { salaryId });
+    return api.get(`/salaries/${salaryId}`);
+  },
+
   getPending: () => api.get('/salaries/pending'),
 
   issue: (salaryId: number, data: { amount: number; paymentProof?: string }) =>
