@@ -248,53 +248,113 @@ function buildSalaryPeriod(data: SalaryReportData): any {
   ];
 }
 
-function buildAttendanceSummary(data: SalaryReportData): any {
-  const { summary } = data.attendance;
+function buildAttendanceSummary(data: SalaryReportData): Content {
+  const { attendance } = data;
+  const { summary } = attendance;
 
-  return [
-    {
-      text: 'ATTENDANCE SUMMARY',
-      style: 'sectionHeader',
-    },
-    {
-      columns: [
-        {
-          width: '25%',
-          stack: [
-            { text: 'Total Days', style: 'summaryLabel' },
-            { text: summary.totalDays.toFixed(1), style: 'summaryValue' },
-          ],
-          alignment: 'center',
-        },
-        {
-          width: '25%',
-          stack: [
-            { text: 'OT Units', style: 'summaryLabel' },
-            { text: summary.totalOtUnits.toFixed(1), style: 'summaryValue' },
-          ],
-          alignment: 'center',
-        },
-        {
-          width: '25%',
-          stack: [
-            { text: 'Present', style: 'summaryLabel' },
-            { text: summary.presentDays.toString(), style: 'summaryValue' },
-          ],
-          alignment: 'center',
-        },
-        {
-          width: '25%',
-          stack: [
-            { text: 'Half Day', style: 'summaryLabel' },
-            { text: summary.halfDays.toString(), style: 'summaryValue' },
-          ],
-          alignment: 'center',
-        },
-      ],
-      margin: [0, 0, 0, 10],
-    },
-  ];
+  return {
+    stack: [
+      // Header
+      {
+        text: 'Attendance Summary',
+        style: 'sectionHeader',
+        margin: [0, 15, 0, 10],
+      },
+
+      // Two-column layout
+      {
+        columns: [
+          // Left Column - Days
+          {
+            width: '48%',
+            stack: [
+              { text: 'Days Breakdown', style: 'subHeader', margin: [0, 0, 0, 5] },
+              {
+                table: {
+                  widths: ['*', 'auto'],
+                  body: [
+                    [
+                      { text: 'Present Days', style: 'tableCell' },
+                      { text: summary.presentDays.toString(), style: 'tableCell', alignment: 'right' },
+                    ],
+                    [
+                      { text: 'Half Days', style: 'tableCell' },
+                      { text: summary.halfDays.toString(), style: 'tableCell', alignment: 'right' },
+                    ],
+                    [
+                      { text: 'Absent Days', style: 'tableCell' },
+                      { text: summary.absentDays.toString(), style: 'tableCell', alignment: 'right' },
+                    ],
+                    [
+                      { text: 'Total Days Worked', style: 'tableCell', bold: true },
+                      { text: summary.totalDays.toFixed(1), style: 'tableCell', alignment: 'right', bold: true },
+                    ],
+                    [
+                      { text: 'Total OT Units', style: 'tableCell', bold: true },
+                      { text: summary.totalOtUnits.toFixed(1), style: 'tableCell', alignment: 'right', bold: true },
+                    ],
+                  ],
+                },
+                layout: 'lightHorizontalLines',
+              },
+            ],
+          },
+
+          // Gap
+          { width: '4%', text: '' },
+
+          // Right Column - Amounts
+          {
+            width: '48%',
+            stack: [
+              { text: 'Payment Breakdown', style: 'subHeader', margin: [0, 0, 0, 5] },
+              {
+                table: {
+                  widths: ['*', 'auto'],
+                  body: [
+                    [
+                      { text: 'Base Wage', style: 'tableCell' },
+                      { 
+                        text: formatCurrency(summary.totalBasePay), 
+                        style: 'tableCell', 
+                        alignment: 'right',
+                        bold: true,
+                        color: '#10B981', // Success color
+                      },
+                    ],
+                    [
+                      { text: 'Overtime Pay', style: 'tableCell' },
+                      { 
+                        text: formatCurrency(summary.totalOtPay), 
+                        style: 'tableCell', 
+                        alignment: 'right',
+                        bold: true,
+                        color: '#10B981', // Success color
+                      },
+                    ],
+                    [
+                      { text: 'Gross Pay', style: 'tableCell', bold: true },
+                      { 
+                        text: formatCurrency(summary.totalBasePay + summary.totalOtPay), 
+                        style: 'tableCell', 
+                        alignment: 'right',
+                        bold: true,
+                        fontSize: 11,
+                        color: '#18181b', // Primary color
+                      },
+                    ],
+                  ],
+                },
+                layout: 'lightHorizontalLines',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
 }
+
 
 function buildAttendanceTable(data: SalaryReportData): any {
   const { records } = data.attendance;

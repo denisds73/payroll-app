@@ -1,4 +1,3 @@
-
 import {
   attendanceAPI,
   advancesAPI,
@@ -51,15 +50,31 @@ export async function fetchSalaryReportData(
         advancesAPI.getByWorker(salary.workerId, { startDate, endDate }),
       ]);
 
-    console.log('✅ Records fetched:', {
-      attendance: attendanceResponse.data.length,
-      expenses: expensesResponse.data.length,
-      advances: advancesResponse.data.length,
-    });
+    const allAttendanceRecords: AttendanceRecord[] = attendanceResponse.data;
+    const allExpenseRecords: ExpenseRecord[] = expensesResponse.data;
+    const allAdvanceRecords: AdvanceRecord[] = advancesResponse.data;
 
-    const attendanceRecords: AttendanceRecord[] = attendanceResponse.data;
-    const expenseRecords: ExpenseRecord[] = expensesResponse.data;
-    const advanceRecords: AdvanceRecord[] = advancesResponse.data;
+    const attendanceRecords = filterRecordsByDateRange(
+      allAttendanceRecords,
+      startDate,
+      endDate,
+    );
+    const expenseRecords = filterRecordsByDateRange(
+      allExpenseRecords,
+      startDate,
+      endDate,
+    );
+    const advanceRecords = filterRecordsByDateRange(
+      allAdvanceRecords,
+      startDate,
+      endDate,
+    );
+
+    console.log('✅ Records filtered for period:', {
+      attendance: attendanceRecords.length,
+      expenses: expenseRecords.length,
+      advances: advanceRecords.length,
+    });
 
     const attendanceSummary = calculateAttendanceSummary(attendanceRecords);
     const expenseSummary = calculateExpenseSummary(expenseRecords);
@@ -98,6 +113,20 @@ export async function fetchSalaryReportData(
 
     throw new Error(`Failed to fetch salary report data: ${errorMessage}`);
   }
+}
+
+function filterRecordsByDateRange<T extends { date: string }>(
+  records: T[],
+  startDate: string,
+  endDate: string,
+): T[] {
+  const start = new Date(startDate).setHours(0, 0, 0, 0);
+  const end = new Date(endDate).setHours(23, 59, 59, 999);
+
+  return records.filter((record) => {
+    const recordDate = new Date(record.date).getTime();
+    return recordDate >= start && recordDate <= end;
+  });
 }
 
 function calculateAttendanceSummary(
