@@ -8,6 +8,7 @@ import EditAdvanceModal from '../modals/EditAdvanceModal';
 import EditExpenseModal from '../modals/EditExpenseModal';
 import { DateRangePicker } from '../ui/DatePicker';
 import Tooltip from '../ui/Tooltip';
+import SalaryPdfExportButton from '../export/SalaryPdfExportButton';
 
 interface HistoryTabProps {
   workerId: number;
@@ -121,10 +122,8 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
       }));
 
       const combined = [...advances, ...salaries, ...expenses].sort((a, b) => {
-        // Primary sort by date (descending - newest first)
         const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
         if (dateCompare !== 0) return dateCompare;
-        // Secondary sort by createdAt (descending - most recently recorded first)
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
 
@@ -527,6 +526,14 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           {formatCurrency(item.amount)}
                         </p>
                       </div>
+
+                      {item.type === 'salary' && (
+                        <SalaryPdfExportButton
+                          salaryId={item.id}
+                          workerName={workerName}
+                          variant="ghost"
+                        />
+                      )}
 
                       {(item.type === 'advance' || item.type === 'expense') && (
                         <>

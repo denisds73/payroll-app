@@ -8,6 +8,7 @@ import { salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
+import SalaryPdfExportButton from '../export/SalaryPdfExportButton';
 
 interface PaySalaryModalProps {
   workerId: number;
@@ -49,7 +50,7 @@ export default function PaySalaryModal({
   const paymentProofId = useId();
   const modalTitleId = useId();
 
-  // ✅ NEW: Get optimistic update function from Zustand store
+
   const { markSalaryAsPaid } = useSalaryLockStore();
 
   const [formData, setFormData] = useState<SalaryFormData>({
@@ -63,6 +64,7 @@ export default function PaySalaryModal({
   const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
+  const [pdfSalaryId, setPdfSalaryId] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -165,7 +167,8 @@ export default function PaySalaryModal({
 
       markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
 
-      // Now when modal closes, AttendanceTab will show locks immediately! ✨
+      console.log('📄 Triggering PDF download for salary:', salary.id);
+      setPdfSalaryId(salary.id);
 
       onSuccess();
       handleClose();
@@ -523,6 +526,21 @@ export default function PaySalaryModal({
           ) : null}
         </form>
       </div>
+      {pdfSalaryId && (
+      <SalaryPdfExportButton
+        salaryId={pdfSalaryId}
+        workerName={workerName}
+        variant="auto"
+        onSuccess={() => {
+          console.log('PDF downloaded successfully');
+          setPdfSalaryId(null);
+        }}
+        onError={(error) => {
+          console.error('PDF download failed:', error);
+          setPdfSalaryId(null);
+        }}
+      />
+    )}
     </div>
   );
 }

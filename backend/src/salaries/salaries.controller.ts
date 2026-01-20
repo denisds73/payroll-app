@@ -1,3 +1,7 @@
+  @Get(':id')
+  async getSalaryById(@Param('id', ParseIntPipe) id: number) {
+    return this.salariesService.findOne(id);
+  }
 import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { FilterSalariesDto } from './dto/filter-salaries.dto';
 import { IssueSalaryDto } from './dto/issue-salary.dto';
@@ -50,6 +54,10 @@ export class SalariesController {
     return this.salariesService.getWorkerSalaries(workerId, filter);
   }
 
+  @Get(':id')
+  async getSalary(@Param('id', ParseIntPipe) id: number) {
+    return this.salariesService.findOne(id);
+  }
 
   @Post(':workerId')
   async createSalary(

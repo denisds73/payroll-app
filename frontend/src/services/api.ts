@@ -126,6 +126,8 @@ export const expenseTypesAPI = {
 export const workersAPI = {
   getAll: () => api.get('/workers'),
 
+  getById: (id: number) => api.get(`/workers/${id}`),
+
   create: (data: {
     name: string;
     phone?: string;
@@ -182,6 +184,11 @@ export const salariesAPI = {
       status?: 'PENDING' | 'PARTIAL' | 'PAID';
     },
   ) => api.get(`/salaries/worker/${workerId}`, { params }),
+
+  getById: (salaryId: number) => {
+    console.log('🔍 salariesAPI.getById called:', { salaryId });
+    return api.get(`/salaries/${salaryId}`);
+  },
 
   getPending: () => api.get('/salaries/pending'),
 
