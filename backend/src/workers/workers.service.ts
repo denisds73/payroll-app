@@ -14,10 +14,90 @@ export class WorkersService {
     private dateService: DateService,
   ) {}
 
-  findAll() {
-    return this.prisma.worker.findMany({
+  async findAll() {
+    const workers = await this.prisma.worker.findMany({
       orderBy: { createdAt: 'desc' },
     });
+
+    const workersWithNetPayable = await Promise.all(
+      workers.map(async (worker) => {
+        const netPayable = await this.calculateNetPayable(worker.id, worker.joinedAt);
+        return {
+          ...worker,
+          netPayable,
+        };
+      }),
+    );
+
+    return workersWithNetPayable;
+  }
+
+  private async calculateNetPayable(workerId: number, joinedAt: Date): Promise<number> {
+    const lastSalary = await this.prisma.salary.findFirst({
+      where: { workerId },
+      orderBy: { cycleEnd: 'desc' },
+    });
+
+    const cycleStart = lastSalary ? new Date(lastSalary.cycleEnd.getTime() + 86400000) : joinedAt;
+
+    const cycleEnd = this.dateService.startOfToday();
+
+    const attendanceRecords = await this.prisma.attendance.findMany({
+      where: {
+        workerId,
+        date: { gte: cycleStart, lte: cycleEnd },
+      },
+      select: {
+        status: true,
+        otUnits: true,
+        wageAtTime: true,
+        otRateAtTime: true,
+      },
+    });
+
+    let basePay = 0;
+    let otPay = 0;
+
+    for (const record of attendanceRecords) {
+      if (record.status === 'PRESENT') {
+        basePay += record.wageAtTime;
+      } else if (record.status === 'HALF') {
+        basePay += record.wageAtTime * 0.5;
+      }
+      const otUnits = record.otUnits ?? 0;
+      otPay += otUnits * record.otRateAtTime;
+    }
+
+    const grossPay = basePay + otPay;
+
+    const advanceResult = await this.prisma.advance.aggregate({
+      _sum: { amount: true },
+      where: {
+        workerId,
+        OR: [
+          { date: { gte: cycleStart, lte: cycleEnd } },
+          {
+            AND: [
+              { date: lastSalary ? lastSalary.cycleEnd : cycleStart },
+              { reason: { startsWith: 'Auto advance: salary shortfall' } },
+            ],
+          },
+        ],
+      },
+    });
+
+    const expenseResult = await this.prisma.expense.aggregate({
+      _sum: { amount: true },
+      where: {
+        workerId,
+        date: { gte: cycleStart, lte: cycleEnd },
+      },
+    });
+
+    const totalAdvance = advanceResult._sum.amount ?? 0;
+    const totalExpense = expenseResult._sum.amount ?? 0;
+
+    return grossPay - totalAdvance - totalExpense;
   }
 
   async findOne(id: number) {
@@ -310,7 +390,6 @@ export class WorkersService {
     const effectiveDate = new Date(`${dto.effectiveFrom}T00:00:00Z`);
     const today = this.dateService.startOfToday();
 
-    // Determine if this is a future scheduled inactivation or immediate
     const isFutureDate = effectiveDate > today;
 
     if (effectiveDate < worker.joinedAt) {
@@ -346,8 +425,6 @@ export class WorkersService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Update worker status
-      // Only set isActive to false if the date is today or in the past
       const updatedWorker = await tx.worker.update({
         where: { id },
         data: {
@@ -356,7 +433,6 @@ export class WorkersService {
         },
       });
 
-      // Create status history record
       await tx.workerStatusHistory.create({
         data: {
           workerId: id,
@@ -378,7 +454,6 @@ export class WorkersService {
       throw new NotFoundException(`Worker with ID ${id} not found`);
     }
 
-    // Handle cancelling scheduled inactivation (worker is still active but has inactiveFrom set)
     const isCancellingScheduled = worker.isActive && worker.inactiveFrom !== null;
 
     if (worker.isActive && !worker.inactiveFrom) {
@@ -387,7 +462,6 @@ export class WorkersService {
 
     const effectiveDate = new Date(`${dto.effectiveFrom}T00:00:00Z`);
 
-    // Only validate effectiveDate >= inactiveFrom when reactivating an inactive worker
     if (!isCancellingScheduled && worker.inactiveFrom && effectiveDate < worker.inactiveFrom) {
       throw new BadRequestException(
         `Activation date cannot be before the worker was disabled (${worker.inactiveFrom.toISOString().split('T')[0]})`,
@@ -395,7 +469,6 @@ export class WorkersService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Update worker status
       const updatedWorker = await tx.worker.update({
         where: { id },
         data: {
@@ -404,7 +477,6 @@ export class WorkersService {
         },
       });
 
-      // Create status history record
       await tx.workerStatusHistory.create({
         data: {
           workerId: id,

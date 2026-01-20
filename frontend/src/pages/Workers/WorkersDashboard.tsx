@@ -1,13 +1,4 @@
-import {
-  Calendar,
-  ChevronRight,
-  DollarSign,
-  Phone,
-  Plus,
-  Search,
-  UserCheck,
-  Users,
-} from 'lucide-react';
+import { ChevronRight, Phone, Plus, Search, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AddWorkerModal from '../../components/modals/AddWorkerModal';
@@ -28,34 +19,15 @@ export default function WorkersDashboard() {
     fetchWorkers();
   }, [fetchWorkers]);
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const activeWorkers = workers.filter((w) => w.isActive);
-    const inactiveWorkers = workers.filter((w) => !w.isActive);
-    const totalDailyWages = activeWorkers.reduce((sum, w) => sum + w.wage, 0);
-    const totalBalance = workers.reduce((sum, w) => sum + w.balance, 0);
-
-    return {
-      total: workers.length,
-      active: activeWorkers.length,
-      inactive: inactiveWorkers.length,
-      totalDailyWages,
-      totalBalance,
-    };
-  }, [workers]);
-
-  // Filter workers based on search and tab
   const filteredWorkers = useMemo(() => {
     let result = workers;
 
-    // Filter by status
     if (activeFilter === 'active') {
       result = result.filter((w) => w.isActive);
     } else if (activeFilter === 'inactive') {
       result = result.filter((w) => !w.isActive);
     }
 
-    // Filter by search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -74,23 +46,14 @@ export default function WorkersDashboard() {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
   const filterTabs: { id: FilterTab; label: string; count: number }[] = [
-    { id: 'all', label: 'All Workers', count: stats.total },
-    { id: 'active', label: 'Active', count: stats.active },
-    { id: 'inactive', label: 'Inactive', count: stats.inactive },
+    { id: 'all', label: 'All Workers', count: workers.length },
+    { id: 'active', label: 'Active', count: workers.filter((w) => w.isActive).length },
+    { id: 'inactive', label: 'Inactive', count: workers.filter((w) => !w.isActive).length },
   ];
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Workers</h1>
@@ -103,53 +66,8 @@ export default function WorkersDashboard() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-card rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-text-secondary mb-1">
-            <Users className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-wide">Total Workers</span>
-          </div>
-          <p className="text-2xl font-bold text-text-primary">{stats.total}</p>
-        </div>
-
-        <div className="bg-card rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-success mb-1">
-            <UserCheck className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-wide">Active</span>
-          </div>
-          <p className="text-2xl font-bold text-text-primary">{stats.active}</p>
-        </div>
-
-        <div className="bg-card rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-text-secondary mb-1">
-            <DollarSign className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-wide">Daily Payroll</span>
-          </div>
-          <p className="text-2xl font-bold text-text-primary">
-            {formatCurrency(stats.totalDailyWages)}
-          </p>
-        </div>
-
-        <div className="bg-card rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-warning mb-1">
-            <DollarSign className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-wide">Total Balance</span>
-          </div>
-          <p
-            className={`text-2xl font-bold ${
-              stats.totalBalance >= 0 ? 'text-success' : 'text-error'
-            }`}
-          >
-            {formatCurrency(stats.totalBalance)}
-          </p>
-        </div>
-      </div>
-
-      {/* Filter Tabs + Search */}
       <div className="bg-card rounded-lg border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between border-b border-gray-200 px-4">
-          {/* Tabs */}
           <div className="flex">
             {filterTabs.map((tab) => (
               <button
@@ -176,7 +94,6 @@ export default function WorkersDashboard() {
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
@@ -189,14 +106,12 @@ export default function WorkersDashboard() {
           </div>
         </div>
 
-        {/* Error State */}
         {error && (
           <div className="p-4 bg-error/10 border-b border-error/20">
             <p className="text-error text-sm font-medium">{error}</p>
           </div>
         )}
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -204,62 +119,42 @@ export default function WorkersDashboard() {
                 <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
                   Worker
                 </th>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
-                  Contact
-                </th>
-                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
-                  Daily Wage
-                </th>
-                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
-                  OT Rate
-                </th>
-                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
-                  Balance
-                </th>
-                <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
+                <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-24">
                   Status
                 </th>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
-                  Joined
+                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-32">
+                  Net Payable
                 </th>
-                <th className="px-4 py-3" />
+                <th className="w-10 px-2 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                // Loading skeleton
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
                     <td className="px-4 py-3">
-                      <div className="h-5 bg-gray-200 rounded animate-pulse w-32" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse" />
+                        <div className="min-w-0 flex-1">
+                          <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mb-1.5" />
+                          <div className="h-3 bg-gray-200 rounded animate-pulse w-24" />
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-24" />
+                    <td className="px-4 py-3 w-24">
+                      <div className="h-6 bg-gray-200 rounded-full animate-pulse w-16 mx-auto" />
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-16 ml-auto" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-14 ml-auto" />
-                    </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 w-28">
                       <div className="h-4 bg-gray-200 rounded animate-pulse w-20 ml-auto" />
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="h-5 bg-gray-200 rounded-full animate-pulse w-16 mx-auto" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-20" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-4" />
+                    <td className="px-2 py-3 w-10">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-4 mx-auto" />
                     </td>
                   </tr>
                 ))
               ) : filteredWorkers.length === 0 ? (
-                // Empty state
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
+                  <td colSpan={4} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center">
                       <Users className="w-12 h-12 text-gray-300 mb-3" />
                       <p className="text-text-secondary font-medium mb-1">
@@ -283,51 +178,39 @@ export default function WorkersDashboard() {
                   </td>
                 </tr>
               ) : (
-                // Worker rows
                 filteredWorkers.map((worker) => (
                   <tr
                     key={worker.id}
                     onClick={() => navigate(`/workers/${worker.id}`)}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="group hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <span className="text-primary font-semibold text-sm">
                             {worker.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <span className="font-medium text-text-primary">{worker.name}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-text-primary truncate">
+                            {worker.name}
+                          </p>
+                          <p className="text-xs text-text-secondary truncate flex items-center gap-1 mt-0.5">
+                            {worker.phone ? (
+                              <>
+                                <Phone className="w-3 h-3 shrink-0" />
+                                {worker.phone}
+                              </>
+                            ) : (
+                              <span className="text-gray-400">No phone</span>
+                            )}
+                          </p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 text-sm text-text-secondary">
-                        <Phone className="w-3.5 h-3.5" />
-                        {worker.phone || '—'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="font-medium text-text-primary">
-                        {formatCurrency(worker.wage)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="text-sm text-text-secondary">
-                        {formatCurrency(worker.otRate)}/unit
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 w-24 text-center">
                       <span
-                        className={`font-medium ${
-                          worker.balance >= 0 ? 'text-success' : 'text-error'
-                        }`}
-                      >
-                        {formatCurrency(worker.balance)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                        className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           worker.isActive
                             ? 'bg-success/10 text-success'
                             : 'bg-gray-100 text-gray-500'
@@ -336,14 +219,26 @@ export default function WorkersDashboard() {
                         {worker.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 text-sm text-text-secondary">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {formatDate(worker.joinedAt)}
+                    <td className="px-4 py-3 w-32 text-right">
+                      <div>
+                        <span
+                          className={`text-sm font-semibold ${
+                            (worker.netPayable ?? 0) >= 0 ? 'text-success' : 'text-error'
+                          }`}
+                        >
+                          {formatCurrency(Math.abs(worker.netPayable ?? 0))}
+                        </span>
+                        <p
+                          className={`text-xs mt-0.5 ${
+                            (worker.netPayable ?? 0) >= 0 ? 'text-success' : 'text-error'
+                          }`}
+                        >
+                          {(worker.netPayable ?? 0) >= 0 ? 'To Pay' : 'Owes'}
+                        </p>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <td className="px-2 py-3 w-10">
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors mx-auto" />
                     </td>
                   </tr>
                 ))
@@ -352,15 +247,13 @@ export default function WorkersDashboard() {
           </table>
         </div>
 
-        {/* Footer with count */}
         {!loading && filteredWorkers.length > 0 && (
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-sm text-text-secondary">
-            Showing {filteredWorkers.length} of {stats.total} workers
+            Showing {filteredWorkers.length} of {workers.length} workers
           </div>
         )}
       </div>
 
-      {/* Add Worker Modal */}
       <AddWorkerModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>
   );

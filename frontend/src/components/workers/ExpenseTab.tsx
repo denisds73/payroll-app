@@ -9,6 +9,7 @@ import ExpenseTable, { type ExpenseData } from '../ui/ExpenseTable';
 interface ExpenseTabProps {
   workerId: number;
   workerName: string;
+  joinedAt: string;
   onExpenseChange: () => void;
 }
 
@@ -26,7 +27,12 @@ interface Expense {
   typeId: number;
 }
 
-export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProps) {
+export default function ExpenseTab({
+  workerId,
+  workerName,
+  joinedAt,
+  onExpenseChange,
+}: ExpenseTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date();
 
@@ -290,27 +296,25 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
     const locked = new Map<string, string[]>();
     const dates = getAllDaysInMonth(selectedMonth, selectedYear);
 
-    console.log('🔄 Recomputing locked dates for worker', workerId);
-
     dates.forEach((date) => {
       const reasons: string[] = [];
 
       if (isDateLocked(workerId, date)) {
         reasons.push('Salary paid for this period');
-        console.log('🔒 Date locked (salary):', date);
       }
 
       if (isDateInactive(workerId, date)) {
         reasons.push('Worker was inactive on this date');
-        console.log('🔒 Date locked (inactive):', date);
+      }
+
+      if (date < joinedAt.split('T')[0]) {
+        reasons.push('Worker not yet joined');
       }
 
       if (reasons.length > 0) {
         locked.set(date, reasons);
       }
     });
-
-    console.log('Total locked dates:', locked.size);
     return locked;
   }, [
     lockDataByWorker,
@@ -320,6 +324,7 @@ export default function ExpenseTab({ workerId, onExpenseChange }: ExpenseTabProp
     selectedYear,
     isDateLocked,
     isDateInactive,
+    joinedAt,
   ]);
 
   const lockedPeriods = useMemo(() => {

@@ -1,6 +1,5 @@
-import type { RouteObject } from 'react-router-dom';
+import { Navigate, type RouteObject } from 'react-router-dom';
 import App from './App';
-import Dashboard from './pages/Dashboard/Dashboard';
 import TestPage from './pages/TestPage';
 import WorkerDetail from './pages/Workers/WorkerDetail';
 import WorkersDashboard from './pages/Workers/WorkersDashboard';
@@ -12,13 +11,13 @@ export const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Dashboard />,
+        element: <Navigate to="/workers" replace />,
       },
       {
         path: 'test',
         element: <TestPage />,
       },
-      // Worker routes
+      // Worker routes - main app functionality
       {
         path: 'workers',
         children: [

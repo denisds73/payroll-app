@@ -40,6 +40,10 @@ export class ExpensesService {
 
     if (!type) throw new NotFoundException('Expense type not found');
 
+    if (expenseDate < worker.joinedAt) {
+      throw new BadRequestException('Cannot add expense before worker joined');
+    }
+
     const expense = await this.prisma.expense.create({
       data: {
         workerId,

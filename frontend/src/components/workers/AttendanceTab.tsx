@@ -21,10 +21,15 @@ interface AttendanceDataWithId extends AttendanceData {
 
 interface AttendanceTabProps {
   workerId: number;
+  joinedAt: string;
   onAttendanceChange?: () => void;
 }
 
-export default function AttendanceTab({ workerId, onAttendanceChange }: AttendanceTabProps) {
+export default function AttendanceTab({
+  workerId,
+  joinedAt,
+  onAttendanceChange,
+}: AttendanceTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date();
 
@@ -221,29 +226,36 @@ export default function AttendanceTab({ workerId, onAttendanceChange }: Attendan
     const locked = new Map<string, string[]>();
     const dates = getAllDaysInMonth(month, year);
 
-    console.log('🔄 Recomputing locked dates for worker', workerId);
-
     dates.forEach((date) => {
       const reasons: string[] = [];
 
       if (isDateLocked(workerId, date)) {
         reasons.push('Salary paid for this period');
-        console.log('🔒 Date locked (salary):', date);
       }
 
       if (isDateInactive(workerId, date)) {
         reasons.push('Worker was inactive on this date');
-        console.log('🔒 Date locked (inactive):', date);
+      }
+
+      if (date < joinedAt.split('T')[0]) {
+        reasons.push('Worker not yet joined');
       }
 
       if (reasons.length > 0) {
         locked.set(date, reasons);
       }
     });
-
-    console.log('✅ Total locked dates:', locked.size);
     return locked;
-  }, [lockDataByWorker, statusDataByWorker, workerId, month, year, isDateLocked, isDateInactive]);
+  }, [
+    lockDataByWorker,
+    statusDataByWorker,
+    workerId,
+    month,
+    year,
+    isDateLocked,
+    isDateInactive,
+    joinedAt,
+  ]);
 
   const lockedPeriods = useMemo(() => {
     const workerData = lockDataByWorker[workerId];
