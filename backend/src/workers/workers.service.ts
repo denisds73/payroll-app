@@ -97,7 +97,7 @@ export class WorkersService {
     const totalAdvance = advanceResult._sum.amount ?? 0;
     const totalExpense = expenseResult._sum.amount ?? 0;
 
-    // Include unpaid balance from PARTIAL salary records (carry-forward)
+
     const partialSalaries = await this.prisma.salary.findMany({
       where: {
         workerId,

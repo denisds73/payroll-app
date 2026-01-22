@@ -77,7 +77,6 @@ export default function PaySalaryModal({
   const [pdfSalaryId, setPdfSalaryId] = useState<number | null>(null);
 
   const [pendingPartials, setPendingPartials] = useState<PendingPartialSalary[]>([]);
-  const [paymentTarget, setPaymentTarget] = useState<'carryForward' | 'currentCycle' | 'combined'>('combined');
 
   useEffect(() => {
     if (isOpen) {
@@ -93,10 +92,6 @@ export default function PaySalaryModal({
     try {
       const response = await salariesAPI.getPendingPartials(workerId);
       setPendingPartials(response.data);
-      // Default to paying carry forward if available
-      if (response.data.length > 0) {
-        setPaymentTarget('carryForward');
-      }
     } catch (err) {
       console.error('Failed to fetch pending partials', err);
     }
@@ -104,20 +99,12 @@ export default function PaySalaryModal({
 
   useEffect(() => {
     if (salaryData && !isPartialPayment) {
-      let amount = 0;
-      if (paymentTarget === 'carryForward') {
-        amount = salaryData.carryForward;
-      } else if (paymentTarget === 'currentCycle') {
-        amount = salaryData.netPay;
-      } else {
-        amount = salaryData.totalNetPayable;
-      }
       setFormData((prev) => ({
         ...prev,
-        paymentAmount: amount > 0 ? amount.toString() : '0',
+        paymentAmount: salaryData.totalNetPayable > 0 ? salaryData.totalNetPayable.toString() : '0',
       }));
     }
-  }, [salaryData, isPartialPayment, paymentTarget]);
+  }, [salaryData, isPartialPayment]);
 
   const fetchSalaryCalculation = async (payDate?: string): Promise<void> => {
     setCalculating(true);
@@ -170,12 +157,7 @@ export default function PaySalaryModal({
       return;
     }
 
-    const maxAmount =
-      paymentTarget === 'carryForward'
-        ? salaryData.carryForward
-        : paymentTarget === 'currentCycle'
-          ? salaryData.netPay
-          : salaryData.totalNetPayable;
+    const maxAmount = salaryData.totalNetPayable;
 
     if (paymentAmount > maxAmount) {
       setError(
@@ -187,96 +169,48 @@ export default function PaySalaryModal({
     setLoading(true);
 
     try {
-      // 1. Pay Carry Forward (Existing PARTIAL salary)
-      if (paymentTarget === 'carryForward' && pendingPartials.length > 0) {
-        console.log('Paying carry-forward amount...');
-        // Sort by oldest date first (already sorted by cycleEnd asc from backend)
-        let remainingToPay = paymentAmount;
-        
+      let remainingToPay = paymentAmount;
+
+      // 1. Pay Carry Forward (Oldest First)
+      if (pendingPartials.length > 0) {
         for (const salary of pendingPartials) {
           if (remainingToPay <= 0) break;
-          
+
           const unpaidBalance = salary.netPay - salary.totalPaid;
           const payAmount = Math.min(remainingToPay, unpaidBalance);
-          
+
           if (payAmount > 0) {
-            console.log(`Paying ₹${payAmount} to salary #${salary.id}`);
+            console.log(`Paying ₹${payAmount} to carry-forward salary #${salary.id}`);
             await salariesAPI.issue(salary.id, {
               amount: payAmount,
               paymentProof: formData.paymentProof || undefined,
             });
-            
+
             // Update lock state
             markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
             remainingToPay -= payAmount;
           }
         }
-        
-        onSuccess();
-        handleClose();
-        return;
       }
 
-      // 2. Pay New Cycle (Create new salary)
-      if (paymentTarget === 'currentCycle') {
-         console.log('Creating salary record for pay date:', formData.paymentDate);
-         const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
-         const salary = createResponse.data;
-         
-         await salariesAPI.issue(salary.id, {
-            amount: paymentAmount,
-            paymentProof: formData.paymentProof || undefined,
-         });
-         
-         markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
-         setPdfSalaryId(salary.id);
-         
-         onSuccess();
-         handleClose();
-         return;
+      // 2. Pay New Cycle (if money left)
+      if (remainingToPay > 0 && salaryData) {
+        console.log('Paying remaining ₹' + remainingToPay + ' to current cycle');
+        // Create new salary record
+        const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
+        const salary = createResponse.data;
+
+        await salariesAPI.issue(salary.id, {
+          amount: remainingToPay,
+          paymentProof: formData.paymentProof || undefined,
+        });
+
+        markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
+        setPdfSalaryId(salary.id);
       }
 
-      // 3. Combined: Pay Carry Forward first, then New Cycle
-      if (paymentTarget === 'combined') {
-         let remainingToPay = paymentAmount;
-         
-         // First clear carry forward
-         if (pendingPartials.length > 0) {
-            for (const salary of pendingPartials) {
-               if (remainingToPay <= 0) break;
-               
-               const unpaidBalance = salary.netPay - salary.totalPaid;
-               const payAmount = Math.min(remainingToPay, unpaidBalance);
-               
-               if (payAmount > 0) {
-                  await salariesAPI.issue(salary.id, {
-                     amount: payAmount,
-                     paymentProof: formData.paymentProof || undefined,
-                  });
-                  markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
-                  remainingToPay -= payAmount;
-               }
-            }
-         }
-         
-         // Then pay remaining to current cycle
-         if (remainingToPay > 0) {
-            const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
-            const salary = createResponse.data;
-            
-            await salariesAPI.issue(salary.id, {
-               amount: remainingToPay,
-               paymentProof: formData.paymentProof || undefined,
-            });
-            
-             markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
-             setPdfSalaryId(salary.id);
-         }
-         
-         onSuccess();
-         handleClose();
-      }
-
+      onSuccess();
+      handleClose();
     } catch (err) {
       const errorMessage =
         err instanceof Error && 'response' in err
@@ -324,7 +258,7 @@ export default function PaySalaryModal({
     if (!partial && salaryData) {
       setFormData((prev) => ({
         ...prev,
-        paymentAmount: salaryData.netPay > 0 ? salaryData.netPay.toString() : '0',
+        paymentAmount: salaryData.totalNetPayable > 0 ? salaryData.totalNetPayable.toString() : '0',
       }));
     } else {
       setFormData((prev) => ({
@@ -520,62 +454,11 @@ export default function PaySalaryModal({
                     </p>
                   </div>
 
-                    {/* PAYMENT TARGET SELECTION */}
-                    {salaryData.carryForward > 0 && salaryData.netPay > 0 && (
-                      <div>
-                        <label className="block text-sm font-medium text-text-primary mb-3">
-                           Payment Target
-                        </label>
-                        <div className="flex flex-col gap-2">
-                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentTarget === 'carryForward' ? 'bg-primary/5 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
-                            <input
-                              type="radio"
-                              name="paymentTarget"
-                              checked={paymentTarget === 'carryForward'}
-                              onChange={() => setPaymentTarget('carryForward')}
-                              className="text-primary focus:ring-primary"
-                            />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-text-primary">Pay Carry Forward Only</p>
-                              <p className="text-xs text-text-secondary">Clear previous dues: {formatCurrency(salaryData.carryForward)}</p>
-                            </div>
-                          </label>
-
-                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentTarget === 'currentCycle' ? 'bg-primary/5 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
-                            <input
-                              type="radio"
-                              name="paymentTarget"
-                              checked={paymentTarget === 'currentCycle'}
-                              onChange={() => setPaymentTarget('currentCycle')}
-                              className="text-primary focus:ring-primary"
-                            />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-text-primary">Pay Current Cycle Only</p>
-                              <p className="text-xs text-text-secondary">Current earnings: {formatCurrency(salaryData.netPay)}</p>
-                            </div>
-                          </label>
-
-                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentTarget === 'combined' ? 'bg-primary/5 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
-                            <input
-                              type="radio"
-                              name="paymentTarget"
-                              checked={paymentTarget === 'combined'}
-                              onChange={() => setPaymentTarget('combined')}
-                              className="text-primary focus:ring-primary"
-                            />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-text-primary">Pay Combined Amount</p>
-                              <p className="text-xs text-text-secondary">Total payable: {formatCurrency(salaryData.totalNetPayable)}</p>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                    )}
-                    
                     {/* Simplified selection when only one option typically exists */}
-                    {salaryData.carryForward > 0 && salaryData.netPay <= 0 && (
-                       <div className="bg-warning/10 p-3 rounded text-sm text-warning mb-4">
-                          Paying carry-forward balance of {formatCurrency(salaryData.carryForward)}
+                    {salaryData.carryForward > 0 && (
+                       <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-700 mb-4 flex items-center gap-2">
+                          <span className="font-semibold">Note:</span>
+                          Payments will clear carry-forward balances first.
                        </div>
                     )}
 
@@ -631,13 +514,7 @@ export default function PaySalaryModal({
                           }
                           placeholder="Enter amount"
                           min="0"
-                          max={
-                            paymentTarget === 'carryForward' 
-                               ? salaryData.carryForward 
-                               : paymentTarget === 'currentCycle'
-                                  ? salaryData.netPay
-                                  : salaryData.totalNetPayable
-                          }
+                          max={salaryData.totalNetPayable}
                           step="0.01"
                           className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
                           required
@@ -646,13 +523,7 @@ export default function PaySalaryModal({
                       </div>
                       {isPartialPayment && (
                         <p className="text-xs text-text-secondary mt-1">
-                          Maximum: {formatCurrency(
-                            paymentTarget === 'carryForward' 
-                               ? salaryData.carryForward 
-                               : paymentTarget === 'currentCycle'
-                                  ? salaryData.netPay
-                                  : salaryData.totalNetPayable
-                          )}
+                          Maximum: {formatCurrency(salaryData.totalNetPayable)}
                         </p>
                       )}
                     </div>
