@@ -311,7 +311,9 @@ export class SalariesService {
     const partialSalaries = await this.prisma.salary.findMany({
       where: {
         workerId,
-        status: SalaryStatus.PARTIAL,
+        status: {
+          in: [SalaryStatus.PENDING, SalaryStatus.PARTIAL],
+        },
       },
       select: {
         netPay: true,
@@ -331,7 +333,9 @@ export class SalariesService {
     return this.prisma.salary.findMany({
       where: {
         workerId,
-        status: 'PARTIAL',
+        status: {
+          in: [SalaryStatus.PENDING, SalaryStatus.PARTIAL],
+        },
       },
       select: {
         id: true,
