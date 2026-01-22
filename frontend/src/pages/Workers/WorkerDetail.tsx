@@ -35,8 +35,8 @@ interface CycleStats {
   totalAdvance: number;
   totalExpense: number;
   netPay: number;
-  carryForward: number; // Unpaid from previous PARTIAL salaries
-  totalNetPayable: number; // netPay + carryForward
+  carryForward: number;
+  totalNetPayable: number;
 }
 
 export default function WorkerDetail() {
@@ -187,7 +187,7 @@ export default function WorkerDetail() {
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
   ];
 
-  const canPaySalary = cycleStats && cycleStats.grossPay > 0;
+  const canPaySalary = cycleStats && cycleStats.totalNetPayable > 0;
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">

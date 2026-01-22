@@ -63,7 +63,11 @@ export class SalariesService {
     };
   }
 
-  private async calculateBreakdown(workerId: number, payDate?: Date) {
+  private async calculateBreakdown(
+    workerId: number,
+    payDate?: Date,
+    throwOnInvalidDate = true,
+  ) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: workerId },
     });
@@ -82,9 +86,26 @@ export class SalariesService {
     const cycleEnd = payDate || this.dateService.startOfToday();
 
     if (cycleEnd < cycleStart) {
-      throw new BadRequestException(
-        `Pay date cannot be before cycle start date (${cycleStart.toISOString().split('T')[0]})`,
-      );
+      if (throwOnInvalidDate) {
+        throw new BadRequestException(
+          `Pay date cannot be before cycle start date (${cycleStart.toISOString().split('T')[0]})`,
+        );
+      }
+
+      // Return zeroed stats if not throwing
+      return {
+        cycleStart,
+        cycleEnd,
+        totalDays: 0,
+        totalOtUnits: 0,
+        basePay: 0,
+        otPay: 0,
+        grossPay: 0,
+        totalAdvance: 0,
+        totalExpense: 0,
+        unpaidBalance: 0,
+        netPay: 0,
+      };
     }
 
     console.log('Cycle calculation:', {
@@ -180,7 +201,7 @@ export class SalariesService {
 
   async calculateSalary(workerId: number, payDate?: string) {
     const parsedDate = payDate ? this.dateService.parseDate(payDate) : undefined;
-    const breakdown = await this.calculateBreakdown(workerId, parsedDate);
+    const breakdown = await this.calculateBreakdown(workerId, parsedDate, false);
     const carryForward = await this.getUnpaidBalance(workerId);
 
     return {
