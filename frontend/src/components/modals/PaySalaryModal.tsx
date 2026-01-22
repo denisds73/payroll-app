@@ -29,6 +29,16 @@ interface SalaryCalculation {
   totalAdvance: number;
   totalExpense: number;
   netPay: number;
+  carryForward: number;
+  totalNetPayable: number;
+}
+
+interface PendingPartialSalary {
+  id: number;
+  cycleStart: string;
+  cycleEnd: string;
+  netPay: number;
+  totalPaid: number;
 }
 
 interface SalaryFormData {
@@ -66,23 +76,48 @@ export default function PaySalaryModal({
   const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
   const [pdfSalaryId, setPdfSalaryId] = useState<number | null>(null);
 
+  const [pendingPartials, setPendingPartials] = useState<PendingPartialSalary[]>([]);
+  const [paymentTarget, setPaymentTarget] = useState<'carryForward' | 'currentCycle' | 'combined'>('combined');
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsAnimating(true), 10);
       fetchSalaryCalculation();
+      fetchPendingPartials();
     } else {
       setIsAnimating(false);
     }
   }, [isOpen, workerId]);
 
+  const fetchPendingPartials = async () => {
+    try {
+      const response = await salariesAPI.getPendingPartials(workerId);
+      setPendingPartials(response.data);
+      // Default to paying carry forward if available
+      if (response.data.length > 0) {
+        setPaymentTarget('carryForward');
+      }
+    } catch (err) {
+      console.error('Failed to fetch pending partials', err);
+    }
+  };
+
   useEffect(() => {
     if (salaryData && !isPartialPayment) {
+      let amount = 0;
+      if (paymentTarget === 'carryForward') {
+        amount = salaryData.carryForward;
+      } else if (paymentTarget === 'currentCycle') {
+        amount = salaryData.netPay;
+      } else {
+        amount = salaryData.totalNetPayable;
+      }
       setFormData((prev) => ({
         ...prev,
-        paymentAmount: salaryData.netPay > 0 ? salaryData.netPay.toString() : '0',
+        paymentAmount: amount > 0 ? amount.toString() : '0',
       }));
     }
-  }, [salaryData, isPartialPayment]);
+  }, [salaryData, isPartialPayment, paymentTarget]);
 
   const fetchSalaryCalculation = async (payDate?: string): Promise<void> => {
     setCalculating(true);
@@ -135,9 +170,16 @@ export default function PaySalaryModal({
       return;
     }
 
-    if (paymentAmount > salaryData.netPay) {
+    const maxAmount =
+      paymentTarget === 'carryForward'
+        ? salaryData.carryForward
+        : paymentTarget === 'currentCycle'
+          ? salaryData.netPay
+          : salaryData.totalNetPayable;
+
+    if (paymentAmount > maxAmount) {
       setError(
-        `Payment amount cannot exceed net payable: ₹${salaryData.netPay.toLocaleString('en-IN')}`,
+        `Payment amount cannot exceed payable amount: ₹${maxAmount.toLocaleString('en-IN')}`,
       );
       return;
     }
@@ -145,33 +187,96 @@ export default function PaySalaryModal({
     setLoading(true);
 
     try {
-      console.log('Creating salary record for pay date:', formData.paymentDate);
-      const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
-      const salary = createResponse.data;
-      console.log('Salary record created:', salary.id);
+      // 1. Pay Carry Forward (Existing PARTIAL salary)
+      if (paymentTarget === 'carryForward' && pendingPartials.length > 0) {
+        console.log('Paying carry-forward amount...');
+        // Sort by oldest date first (already sorted by cycleEnd asc from backend)
+        let remainingToPay = paymentAmount;
+        
+        for (const salary of pendingPartials) {
+          if (remainingToPay <= 0) break;
+          
+          const unpaidBalance = salary.netPay - salary.totalPaid;
+          const payAmount = Math.min(remainingToPay, unpaidBalance);
+          
+          if (payAmount > 0) {
+            console.log(`Paying ₹${payAmount} to salary #${salary.id}`);
+            await salariesAPI.issue(salary.id, {
+              amount: payAmount,
+              paymentProof: formData.paymentProof || undefined,
+            });
+            
+            // Update lock state
+            markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
+            remainingToPay -= payAmount;
+          }
+        }
+        
+        onSuccess();
+        handleClose();
+        return;
+      }
 
-      console.log('Issuing payment...');
-      await salariesAPI.issue(salary.id, {
-        amount: paymentAmount,
-        paymentProof: formData.paymentProof || undefined,
-      });
-      console.log('Payment issued successfully');
+      // 2. Pay New Cycle (Create new salary)
+      if (paymentTarget === 'currentCycle') {
+         console.log('Creating salary record for pay date:', formData.paymentDate);
+         const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
+         const salary = createResponse.data;
+         
+         await salariesAPI.issue(salary.id, {
+            amount: paymentAmount,
+            paymentProof: formData.paymentProof || undefined,
+         });
+         
+         markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
+         setPdfSalaryId(salary.id);
+         
+         onSuccess();
+         handleClose();
+         return;
+      }
 
-      // ✅ ⚡ OPTIMISTIC UPDATE - Instantly update lock state
-      console.log('🔒 Marking salary as paid optimistically:', {
-        workerId,
-        salaryId: salary.id,
-        cycleStart: salary.cycleStart,
-        cycleEnd: salary.cycleEnd,
-      });
+      // 3. Combined: Pay Carry Forward first, then New Cycle
+      if (paymentTarget === 'combined') {
+         let remainingToPay = paymentAmount;
+         
+         // First clear carry forward
+         if (pendingPartials.length > 0) {
+            for (const salary of pendingPartials) {
+               if (remainingToPay <= 0) break;
+               
+               const unpaidBalance = salary.netPay - salary.totalPaid;
+               const payAmount = Math.min(remainingToPay, unpaidBalance);
+               
+               if (payAmount > 0) {
+                  await salariesAPI.issue(salary.id, {
+                     amount: payAmount,
+                     paymentProof: formData.paymentProof || undefined,
+                  });
+                  markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
+                  remainingToPay -= payAmount;
+               }
+            }
+         }
+         
+         // Then pay remaining to current cycle
+         if (remainingToPay > 0) {
+            const createResponse = await salariesAPI.create(workerId, formData.paymentDate);
+            const salary = createResponse.data;
+            
+            await salariesAPI.issue(salary.id, {
+               amount: remainingToPay,
+               paymentProof: formData.paymentProof || undefined,
+            });
+            
+             markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
+             setPdfSalaryId(salary.id);
+         }
+         
+         onSuccess();
+         handleClose();
+      }
 
-      markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
-
-      console.log('📄 Triggering PDF download for salary:', salary.id);
-      setPdfSalaryId(salary.id);
-
-      onSuccess();
-      handleClose();
     } catch (err) {
       const errorMessage =
         err instanceof Error && 'response' in err
@@ -362,19 +467,31 @@ export default function PaySalaryModal({
                 <div className="flex items-center justify-between pt-3 border-t-2 border-gray-400">
                   <span className="text-base font-bold text-text-primary">Net Payable</span>
                   <span
-                    className={`text-xl font-bold ${salaryData.netPay >= 0 ? 'text-success' : 'text-error'}`}
+                    className={`text-xl font-bold ${salaryData.totalNetPayable >= 0 ? 'text-success' : 'text-error'}`}
                   >
-                    {formatCurrency(Math.abs(salaryData.netPay))}
+                    {formatCurrency(Math.abs(salaryData.totalNetPayable))}
                   </span>
                 </div>
-                {salaryData.netPay < 0 && (
+                {salaryData.carryForward > 0 && (
+                  <div className="text-xs space-y-1 bg-gray-50 p-2 rounded border border-gray-200 mt-2">
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Current Cycle:</span>
+                      <span className="font-medium">{formatCurrency(salaryData.netPay)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-warning font-medium">Carry Forward (Unpaid):</span>
+                      <span className="font-medium text-warning">{formatCurrency(salaryData.carryForward)}</span>
+                    </div>
+                  </div>
+                )}
+                {salaryData.totalNetPayable < 0 && (
                   <p className="text-xs text-error text-center">
                     ⚠️ Worker owes company - no payment required
                   </p>
                 )}
               </div>
 
-              {salaryData.netPay > 0 && (
+              {salaryData.totalNetPayable > 0 && (
                 <>
                   <div>
                     <label
@@ -403,71 +520,142 @@ export default function PaySalaryModal({
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-text-primary mb-3">
-                      Payment Type
-                    </label>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handlePaymentTypeChange(false)}
-                        disabled={loading}
-                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                          !isPartialPayment
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'bg-background text-text-secondary hover:bg-gray-200'
-                        }`}
-                      >
-                        Full Payment
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePaymentTypeChange(true)}
-                        disabled={loading}
-                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                          isPartialPayment
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'bg-background text-text-secondary hover:bg-gray-200'
-                        }`}
-                      >
-                        Partial Payment
-                      </button>
-                    </div>
-                  </div>
+                    {/* PAYMENT TARGET SELECTION */}
+                    {salaryData.carryForward > 0 && salaryData.netPay > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-3">
+                           Payment Target
+                        </label>
+                        <div className="flex flex-col gap-2">
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentTarget === 'carryForward' ? 'bg-primary/5 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                            <input
+                              type="radio"
+                              name="paymentTarget"
+                              checked={paymentTarget === 'carryForward'}
+                              onChange={() => setPaymentTarget('carryForward')}
+                              className="text-primary focus:ring-primary"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-text-primary">Pay Carry Forward Only</p>
+                              <p className="text-xs text-text-secondary">Clear previous dues: {formatCurrency(salaryData.carryForward)}</p>
+                            </div>
+                          </label>
 
-                  <div>
-                    <label
-                      htmlFor={paymentAmountId}
-                      className="block text-sm font-medium text-text-primary mb-2"
-                    >
-                      Payment Amount <span className="text-error">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-medium">
-                        ₹
-                      </span>
-                      <input
-                        type="number"
-                        id={paymentAmountId}
-                        value={formData.paymentAmount}
-                        onChange={(e) =>
-                          setFormData({ ...formData, paymentAmount: e.target.value })
-                        }
-                        placeholder="Enter amount"
-                        min="0"
-                        max={salaryData.netPay}
-                        step="0.01"
-                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                        required
-                        disabled={loading || !isPartialPayment}
-                      />
-                    </div>
-                    {isPartialPayment && (
-                      <p className="text-xs text-text-secondary mt-1">
-                        Maximum: {formatCurrency(salaryData.netPay)}
-                      </p>
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentTarget === 'currentCycle' ? 'bg-primary/5 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                            <input
+                              type="radio"
+                              name="paymentTarget"
+                              checked={paymentTarget === 'currentCycle'}
+                              onChange={() => setPaymentTarget('currentCycle')}
+                              className="text-primary focus:ring-primary"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-text-primary">Pay Current Cycle Only</p>
+                              <p className="text-xs text-text-secondary">Current earnings: {formatCurrency(salaryData.netPay)}</p>
+                            </div>
+                          </label>
+
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${paymentTarget === 'combined' ? 'bg-primary/5 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                            <input
+                              type="radio"
+                              name="paymentTarget"
+                              checked={paymentTarget === 'combined'}
+                              onChange={() => setPaymentTarget('combined')}
+                              className="text-primary focus:ring-primary"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-text-primary">Pay Combined Amount</p>
+                              <p className="text-xs text-text-secondary">Total payable: {formatCurrency(salaryData.totalNetPayable)}</p>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
                     )}
-                  </div>
+                    
+                    {/* Simplified selection when only one option typically exists */}
+                    {salaryData.carryForward > 0 && salaryData.netPay <= 0 && (
+                       <div className="bg-warning/10 p-3 rounded text-sm text-warning mb-4">
+                          Paying carry-forward balance of {formatCurrency(salaryData.carryForward)}
+                       </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-3">
+                        Payment Type
+                      </label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handlePaymentTypeChange(false)}
+                          disabled={loading}
+                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                            !isPartialPayment
+                              ? 'bg-primary text-white shadow-sm'
+                              : 'bg-background text-text-secondary hover:bg-gray-200'
+                          }`}
+                        >
+                          Full Payment
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePaymentTypeChange(true)}
+                          disabled={loading}
+                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                            isPartialPayment
+                              ? 'bg-primary text-white shadow-sm'
+                              : 'bg-background text-text-secondary hover:bg-gray-200'
+                          }`}
+                        >
+                          Partial Payment
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor={paymentAmountId}
+                        className="block text-sm font-medium text-text-primary mb-2"
+                      >
+                        Payment Amount <span className="text-error">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-medium">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          id={paymentAmountId}
+                          value={formData.paymentAmount}
+                          onChange={(e) =>
+                            setFormData({ ...formData, paymentAmount: e.target.value })
+                          }
+                          placeholder="Enter amount"
+                          min="0"
+                          max={
+                            paymentTarget === 'carryForward' 
+                               ? salaryData.carryForward 
+                               : paymentTarget === 'currentCycle'
+                                  ? salaryData.netPay
+                                  : salaryData.totalNetPayable
+                          }
+                          step="0.01"
+                          className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                          required
+                          disabled={loading || !isPartialPayment}
+                        />
+                      </div>
+                      {isPartialPayment && (
+                        <p className="text-xs text-text-secondary mt-1">
+                          Maximum: {formatCurrency(
+                            paymentTarget === 'carryForward' 
+                               ? salaryData.carryForward 
+                               : paymentTarget === 'currentCycle'
+                                  ? salaryData.netPay
+                                  : salaryData.totalNetPayable
+                          )}
+                        </p>
+                      )}
+                    </div>
 
                   <div>
                     <label
@@ -500,7 +688,7 @@ export default function PaySalaryModal({
                 >
                   Cancel
                 </Button>
-                {salaryData.netPay > 0 ? (
+                {salaryData.totalNetPayable > 0 ? (
                   <Button
                     type="submit"
                     variant="primary"

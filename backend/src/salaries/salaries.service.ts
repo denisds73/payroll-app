@@ -180,7 +180,14 @@ export class SalariesService {
 
   async calculateSalary(workerId: number, payDate?: string) {
     const parsedDate = payDate ? this.dateService.parseDate(payDate) : undefined;
-    return this.calculateBreakdown(workerId, parsedDate);
+    const breakdown = await this.calculateBreakdown(workerId, parsedDate);
+    const carryForward = await this.getUnpaidBalance(workerId);
+
+    return {
+      ...breakdown,
+      carryForward, // Unpaid from previous PARTIAL salaries
+      totalNetPayable: breakdown.netPay + carryForward, // Combined amount
+    };
   }
 
   async createSalary(workerId: number, payDate?: string) {
@@ -297,6 +304,23 @@ export class SalariesService {
     );
 
     return unpaidBalance;
+  }
+
+  async getPendingPartialSalaries(workerId: number) {
+    return this.prisma.salary.findMany({
+      where: {
+        workerId,
+        status: 'PARTIAL',
+      },
+      select: {
+        id: true,
+        cycleStart: true,
+        cycleEnd: true,
+        netPay: true,
+        totalPaid: true,
+      },
+      orderBy: { cycleEnd: 'asc' },
+    });
   }
 
   async issueSalary(salaryId: number, amount: number, paymentProof?: string) {

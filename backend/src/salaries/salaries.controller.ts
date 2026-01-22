@@ -42,6 +42,11 @@ export class SalariesController {
     return this.salariesService.calculateSalary(workerId, payDate);
   }
 
+  @Get('worker/:workerId/partial')
+  async getPendingPartialSalaries(@Param('workerId', ParseIntPipe) workerId: number) {
+    return this.salariesService.getPendingPartialSalaries(workerId);
+  }
+
   @Get('worker/:workerId')
   async getWorkerSalaries(
     @Param('workerId', ParseIntPipe) workerId: number,

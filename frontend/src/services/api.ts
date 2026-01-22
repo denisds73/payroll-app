@@ -199,4 +199,9 @@ export const salariesAPI = {
     console.log('🔍 salariesAPI.getPaidPeriods called:', { workerId });
     return api.get('/salaries/paid-periods', { params: { workerId } });
   },
+
+  getPendingPartials: (workerId: number) => {
+    console.log('🔍 salariesAPI.getPendingPartials called:', { workerId });
+    return api.get(`/salaries/worker/${workerId}/partial`);
+  },
 };

@@ -515,16 +515,20 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
 
                             {/* 🆕 SHOW PARTIAL PAYMENT STATUS */}
                             {item.status === 'PARTIAL' && item.netPay && item.totalPaid !== undefined && (
-                              <p className="text-xs flex items-center gap-1">
-                                <span className="font-medium text-warning">Partial Payment:</span>
-                                <span className="text-text-secondary">
-                                  {formatCurrency(item.totalPaid)} of {formatCurrency(item.netPay)}
-                                </span>
-                                <span className="text-text-disabled">•</span>
-                                <span className="text-warning">
-                                  Remaining: {formatCurrency(item.netPay - item.totalPaid)}
-                                </span>
-                              </p>
+                              <div className="mt-1 space-y-1">
+                                <p className="text-xs flex items-center gap-1">
+                                  <span className="font-medium text-warning">Partial Payment:</span>
+                                  <span className="text-text-secondary">
+                                    {formatCurrency(item.totalPaid)} of {formatCurrency(item.netPay)}
+                                  </span>
+                                </p>
+                                <p className="text-xs text-warning flex items-center gap-1">
+                                  <span className="bg-warning/20 px-1.5 py-0.5 rounded text-warning font-medium">
+                                    Carry Forward
+                                  </span>
+                                  <span>{formatCurrency(item.netPay - item.totalPaid)} to next cycle</span>
+                                </p>
+                              </div>
                             )}
                           </div>
                         ) : (
