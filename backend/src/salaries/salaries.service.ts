@@ -27,13 +27,17 @@ export class SalariesService {
     const paidSalaries = await this.prisma.salary.findMany({
       where: {
         workerId,
-        status: SalaryStatus.PAID, 
+        status: {
+          in: [SalaryStatus.PAID, SalaryStatus.PARTIAL],
+        },
       },
       select: {
         id: true,
         cycleStart: true,
         cycleEnd: true,
         status: true,
+        totalPaid: true,
+        netPay: true,
       },
       orderBy: {
         cycleStart: 'desc', 
@@ -45,7 +49,10 @@ export class SalariesService {
       id: salary.id,
       startDate: salary.cycleStart.toISOString().split('T')[0],
       endDate: salary.cycleEnd.toISOString().split('T')[0], 
-      isPaid: salary.status === SalaryStatus.PAID,
+      isPaid: true,
+      isPartial: salary.status === SalaryStatus.PARTIAL,
+      paidAmount: salary.totalPaid,
+      remainingAmount: salary.netPay - salary.totalPaid,
     }));
 
     return {
@@ -56,7 +63,11 @@ export class SalariesService {
     };
   }
 
-  private async calculateBreakdown(workerId: number, payDate?: Date) {
+  private async calculateBreakdown(
+    workerId: number,
+    payDate?: Date,
+    throwOnInvalidDate = true,
+  ) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: workerId },
     });
@@ -75,9 +86,26 @@ export class SalariesService {
     const cycleEnd = payDate || this.dateService.startOfToday();
 
     if (cycleEnd < cycleStart) {
-      throw new BadRequestException(
-        `Pay date cannot be before cycle start date (${cycleStart.toISOString().split('T')[0]})`,
-      );
+      if (throwOnInvalidDate) {
+        throw new BadRequestException(
+          `Pay date cannot be before cycle start date (${cycleStart.toISOString().split('T')[0]})`,
+        );
+      }
+
+      // Return zeroed stats if not throwing
+      return {
+        cycleStart,
+        cycleEnd,
+        totalDays: 0,
+        totalOtUnits: 0,
+        basePay: 0,
+        otPay: 0,
+        grossPay: 0,
+        totalAdvance: 0,
+        totalExpense: 0,
+        unpaidBalance: 0,
+        netPay: 0,
+      };
     }
 
     console.log('Cycle calculation:', {
@@ -153,6 +181,7 @@ export class SalariesService {
 
     const totalAdvance = advanceResult._sum.amount ?? 0;
     const totalExpense = expenseResult._sum.amount ?? 0;
+    const unpaidBalance = await this.getUnpaidBalance(workerId);
     const netPay = grossPay - totalAdvance - totalExpense;
 
     return {
@@ -165,13 +194,21 @@ export class SalariesService {
       grossPay,
       totalAdvance,
       totalExpense,
+      unpaidBalance,
       netPay,
     };
   }
 
   async calculateSalary(workerId: number, payDate?: string) {
     const parsedDate = payDate ? this.dateService.parseDate(payDate) : undefined;
-    return this.calculateBreakdown(workerId, parsedDate);
+    const breakdown = await this.calculateBreakdown(workerId, parsedDate, false);
+    const carryForward = await this.getUnpaidBalance(workerId);
+
+    return {
+      ...breakdown,
+      carryForward, // Unpaid from previous PARTIAL salaries
+      totalNetPayable: breakdown.netPay + carryForward, // Combined amount
+    };
   }
 
   async createSalary(workerId: number, payDate?: string) {
@@ -209,6 +246,7 @@ export class SalariesService {
           netPay: salaryNet,
           totalPaid: 0,
           status: SalaryStatus.PENDING,
+          unpaidBalance: breakdown.unpaidBalance || 0,
         },
       });
 
@@ -244,6 +282,9 @@ export class SalariesService {
             otRate: true,
           },
         },
+        payments: {
+            orderBy: { date: 'desc' }
+        },
       },
     });
 
@@ -266,6 +307,47 @@ export class SalariesService {
         },
       },
       orderBy: [{ status: 'asc' }, { cycleEnd: 'desc' }],
+    });
+  }
+
+  private async getUnpaidBalance(workerId: number): Promise<number> {
+    const partialSalaries = await this.prisma.salary.findMany({
+      where: {
+        workerId,
+        status: {
+          in: [SalaryStatus.PENDING, SalaryStatus.PARTIAL],
+        },
+      },
+      select: {
+        netPay: true,
+        totalPaid: true,
+      },
+    });
+
+    const unpaidBalance = partialSalaries.reduce(
+      (sum, salary) => sum + (salary.netPay - salary.totalPaid),
+      0,
+    );
+
+    return unpaidBalance;
+  }
+
+  async getPendingPartialSalaries(workerId: number) {
+    return this.prisma.salary.findMany({
+      where: {
+        workerId,
+        status: {
+          in: [SalaryStatus.PENDING, SalaryStatus.PARTIAL],
+        },
+      },
+      select: {
+        id: true,
+        cycleStart: true,
+        cycleEnd: true,
+        netPay: true,
+        totalPaid: true,
+      },
+      orderBy: { cycleEnd: 'asc' },
     });
   }
 
@@ -300,6 +382,16 @@ export class SalariesService {
           issuedAt: new Date(),
           paymentProof: paymentProof || null,
         },
+        include: { payments: true }
+      });
+      
+      await tx.salaryPayment.create({
+          data: {
+              salaryId: salaryId,
+              amount: amount,
+              date: new Date(),
+              proof: paymentProof
+          }
       });
 
       await tx.worker.update({
@@ -374,6 +466,9 @@ export class SalariesService {
           joinedAt: true,
           isActive: true,
         },
+      },
+      payments: {
+          orderBy: { date: 'desc' }
       },
     },
   });

@@ -1,7 +1,3 @@
-  @Get(':id')
-  async getSalaryById(@Param('id', ParseIntPipe) id: number) {
-    return this.salariesService.findOne(id);
-  }
 import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { FilterSalariesDto } from './dto/filter-salaries.dto';
 import { IssueSalaryDto } from './dto/issue-salary.dto';
@@ -44,6 +40,11 @@ export class SalariesController {
   ) {
     console.log('📊 Controller received:', { workerId, payDate });
     return this.salariesService.calculateSalary(workerId, payDate);
+  }
+
+  @Get('worker/:workerId/partial')
+  async getPendingPartialSalaries(@Param('workerId', ParseIntPipe) workerId: number) {
+    return this.salariesService.getPendingPartialSalaries(workerId);
   }
 
   @Get('worker/:workerId')

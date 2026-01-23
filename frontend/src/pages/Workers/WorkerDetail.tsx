@@ -35,6 +35,8 @@ interface CycleStats {
   totalAdvance: number;
   totalExpense: number;
   netPay: number;
+  carryForward: number;
+  totalNetPayable: number;
 }
 
 export default function WorkerDetail() {
@@ -101,6 +103,8 @@ export default function WorkerDetail() {
         totalAdvance: 0,
         totalExpense: 0,
         netPay: 0,
+        carryForward: 0,
+        totalNetPayable: 0,
       });
 
       if (err.response?.status !== 400) {
@@ -183,7 +187,7 @@ export default function WorkerDetail() {
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
   ];
 
-  const canPaySalary = cycleStats && cycleStats.grossPay > 0;
+  const canPaySalary = cycleStats && cycleStats.totalNetPayable > 0;
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
@@ -270,7 +274,9 @@ export default function WorkerDetail() {
             <div className="flex items-center gap-2 text-sm text-text-secondary">
               <Calendar className="w-4 h-4" />
               <span>
-                {formatDate(cycleStats.cycleStart)} - {formatDate(cycleStats.cycleEnd)}
+                {new Date(cycleStats.cycleStart) > new Date(cycleStats.cycleEnd)
+                  ? `Next Cycle Starts: ${formatDate(cycleStats.cycleStart)}`
+                  : `${formatDate(cycleStats.cycleStart)} - ${formatDate(cycleStats.cycleEnd)}`}
               </span>
             </div>
           )}
@@ -337,17 +343,36 @@ export default function WorkerDetail() {
             <div className="bg-white rounded-lg p-4 border-2 border-primary">
               <div className="flex items-center gap-2 mb-3">
                 <FileText
-                  className={`w-5 h-5 ${(cycleStats?.netPay ?? 0) >= 0 ? 'text-success' : 'text-error'}`}
+                  className={`w-5 h-5 ${(cycleStats?.totalNetPayable ?? 0) >= 0 ? 'text-success' : 'text-error'}`}
                 />
                 <p className="text-sm font-semibold text-text-primary">Net Payable</p>
               </div>
+
+              {/* Show breakdown if there's carry-forward */}
+              {(cycleStats?.carryForward ?? 0) > 0 && (
+                <div className="mb-2 space-y-1 pb-2 border-b border-gray-200">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-text-secondary">Current Cycle</span>
+                    <span className="font-medium text-text-primary">
+                      {formatCurrency(cycleStats?.netPay ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-warning font-medium">Carry Forward</span>
+                    <span className="font-medium text-warning">
+                      {formatCurrency(cycleStats?.carryForward ?? 0)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <p className="text-2xl font-bold text-text-primary mb-1">
-                {formatCurrency(Math.abs(cycleStats?.netPay ?? 0))}
+                {formatCurrency(Math.abs(cycleStats?.totalNetPayable ?? 0))}
               </p>
               <p
-                className={`text-xs font-medium ${(cycleStats?.netPay ?? 0) >= 0 ? 'text-success' : 'text-error'}`}
+                className={`text-xs font-medium ${(cycleStats?.totalNetPayable ?? 0) >= 0 ? 'text-success' : 'text-error'}`}
               >
-                {(cycleStats?.netPay ?? 0) >= 0 ? 'To Pay Worker' : 'Worker Owes Company'}
+                {(cycleStats?.totalNetPayable ?? 0) >= 0 ? 'To Pay Worker' : 'Worker Owes Company'}
               </p>
             </div>
           </div>
