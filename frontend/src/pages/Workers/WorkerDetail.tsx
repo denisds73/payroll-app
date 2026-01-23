@@ -274,7 +274,9 @@ export default function WorkerDetail() {
             <div className="flex items-center gap-2 text-sm text-text-secondary">
               <Calendar className="w-4 h-4" />
               <span>
-                {formatDate(cycleStats.cycleStart)} - {formatDate(cycleStats.cycleEnd)}
+                {new Date(cycleStats.cycleStart) > new Date(cycleStats.cycleEnd)
+                  ? `Next Cycle Starts: ${formatDate(cycleStats.cycleStart)}`
+                  : `${formatDate(cycleStats.cycleStart)} - ${formatDate(cycleStats.cycleEnd)}`}
               </span>
             </div>
           )}
