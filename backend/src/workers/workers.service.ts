@@ -127,27 +127,40 @@ export class WorkersService {
 
   async create(data: CreateWorkerDto) {
     const { joinedAt, ...rest } = data;
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const worker = await tx.worker.create({
+          data: {
+            ...rest,
+            joinedAt: joinedAt
+              ? joinedAt.includes('T')
+                ? new Date(joinedAt)
+                : new Date(`${joinedAt}T00:00:00Z`)
+              : new Date(),
+          },
+        });
 
-    return this.prisma.$transaction(async (tx) => {
-      const worker = await tx.worker.create({
-        data: {
-          ...rest,
-          joinedAt: joinedAt ? new Date(`${joinedAt}T00:00:00Z`) : new Date(),
-        },
+        await tx.wageHistory.create({
+          data: {
+            workerId: worker.id,
+            wage: data.wage,
+            otRate: data.otRate ?? 0,
+            effectiveFrom: joinedAt
+              ? joinedAt.includes('T')
+                ? new Date(joinedAt)
+                : new Date(`${joinedAt}T00:00:00Z`)
+              : new Date(),
+            reason: 'Initial wage',
+          },
+        });
+
+        return worker;
       });
-
-      await tx.wageHistory.create({
-        data: {
-          workerId: worker.id,
-          wage: data.wage,
-          otRate: data.otRate ?? 0,
-          effectiveFrom: joinedAt ? new Date(`${joinedAt}T00:00:00Z`) : new Date(),
-          reason: 'Initial wage',
-        },
-      });
-
-      return worker;
-    });
+    } catch (error) {
+       const fs = require('fs');
+       fs.writeFileSync('backend_error.log', JSON.stringify({ message: error.message, stack: error.stack }, null, 2));
+       throw error;
+    }
   }
 
   async update(id: number, dto: UpdateWorkerDto) {
