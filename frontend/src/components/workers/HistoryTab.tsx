@@ -31,6 +31,8 @@ interface HistoryItem {
   status?: 'PENDING' | 'PARTIAL' | 'PAID';
   netPay?: number;
   totalPaid?: number;
+  paymentId?: number;
+  isPartial?: boolean;
 }
 
 interface FilterState {
@@ -100,22 +102,45 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
       }));
 
       const salariesResponse = await salariesAPI.getByWorker(workerId);
-      const salaries: HistoryItem[] = salariesResponse.data.map((sal: any) => ({
-        id: sal.id,
-        type: 'salary' as const,
-        date: sal.cycleEnd,
-        amount: sal.totalPaid,
-        description:
-          sal.paymentProof ||
-          `Salary for ${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
-        cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
-        issuedAt: sal.issuedAt,
-        createdAt: sal.createdAt,
-        // 🆕 Add status and payment fields
-        status: sal.status,
-        netPay: sal.netPay,
-        totalPaid: sal.totalPaid,
-      }));
+      const salaries: HistoryItem[] = [];
+      salariesResponse.data.forEach((sal: any) => {
+        // If we have detailed payments, create an item for each
+        if (sal.payments && sal.payments.length > 0) {
+           sal.payments.forEach((payment: any, index: number) => {
+              salaries.push({
+                 id: sal.id, // Keep salary ID for locking/reference
+                 paymentId: payment.id, // Unique payment ID
+                 type: 'salary' as const,
+                 date: payment.date, // Use actual payment date
+                 amount: payment.amount,
+                 description: sal.paymentProof || `Payment for cycle ending ${formatDate(sal.cycleEnd)}`,
+                 cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+                 issuedAt: payment.date,
+                 createdAt: payment.createdAt,
+                 status: sal.status,
+                 netPay: sal.netPay,
+                 totalPaid: sal.totalPaid,
+                 isPartial: index < sal.payments.length - 1 || sal.status === 'PARTIAL', // Mark as partial if it's not the final clearing payment or status is still partial
+              });
+           });
+        } 
+        // Legacy fallback: if paid/partial but no payments recorded
+        else if (sal.totalPaid > 0) {
+           salaries.push({
+              id: sal.id,
+              type: 'salary' as const,
+              date: sal.issuedAt || sal.cycleEnd, // Fallback date
+              amount: sal.totalPaid,
+              description: sal.paymentProof || `Salary for ${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+              cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+              issuedAt: sal.issuedAt,
+              createdAt: sal.createdAt,
+              status: sal.status,
+              netPay: sal.netPay,
+              totalPaid: sal.totalPaid,
+           });
+        }
+      });
 
       const expensesResponse = await expensesAPI.getByWorker(workerId);
       const expenses: HistoryItem[] = expensesResponse.data.map((exp: any) => ({
@@ -470,7 +495,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
 
               const itemContent = (
                 <div
-                  key={`${item.type}-${item.id}`}
+                  key={`${item.type}-${item.id}-${item.paymentId || 'main'}`}
                   className={`border-l-4 ${getItemColor(item.type)} rounded-lg p-4 hover:shadow-md transition-all ${
                     locked && item.type !== 'salary' ? 'opacity-70' : ''
                   }`}

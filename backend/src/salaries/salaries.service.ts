@@ -282,6 +282,9 @@ export class SalariesService {
             otRate: true,
           },
         },
+        payments: {
+            orderBy: { date: 'desc' }
+        },
       },
     });
 
@@ -379,6 +382,16 @@ export class SalariesService {
           issuedAt: new Date(),
           paymentProof: paymentProof || null,
         },
+        include: { payments: true }
+      });
+      
+      await tx.salaryPayment.create({
+          data: {
+              salaryId: salaryId,
+              amount: amount,
+              date: new Date(),
+              proof: paymentProof
+          }
       });
 
       await tx.worker.update({
@@ -453,6 +466,9 @@ export class SalariesService {
           joinedAt: true,
           isActive: true,
         },
+      },
+      payments: {
+          orderBy: { date: 'desc' }
       },
     },
   });

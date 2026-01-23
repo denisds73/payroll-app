@@ -96,6 +96,19 @@ model Salary {
   updatedAt    DateTime     @updatedAt
 
   worker Worker @relation(fields: [workerId], references: [id])
+  payments SalaryPayment[]
+}
+
+model SalaryPayment {
+  id        Int      @id @default(autoincrement())
+  salaryId  Int
+  amount    Float
+  date      DateTime @default(now())
+  proof     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  salary    Salary   @relation(fields: [salaryId], references: [id], onDelete: Cascade)
 }
 
 model Advance {
