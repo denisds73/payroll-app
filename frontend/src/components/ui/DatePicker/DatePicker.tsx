@@ -252,11 +252,11 @@ export function DatePicker({
                 weekdays: 'flex',
                 weekday: 'w-9 text-xs font-medium text-text-secondary text-center',
                 week: 'flex mt-1',
-                day: 'w-9 h-9 text-center text-sm relative p-0',
+                day: 'w-9 h-9 text-center text-sm relative p-0 group',
                 day_button:
-                  'w-9 h-9 rounded-md transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer',
-                selected: 'bg-primary text-white font-semibold hover:bg-primary-hover rounded-md',
-                today: 'bg-info/10 text-info font-semibold rounded-md',
+                  'w-9 h-9 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer [not([data-selected])]:hover:bg-gray-100 group-data-[selected]:bg-primary group-data-[selected]:text-white group-data-[selected]:font-semibold group-data-[today]:bg-info/10 group-data-[today]:text-info group-data-[today]:font-semibold',
+                selected: '',
+                today: '',
                 outside: 'text-text-disabled opacity-40',
                 disabled:
                   'text-text-disabled line-through opacity-50 cursor-not-allowed hover:bg-transparent pointer-events-none',

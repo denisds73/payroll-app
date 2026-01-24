@@ -8,9 +8,25 @@ function App() {
       {/* Navigation Bar */}
       <nav className="border-b border-gray-200 bg-card px-6 py-3">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <Link to="/workers" className="text-xl font-bold text-primary">
-            Payroll App
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link to="/workers" className="text-xl font-bold text-primary">
+              Payroll App
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link 
+                to="/workers" 
+                className="text-sm font-medium text-text-secondary hover:text-primary transition-colors"
+              >
+                Workers
+              </Link>
+              <Link 
+                to="/advances" 
+                className="text-sm font-medium text-text-secondary hover:text-primary transition-colors"
+              >
+                Advances
+              </Link>
+            </div>
+          </div>
         </div>
       </nav>
       <Toaster

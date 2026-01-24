@@ -120,9 +120,10 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
       <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
         <div className="flex gap-x-15 font-semibold text-text-primary text-base w-full items-center">
           <div className="w-8 shrink-0" />
-          <div className="w-36 shrink-0 ml-4">Date</div>
-          <div className="w-48 shrink-0 ml-2">Expense Type</div>
-          <div className="w-32 shrink-0">Amount</div>
+          <div className="w-21 shrink-0 ml-4">Date</div>
+          <div className="w-28 shrink-0">Expense Type</div>
+          <div className="w-22 shrink-0">Amount</div>
+          <div className="w-28 shrink-0">Notes</div>
         </div>
         <div className="relative">
           <div className="flex items-center gap-2 ml-6 shrink-0">

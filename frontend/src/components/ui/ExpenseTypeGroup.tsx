@@ -22,18 +22,6 @@ const typeStyleMap: Record<string, TypeStyle> = {
     hoverClass: 'hover:bg-success/10 hover:border-success hover:text-success',
     focusClass: 'focus:ring-success/50',
   },
-  Drinks: {
-    shortLabel: 'Drinks',
-    activeClass: 'bg-info text-white border-info',
-    hoverClass: 'hover:bg-info/10 hover:border-info hover:text-info',
-    focusClass: 'focus:ring-info/50',
-  },
-  Site: {
-    shortLabel: 'Site',
-    activeClass: 'bg-warning text-white border-warning',
-    hoverClass: 'hover:bg-warning/10 hover:border-warning hover:text-warning',
-    focusClass: 'focus:ring-warning/50',
-  },
   Other: {
     shortLabel: 'Other',
     activeClass: 'bg-secondary text-white border-secondary',
@@ -42,7 +30,6 @@ const typeStyleMap: Record<string, TypeStyle> = {
   },
 };
 
-// Default style for unknown expense types
 const defaultStyle: TypeStyle = {
   shortLabel: '?',
   activeClass: 'bg-primary text-white border-primary',

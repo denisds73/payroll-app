@@ -3,8 +3,8 @@ import { AttendanceStatus, PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Seed expense types - EXACTLY 4 types
-  const types = ['Food', 'Drinks', 'Site', 'Other'];
+
+  const types = ['Food', 'Other'];
   const expenseTypes = await Promise.all(
     types.map((name) =>
       prisma.expenseType.upsert({
@@ -15,7 +15,7 @@ async function main() {
     ),
   );
 
-  console.log(`✅ Created ${expenseTypes.length} expense types: Food, Drinks, Site, Other`);
+  console.log(`✅ Created ${expenseTypes.length} expense types: Food, Other`);
 
   // Seed workers
   const workers = [
@@ -36,7 +36,6 @@ async function main() {
 
     console.log(`✅ Created worker: ${createdWorker.name}`);
 
-    // Create attendance records for December 2025
     const daysInMonth = 31;
     for (let day = 1; day <= daysInMonth; day++) {
       if (day <= 30) {
@@ -67,7 +66,6 @@ async function main() {
 
     console.log(`✅ Created attendance for ${createdWorker.name}`);
 
-    // Create some advances
     const numAdvances = Math.floor(Math.random() * 3);
     for (let i = 0; i < numAdvances; i++) {
       const day = Math.floor(Math.random() * 30) + 1;
@@ -83,7 +81,6 @@ async function main() {
 
     console.log(`✅ Created advances for ${createdWorker.name}`);
 
-    // Create some expenses
     const numExpenses = Math.floor(Math.random() * 4);
     for (let i = 0; i < numExpenses; i++) {
       const day = Math.floor(Math.random() * 30) + 1;

@@ -116,7 +116,7 @@ export default function ExpenseTab({
     try {
       const response = await expenseTypesAPI.getAll();
 
-      const preferredOrder = ['Food', 'Drinks', 'Site', 'Other'];
+      const preferredOrder = ['Food', 'Other'];
 
       const sortedTypes = response.data.sort((a: ExpenseType, b: ExpenseType) => {
         const indexA = preferredOrder.indexOf(a.name);

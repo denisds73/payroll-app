@@ -1,28 +1,29 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, useMemo } from 'react';
 import { advancesAPI } from '../../services/api';
+import { useWorkerStore } from '../../store/workerStore';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 
 interface IssueAdvanceModalProps {
-  workerId: number;
-  workerName: string;
+  workerId?: number;
+  workerName?: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
 interface AdvanceFormData {
+  workerId?: number;
   date: string;
   amount: string;
   reason: string;
 }
 
 export default function IssueAdvanceModal({
-  workerId,
-  workerName,
+  workerId: initialWorkerId,
+  workerName: initialWorkerName,
   isOpen,
   onClose,
   onSuccess,
@@ -31,13 +32,21 @@ export default function IssueAdvanceModal({
   const dateId = useId();
   const amountId = useId();
   const reasonId = useId();
+  const workerSearchId = useId();
   const modalTitleId = useId();
 
+  const { workers, fetchWorkers } = useWorkerStore();
+  const activeWorkers = useMemo(() => workers.filter(w => w.isActive), [workers]);
+
   const [formData, setFormData] = useState<AdvanceFormData>({
+    workerId: initialWorkerId,
     date: today,
     amount: '',
     reason: '',
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showWorkerDropdown, setShowWorkerDropdown] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
@@ -45,14 +54,48 @@ export default function IssueAdvanceModal({
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsAnimating(true), 10);
+      if (workers.length === 0) {
+        fetchWorkers();
+      }
     } else {
       setIsAnimating(false);
     }
-  }, [isOpen]);
+  }, [isOpen, workers.length, fetchWorkers]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        workerId: initialWorkerId,
+        date: today,
+        amount: '',
+        reason: '',
+      });
+      setSearchQuery('');
+    }
+  }, [isOpen, initialWorkerId, today]);
+
+  const filteredWorkers = useMemo(() => {
+    if (!searchQuery.trim()) return activeWorkers;
+    const query = searchQuery.toLowerCase();
+    return activeWorkers.filter(w => w.name.toLowerCase().includes(query));
+  }, [activeWorkers, searchQuery]);
+
+  const selectedWorkerName = useMemo(() => {
+    if (initialWorkerName) return initialWorkerName;
+    if (formData.workerId) {
+      return workers.find(w => w.id === formData.workerId)?.name || 'Unknown Worker';
+    }
+    return '';
+  }, [initialWorkerName, formData.workerId, workers]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError(null);
+
+    if (!formData.workerId) {
+      setError('Please select a worker');
+      return;
+    }
 
     if (!formData.amount || Number(formData.amount) <= 0) {
       setError('Please enter a valid amount');
@@ -63,16 +106,10 @@ export default function IssueAdvanceModal({
 
     try {
       await advancesAPI.create({
-        workerId,
+        workerId: formData.workerId,
         date: formData.date,
         amount: Number(formData.amount),
         reason: formData.reason || undefined,
-      });
-
-      setFormData({
-        date: today,
-        amount: '',
-        reason: '',
       });
 
       onSuccess();
@@ -94,11 +131,6 @@ export default function IssueAdvanceModal({
       setIsAnimating(false);
 
       setTimeout(() => {
-        setFormData({
-          date: today,
-          amount: '',
-          reason: '',
-        });
         setError(null);
         onClose();
       }, 200);
@@ -141,7 +173,9 @@ export default function IssueAdvanceModal({
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
               Issue Advance
             </h2>
-            <p className="text-sm text-text-secondary mt-1">{workerName}</p>
+            {initialWorkerName && (
+              <p className="text-sm text-text-secondary mt-1">{initialWorkerName}</p>
+            )}
           </div>
           <button
             type="button"
@@ -161,6 +195,56 @@ export default function IssueAdvanceModal({
               role="alert"
             >
               {error}
+            </div>
+          )}
+
+          {!initialWorkerId && (
+            <div className="relative">
+              <label htmlFor={workerSearchId} className="block text-sm font-medium text-text-primary mb-2">
+                Worker <span className="text-error">*</span>
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+                <input
+                  id={workerSearchId}
+                  type="text"
+                  placeholder="Search and select worker..."
+                  value={formData.workerId ? selectedWorkerName : searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (formData.workerId) {
+                      setFormData({ ...formData, workerId: undefined });
+                    }
+                    setShowWorkerDropdown(true);
+                  }}
+                  onFocus={() => setShowWorkerDropdown(true)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                  autoComplete="off"
+                />
+              </div>
+
+              {showWorkerDropdown && (
+                <div className="absolute z-[60] left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredWorkers.length === 0 ? (
+                    <div className="p-3 text-sm text-text-secondary text-center">No workers found</div>
+                  ) : (
+                    filteredWorkers.map(w => (
+                      <button
+                        key={w.id}
+                        type="button"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 transition-colors"
+                        onClick={() => {
+                          setFormData({ ...formData, workerId: w.id });
+                          setSearchQuery(w.name);
+                          setShowWorkerDropdown(false);
+                        }}
+                      >
+                        {w.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           )}
 
