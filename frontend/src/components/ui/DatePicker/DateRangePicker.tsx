@@ -352,12 +352,12 @@ export function DateRangePicker({
                   week: 'flex mt-1',
                   day: 'w-9 h-9 text-center text-sm relative p-0 group',
                   day_button:
-                    'w-9 h-9 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer rounded-md hover:bg-gray-100 group-data-[range-start]:bg-primary group-data-[range-start]:text-white group-data-[range-start]:rounded-l-md group-data-[range-start]:rounded-r-none group-data-[range-end]:bg-primary group-data-[range-end]:text-white group-data-[range-end]:rounded-r-md group-data-[range-end]:rounded-l-none group-data-[range-middle]:bg-primary/10 group-data-[range-middle]:text-text-primary group-data-[range-middle]:rounded-none group-data-[selected]:bg-primary group-data-[selected]:text-white group-data-[today]:bg-info/10 group-data-[today]:text-info group-data-[today]:font-semibold',
-                  selected: '',
-                  range_start: '',
-                  range_end: '',
-                  range_middle: '',
-                  today: '',
+                    'w-9 h-9 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer rounded-md hover:bg-gray-100',
+                  selected: 'bg-primary text-white font-semibold rounded-md',
+                  range_start: 'rounded-r-none data-[range-end]:rounded-r-md',
+                  range_end: 'rounded-l-none data-[range-start]:rounded-l-md',
+                  range_middle: 'bg-primary/10 text-text-primary rounded-none !bg-primary/10 !text-text-primary',
+                  today: 'bg-info/10 text-info font-semibold rounded-md [not([data-selected])]:bg-info/10',
                   outside: 'text-text-disabled opacity-40',
                   disabled:
                     'text-text-disabled line-through opacity-50 cursor-not-allowed hover:bg-transparent pointer-events-none',
