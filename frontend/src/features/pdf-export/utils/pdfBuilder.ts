@@ -1,6 +1,6 @@
 
-import type { TDocumentDefinitions } from 'pdfmake/interfaces';
-import type { SalaryReportData, AttendanceRecord } from '../types/pdf.types';
+import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+import type { SalaryReportData } from '../types/pdf.types';
 import {
   formatCurrency,
   formatDate,
@@ -152,28 +152,7 @@ function buildWorkerInfo(data: SalaryReportData): any {
         },
         {
           width: '50%',
-          stack: [
-            {
-              columns: [
-                { text: 'Daily Wage:', style: 'infoLabel', width: 80 },
-                {
-                  text: `${formatCurrency(data.worker.wage)}/day`,
-                  style: 'infoValue',
-                },
-              ],
-              margin: [0, 0, 0, 4],
-            },
-            {
-              columns: [
-                { text: 'OT Rate:', style: 'infoLabel', width: 80 },
-                {
-                  text: `${formatCurrency(data.worker.otRate)}/unit`,
-                  style: 'infoValue',
-                },
-              ],
-              margin: [0, 0, 0, 4],
-            },
-          ],
+          stack: [],
         },
       ],
     },
@@ -313,20 +292,20 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                   widths: ['*', 'auto'],
                   body: [
                     [
-                      { text: 'Base Wage', style: 'tableCell' },
-                      { 
-                        text: formatCurrency(summary.totalBasePay), 
-                        style: 'tableCell', 
+                      { text: 'Base Wage Total', style: 'tableCell' },
+                      {
+                        text: formatCurrency(summary.totalBasePay),
+                        style: 'tableCell',
                         alignment: 'right',
                         bold: true,
                         color: '#10B981', // Success color
                       },
                     ],
                     [
-                      { text: 'Overtime Pay', style: 'tableCell' },
-                      { 
-                        text: formatCurrency(summary.totalOtPay), 
-                        style: 'tableCell', 
+                      { text: 'Overtime Total', style: 'tableCell' },
+                      {
+                        text: formatCurrency(summary.totalOtPay),
+                        style: 'tableCell',
                         alignment: 'right',
                         bold: true,
                         color: '#10B981', // Success color
@@ -334,9 +313,9 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                     ],
                     [
                       { text: 'Gross Pay', style: 'tableCell', bold: true },
-                      { 
-                        text: formatCurrency(summary.totalBasePay + summary.totalOtPay), 
-                        style: 'tableCell', 
+                      {
+                        text: formatCurrency(summary.totalBasePay + summary.totalOtPay),
+                        style: 'tableCell',
                         alignment: 'right',
                         bold: true,
                         fontSize: 11,
@@ -370,25 +349,13 @@ function buildAttendanceTable(data: SalaryReportData): any {
     [
       { text: 'Date', style: 'tableHeader' },
       { text: 'Status', style: 'tableHeader' },
-      { text: 'Wage', style: 'tableHeader', alignment: 'right' },
       { text: 'OT Units', style: 'tableHeader', alignment: 'right' },
-      { text: 'OT Amount', style: 'tableHeader', alignment: 'right' },
     ],
     ...records.map((record) => [
       { text: formatDate(record.date), style: 'tableCell' },
       { text: capitalize(record.status), style: 'tableCell' },
       {
-        text: formatCurrency(record.wageAtTime),
-        style: 'tableCell',
-        alignment: 'right',
-      },
-      {
         text: record.otUnits.toFixed(1),
-        style: 'tableCell',
-        alignment: 'right',
-      },
-      {
-        text: formatCurrency(record.otUnits * record.otRateAtTime),
         style: 'tableCell',
         alignment: 'right',
       },
@@ -403,7 +370,7 @@ function buildAttendanceTable(data: SalaryReportData): any {
     {
       table: {
         headerRows: 1,
-        widths: ['20%', '20%', '20%', '20%', '20%'],
+        widths: ['40%', '30%', '30%'],
         body: tableBody,
       },
       layout: {
