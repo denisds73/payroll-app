@@ -72,7 +72,7 @@ model Salary {
   unpaidBalance Float           @default(0)
   netPay        Float           @default(0)
   totalPaid     Float           @default(0)
-  status        SalaryStatus    @default("PENDING")
+  status        SalaryStatus    @default(PENDING)
   paymentProof  String?
   issuedAt      DateTime?
   createdAt     DateTime        @default(now())
