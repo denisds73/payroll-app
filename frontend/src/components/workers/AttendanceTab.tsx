@@ -135,13 +135,7 @@ export default function AttendanceTab({
   const handleSaveAttendance = async (date: string, data: AttendanceData): Promise<void> => {
     try {
       const existingRecord = attendanceMap[date];
-      let backendStatus = data.attendanceStatus.toUpperCase();
-
-      // If OT is marked but no status is selected, default to ABSENT
-      if (data.otHours > 0 && !data.attendanceStatus) {
-        data.attendanceStatus = 'absent';
-        backendStatus = 'ABSENT';
-      }
+      const backendStatus = data.attendanceStatus.toUpperCase();
 
       if (existingRecord?.id) {
         const payload = {
