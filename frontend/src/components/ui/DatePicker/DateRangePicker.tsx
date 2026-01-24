@@ -352,7 +352,7 @@ export function DateRangePicker({
                   week: 'flex mt-1',
                   day: 'w-9 h-9 text-center text-sm relative p-0 group',
                   day_button:
-                    'w-9 h-9 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer rounded-md hover:bg-gray-100',
+                    'w-9 h-9 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer rounded-md hover:bg-gray-100 group-data-[selected]:hover:bg-primary group-data-[range-middle]:hover:bg-primary/20',
                   selected: 'bg-primary text-white font-semibold rounded-md',
                   range_start: 'rounded-r-none data-[range-end]:rounded-r-md',
                   range_end: 'rounded-l-none data-[range-start]:rounded-l-md',

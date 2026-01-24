@@ -254,7 +254,7 @@ export function DatePicker({
                 week: 'flex mt-1',
                 day: 'w-9 h-9 text-center text-sm relative p-0 group',
                 day_button:
-                  'w-9 h-9 rounded-md transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer group-data-[selected]:bg-primary group-data-[selected]:text-white group-data-[selected]:font-semibold group-data-[selected]:hover:bg-primary-hover group-data-[today]:bg-info/10 group-data-[today]:text-info group-data-[today]:font-semibold',
+                  'w-9 h-9 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer [not([data-selected])]:hover:bg-gray-100 group-data-[selected]:bg-primary group-data-[selected]:text-white group-data-[selected]:font-semibold group-data-[today]:bg-info/10 group-data-[today]:text-info group-data-[today]:font-semibold',
                 selected: '',
                 today: '',
                 outside: 'text-text-disabled opacity-40',
