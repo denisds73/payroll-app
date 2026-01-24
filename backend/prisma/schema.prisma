@@ -1,40 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "sqlite"
   url      = "file:../database/database.db"
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Worker {
-  id        Int      @id @default(autoincrement())
-  name      String
-  phone     String?
-  wage      Float
-  otRate    Float    @default(0)
-  isActive  Boolean  @default(true)
-  inactiveFrom DateTime?
-  balance   Float    @default(0)
-  joinedAt  DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int                   @id @default(autoincrement())
+  name          String
+  phone         String?
+  wage          Float
+  otRate        Float                 @default(0)
+  isActive      Boolean               @default(true)
+  balance       Float                 @default(0)
+  joinedAt      DateTime              @default(now())
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  inactiveFrom  DateTime?
+  advances      Advance[]
+  attendances   Attendance[]
+  expenses      Expense[]
+  salaries      Salary[]
+  wageHistory   WageHistory[]
+  statusHistory WorkerStatusHistory[]
 
   @@index([inactiveFrom])
-
-  // relations
-  attendances Attendance[]
-  salaries    Salary[]
-  advances    Advance[]
-  expenses    Expense[]
-  wageHistory WageHistory[]
-  statusHistory   WorkerStatusHistory[]
-}
-
-enum AttendanceStatus {
-  PRESENT
-  HALF
-  ABSENT
 }
 
 model Attendance {
@@ -43,14 +35,12 @@ model Attendance {
   status       AttendanceStatus
   otUnits      Float?           @default(0)
   note         String?
-  
-  wageAtTime   Float            // Wage rate when attendance was marked
-  otRateAtTime Float            // OT rate when attendance was marked
-  
-  worker       Worker           @relation(fields: [workerId], references: [id])
+  wageAtTime   Float
+  otRateAtTime Float
   workerId     Int
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+  worker       Worker           @relation(fields: [workerId], references: [id])
 
   @@unique([workerId, date])
   @@index([date])
@@ -64,39 +54,31 @@ model WageHistory {
   effectiveFrom DateTime
   reason        String?
   createdAt     DateTime @default(now())
-  
   worker        Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  
+
   @@index([workerId, effectiveFrom])
 }
 
-enum SalaryStatus {
-  PENDING
-  PARTIAL
-  PAID
-}
-
 model Salary {
-  id           Int          @id @default(autoincrement())
-  workerId     Int
-  cycleStart   DateTime
-  cycleEnd     DateTime
-  basePay      Float        @default(0)
-  otPay        Float        @default(0)
-  grossPay     Float        @default(0)
-  totalAdvance Float        @default(0)
-  totalExpense Float        @default(0)
-  unpaidBalance Float        @default(0)
-  netPay       Float        @default(0)
-  totalPaid    Float        @default(0)
-  status       SalaryStatus @default(PENDING)
-  paymentProof String?
-  issuedAt     DateTime?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  worker Worker @relation(fields: [workerId], references: [id])
-  payments SalaryPayment[]
+  id            Int             @id @default(autoincrement())
+  workerId      Int
+  cycleStart    DateTime
+  cycleEnd      DateTime
+  basePay       Float           @default(0)
+  otPay         Float           @default(0)
+  grossPay      Float           @default(0)
+  totalAdvance  Float           @default(0)
+  totalExpense  Float           @default(0)
+  unpaidBalance Float           @default(0)
+  netPay        Float           @default(0)
+  totalPaid     Float           @default(0)
+  status        SalaryStatus    @default(PENDING)
+  paymentProof  String?
+  issuedAt      DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  worker        Worker          @relation(fields: [workerId], references: [id])
+  payments      SalaryPayment[]
 }
 
 model SalaryPayment {
@@ -107,7 +89,6 @@ model SalaryPayment {
   proof     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   salary    Salary   @relation(fields: [salaryId], references: [id], onDelete: Cascade)
 }
 
@@ -119,9 +100,7 @@ model Advance {
   date      DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // relation
-  worker Worker @relation(fields: [workerId], references: [id])
+  worker    Worker   @relation(fields: [workerId], references: [id])
 
   @@index([workerId, date])
 }
@@ -139,10 +118,10 @@ model Expense {
   date      DateTime
   note      String?
   typeId    Int
-  type      ExpenseType @relation(fields: [typeId], references: [id])
-  worker    Worker      @relation(fields: [workerId], references: [id])
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+  worker    Worker      @relation(fields: [workerId], references: [id])
+  type      ExpenseType @relation(fields: [typeId], references: [id])
 
   @@index([workerId, date])
 }
@@ -154,8 +133,19 @@ model WorkerStatusHistory {
   effectiveFrom DateTime
   reason        String?
   createdAt     DateTime @default(now())
-  
   worker        Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  
+
   @@index([workerId, effectiveFrom])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  HALF
+  ABSENT
+}
+
+enum SalaryStatus {
+  PENDING
+  PARTIAL
+  PAID
 }
