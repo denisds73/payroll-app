@@ -87,6 +87,9 @@ export const advancesAPI = {
   create: (data: { workerId: number; date: string; amount: number; reason?: string }) =>
     api.post('/advances', data),
 
+  list: (params?: { month?: string; startDate?: string; endDate?: string }) =>
+    api.get('/advances', { params }),
+
   getByWorker: (
     workerId: number,
     params?: { month?: string; startDate?: string; endDate?: string },

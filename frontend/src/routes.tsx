@@ -31,6 +31,17 @@ export const routes: RouteObject[] = [
           },
         ],
       },
+      {
+        path: 'advances',
+        element: <Navigate to="/advances/dashboard" replace />,
+      },
+      {
+        path: 'advances/dashboard',
+        lazy: async () => {
+          const { default: AdvancesDashboard } = await import('./pages/Advances/AdvancesDashboard');
+          return { element: <AdvancesDashboard /> };
+        },
+      },
     ],
   },
 ];
