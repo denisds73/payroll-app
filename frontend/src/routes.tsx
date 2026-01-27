@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
 import App from './App';
+import AdvancesIndexPage from './pages/Advances/AdvancesIndexPage';
 import TestPage from './pages/TestPage';
 import WorkerDetail from './pages/Workers/WorkerDetail';
 import WorkersDashboard from './pages/Workers/WorkersDashboard';
@@ -33,14 +34,21 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'advances',
-        element: <Navigate to="/advances/dashboard" replace />,
-      },
-      {
-        path: 'advances/dashboard',
-        lazy: async () => {
-          const { default: AdvancesDashboard } = await import('./pages/Advances/AdvancesDashboard');
-          return { element: <AdvancesDashboard /> };
-        },
+        children: [
+          {
+            index: true,
+            element: <AdvancesIndexPage />,
+          },
+          // {
+          //   path: ':workerId',
+          //   lazy: async () => {
+          //     const { default: WorkerAdvancesPage } = await import(
+          //       './pages/Advances/WorkerAdvancesPage'
+          //     );
+          //     return { element: <WorkerAdvancesPage /> };
+          //   },
+          // },
+        ],
       },
     ],
   },
