@@ -175,4 +175,43 @@ export class AdvancesService {
       endDate: endDate || null,
     };
   }
+
+  async getWorkersWithLatestAdvance() {
+    const workerIds = await this.prisma.advance.findMany({
+      select: { workerId: true },
+      distinct: ['workerId'],
+    });
+
+    const workersWithLatestAdvance = await Promise.all(
+      workerIds.map(async ({ workerId }) => {
+        const latestAdvance = await this.prisma.advance.findFirst({
+          where: { workerId },
+          orderBy: [{ date: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+          include: {
+            worker: {
+              select: { name: true },
+            },
+          },
+        });
+
+        return latestAdvance;
+      }),
+    );
+
+    const result = workersWithLatestAdvance
+      .filter((adv) => adv !== null)
+      .map((adv) => ({
+        workerId: adv.workerId,
+        workerName: adv.worker.name,
+        lastAdvanceId: adv.id,
+        lastAdvanceDate: adv.date,
+        lastAdvanceAmount: adv.amount,
+        lastAdvanceReason: adv.reason,
+      }))
+      .sort((a, b) => {
+        return b.lastAdvanceDate.getTime() - a.lastAdvanceDate.getTime();
+      });
+
+    return result;
+  }
 }

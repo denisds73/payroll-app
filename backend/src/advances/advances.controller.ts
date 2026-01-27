@@ -47,6 +47,11 @@ export class AdvancesController {
     return this.advancesService.remove(id);
   }
 
+  @Get('workers')
+  getWorkersWithLatestAdvance() {
+    return this.advancesService.getWorkersWithLatestAdvance();
+  }
+
   @Get('worker/:id/total')
   async getWorkerTotal(
     @Param('id', ParseIntPipe) id: number,
