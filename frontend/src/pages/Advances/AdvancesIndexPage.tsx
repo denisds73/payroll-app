@@ -1,6 +1,9 @@
-import { Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
+import Button from '../../components/ui/Button';
 import { advancesAPI } from '../../services/api';
 
 interface WorkerWithLatestAdvance {
@@ -17,6 +20,7 @@ export default function AdvancesIndexPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -60,9 +64,14 @@ export default function AdvancesIndexPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Worker Advances</h1>
-        <p className="text-sm text-text-secondary mt-0.5">Workers with advance history</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Worker Advances</h1>
+          <p className="text-sm text-text-secondary mt-0.5">Workers with advance history</p>
+        </div>
+        <Button onClick={() => setIsIssueModalOpen(true)} icon={<Plus className="w-4 h-4" />}>
+          Issue Advance
+        </Button>
       </div>
 
       <div className="bg-card rounded-lg border border-gray-200 overflow-visible">
@@ -158,16 +167,14 @@ export default function AdvancesIndexPage() {
                     </td>
 
                     <td className="px-4 py-3 text-right w-[12%]">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewHistory(worker.workerId);
-                        }}
-                        className="px-3 py-1.5 text-sm font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleViewHistory(worker.workerId)}
+                        className="cursor-pointer"
                       >
                         View History
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -176,6 +183,15 @@ export default function AdvancesIndexPage() {
           </table>
         </div>
       </div>
+      <IssueAdvanceModal
+        isOpen={isIssueModalOpen}
+        onClose={() => setIsIssueModalOpen(false)}
+        onSuccess={() => {
+          fetchWorkers();
+          setIsIssueModalOpen(false);
+          toast.success('Advance issued successfully!');
+        }}
+      />
     </div>
   );
 }
