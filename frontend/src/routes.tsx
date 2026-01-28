@@ -39,15 +39,15 @@ export const routes: RouteObject[] = [
             index: true,
             element: <AdvancesIndexPage />,
           },
-          // {
-          //   path: ':workerId',
-          //   lazy: async () => {
-          //     const { default: WorkerAdvancesPage } = await import(
-          //       './pages/Advances/WorkerAdvancesPage'
-          //     );
-          //     return { element: <WorkerAdvancesPage /> };
-          //   },
-          // },
+          {
+            path: ':workerId',
+            lazy: async () => {
+              const { default: WorkerAdvancesPage } = await import(
+                './pages/Advances/WorkerAdvancesPage'
+              );
+              return { element: <WorkerAdvancesPage /> };
+            },
+          },
         ],
       },
     ],
