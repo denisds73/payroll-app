@@ -1,6 +1,7 @@
-import { X, Search } from 'lucide-react';
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <> */
+import { Search, X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
-import { useEffect, useId, useState, useMemo } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { advancesAPI } from '../../services/api';
 import { useWorkerStore } from '../../store/workerStore';
 import Button from '../ui/Button';
@@ -36,7 +37,7 @@ export default function IssueAdvanceModal({
   const modalTitleId = useId();
 
   const { workers, fetchWorkers } = useWorkerStore();
-  const activeWorkers = useMemo(() => workers.filter(w => w.isActive), [workers]);
+  const activeWorkers = useMemo(() => workers.filter((w) => w.isActive), [workers]);
 
   const [formData, setFormData] = useState<AdvanceFormData>({
     workerId: initialWorkerId,
@@ -77,13 +78,13 @@ export default function IssueAdvanceModal({
   const filteredWorkers = useMemo(() => {
     if (!searchQuery.trim()) return activeWorkers;
     const query = searchQuery.toLowerCase();
-    return activeWorkers.filter(w => w.name.toLowerCase().includes(query));
+    return activeWorkers.filter((w) => w.name.toLowerCase().includes(query));
   }, [activeWorkers, searchQuery]);
 
   const selectedWorkerName = useMemo(() => {
     if (initialWorkerName) return initialWorkerName;
     if (formData.workerId) {
-      return workers.find(w => w.id === formData.workerId)?.name || 'Unknown Worker';
+      return workers.find((w) => w.id === formData.workerId)?.name || 'Unknown Worker';
     }
     return '';
   }, [initialWorkerName, formData.workerId, workers]);
@@ -200,7 +201,10 @@ export default function IssueAdvanceModal({
 
           {!initialWorkerId && (
             <div className="relative">
-              <label htmlFor={workerSearchId} className="block text-sm font-medium text-text-primary mb-2">
+              <label
+                htmlFor={workerSearchId}
+                className="block text-sm font-medium text-text-primary mb-2"
+              >
                 Worker <span className="text-error">*</span>
               </label>
               <div className="relative">
@@ -224,11 +228,13 @@ export default function IssueAdvanceModal({
               </div>
 
               {showWorkerDropdown && (
-                <div className="absolute z-[60] left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-60 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {filteredWorkers.length === 0 ? (
-                    <div className="p-3 text-sm text-text-secondary text-center">No workers found</div>
+                    <div className="p-3 text-sm text-text-secondary text-center">
+                      No workers found
+                    </div>
                   ) : (
-                    filteredWorkers.map(w => (
+                    filteredWorkers.map((w) => (
                       <button
                         key={w.id}
                         type="button"
