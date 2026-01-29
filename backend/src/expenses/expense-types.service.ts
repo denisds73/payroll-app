@@ -12,4 +12,8 @@ export class ExpenseTypesService {
   async create(dto: { name: string }) {
     return this.prisma.expenseType.create({ data: { name: dto.name } });
   }
+
+  async remove(id: number) {
+    return this.prisma.expenseType.delete({ where: { id } });
+  }
 }

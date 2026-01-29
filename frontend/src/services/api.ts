@@ -126,6 +126,7 @@ export const expensesAPI = {
 export const expenseTypesAPI = {
   getAll: () => api.get('/expense-types'),
   create: (data: { name: string }) => api.post('/expense-types', data),
+  delete: (id: number) => api.delete(`/expense-types/${id}`),
 };
 
 export const workersAPI = {

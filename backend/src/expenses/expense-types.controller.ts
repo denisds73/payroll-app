@@ -1,5 +1,4 @@
-// expense-types.controller.ts
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ExpenseTypesService } from './expense-types.service';
 
 @Controller('expense-types')
@@ -14,5 +13,10 @@ export class ExpenseTypesController {
   @Post()
   create(@Body() dto: { name: string }) {
     return this.expenseTypesService.create(dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.expenseTypesService.remove(+id);
   }
 }

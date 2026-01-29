@@ -14,6 +14,15 @@ export async function ensureExpenseTypes(): Promise<void> {
       }
     }
 
+    const typesToRemove = response.data.filter(
+      (t: { id: number; name: string }) => !REQUIRED_TYPES.includes(t.name),
+    );
+
+    for (const type of typesToRemove) {
+      await expenseTypesAPI.delete(type.id);
+      console.log(`🗑️ Removed extra expense type: ${type.name}`);
+    }
+
     console.log('✅ Expense types verified');
   } catch (error) {
     console.error('❌ Failed to ensure expense types:', error);
