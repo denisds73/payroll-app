@@ -138,7 +138,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               onChange={(e) => onMonthYearChange(month, Number(e.target.value))}
               aria-label="Select year"
             >
-              {Array.from({ length: 12 }, (_, idx) => {
+              {Array.from({ length: 30 }, (_, idx) => {
                 const currentYear = new Date().getFullYear();
                 const yearValue = currentYear - 5 + idx;
                 return (

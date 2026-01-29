@@ -89,6 +89,8 @@ export const advancesAPI = {
 
   list: (params?: { month?: string; startDate?: string; endDate?: string }) =>
     api.get('/advances', { params }),
+  
+  listWorkersWithLatest: () => api.get('/advances/workers'),
 
   getByWorker: (
     workerId: number,
