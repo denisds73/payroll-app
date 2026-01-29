@@ -199,81 +199,84 @@ export default function WorkerAdvancesPage() {
         <p className="text-sm text-text-secondary mt-0.5">Advance history for this worker</p>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-end gap-8">
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <select
-                className="px-3 py-1 rounded-md border border-gray-200 text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
-                value={month}
-                onChange={(e) => handleMonthYearChange(Number(e.target.value), year)}
-                aria-label="Select month"
-              >
-                {Array.from({ length: 12 }, (_, idx) => {
-                  const monthValue = idx + 1;
-                  return (
-                    <option key={monthValue} value={monthValue}>
-                      {new Date(0, idx).toLocaleString('default', { month: 'short' })}
-                    </option>
-                  );
-                })}
-              </select>
-              <select
-                className="px-3 py-1 rounded-md border border-gray-200 text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
-                value={year}
-                onChange={(e) => handleMonthYearChange(month, Number(e.target.value))}
-                aria-label="Select year"
-              >
-                {Array.from({ length: 30 }, (_, idx) => {
-                  const currentYear = new Date().getFullYear();
-                  const yearValue = currentYear - 5 + idx;
-                  return (
-                    <option key={yearValue} value={yearValue}>
-                      {yearValue}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-            {(month !== currentMonth || year !== currentYear) && (
-              <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-amber-100 border border-amber-400 rounded-md shadow-md text-amber-800 text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-3.5 w-3.5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                Not viewing current month
-              </div>
-            )}
-          </div>
-          <Button
-            onClick={() => setIsIssueModalOpen(true)}
-            icon={<Plus className="w-4 h-4" />}
-            size="md"
-          >
-            Issue Advance
-          </Button>
-        </div>
-      </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 overflow-visible">
+      <div className="bg-card rounded-lg border border-gray-200">
+
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-end gap-8">
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <select
+                  className="px-3 py-1 rounded-md border border-gray-200 text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
+                  value={month}
+                  onChange={(e) => handleMonthYearChange(Number(e.target.value), year)}
+                  aria-label="Select month"
+                >
+                  {Array.from({ length: 12 }, (_, idx) => {
+                    const monthValue = idx + 1;
+                    return (
+                      <option key={monthValue} value={monthValue}>
+                        {new Date(0, idx).toLocaleString('default', { month: 'short' })}
+                      </option>
+                    );
+                  })}
+                </select>
+                <select
+                  className="px-3 py-1 rounded-md border border-gray-200 text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
+                  value={year}
+                  onChange={(e) => handleMonthYearChange(month, Number(e.target.value))}
+                  aria-label="Select year"
+                >
+                  {Array.from({ length: 30 }, (_, idx) => {
+                    const currentYear = new Date().getFullYear();
+                    const yearValue = currentYear - 5 + idx;
+                    return (
+                      <option key={yearValue} value={yearValue}>
+                        {yearValue}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              {(month !== currentMonth || year !== currentYear) && (
+                <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-amber-100 border border-amber-400 rounded-md shadow-md text-amber-800 text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Not viewing current month
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={() => setIsIssueModalOpen(true)}
+              icon={<Plus className="w-4 h-4" />}
+              size="md"
+            >
+              Issue Advance
+            </Button>
+          </div>
+        </div>
+
+
         {error && (
-          <div className="p-4 bg-error/10 border-b border-error/20">
+          <div className="px-4 py-3 bg-error/10 border-b border-error/20">
             <p className="text-error text-sm font-medium">{error}</p>
           </div>
         )}
 
-        {/* Table */}
+
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-[25%]">
