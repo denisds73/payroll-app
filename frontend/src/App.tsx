@@ -1,34 +1,12 @@
 import './App.css';
 import { Toaster } from 'react-hot-toast';
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import Navbar from './components/navbar/Navbar';
 
 function App() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Bar */}
-      <nav className="border-b border-gray-200 bg-card px-6 py-3">
-        <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <div className="flex items-center gap-8">
-            <Link to="/workers" className="text-xl font-bold text-primary">
-              Payroll App
-            </Link>
-            <div className="flex items-center gap-6">
-              <Link 
-                to="/workers" 
-                className="text-sm font-medium text-text-secondary hover:text-primary transition-colors"
-              >
-                Workers
-              </Link>
-              <Link 
-                to="/advances" 
-                className="text-sm font-medium text-text-secondary hover:text-primary transition-colors"
-              >
-                Advances
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
       <Toaster
         position="bottom-right"
         toastOptions={{
@@ -56,8 +34,8 @@ function App() {
           },
         }}
       />
-      {/* Page Content */}
-      <main className="p-6">
+
+      <main className="pt-24 px-6">
         <Outlet />
       </main>
     </div>
