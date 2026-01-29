@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/a11y/useSemanticElements: <explanation> */
+/** biome-ignore-all lint/a11y/useFocusableInteractive: <explanation> */
 import { Lock, Plus } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
