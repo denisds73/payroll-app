@@ -7,6 +7,7 @@ import ConfirmModal from '../../components/modals/ConfirmModal';
 import EditAdvanceModal from '../../components/modals/EditAdvanceModal';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import Button from '../../components/ui/Button';
+import Tooltip from '../../components/ui/Tooltip';
 import { advancesAPI, salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 
@@ -132,7 +133,9 @@ export default function WorkerAdvancesPage() {
       try {
         const response = await salariesAPI.getPaidPeriods(Number(workerId));
 
-        const periods: LockedPeriod[] = response.data.map((period: any) => ({
+        const periodsArray = response.data.periods || [];
+
+        const periods: LockedPeriod[] = periodsArray.map((period: any) => ({
           startDate: period.startDate,
           endDate: period.endDate,
           reason: `Salary paid for period`,
@@ -331,15 +334,24 @@ export default function WorkerAdvancesPage() {
                         const locked = isDateLocked(Number(workerId), dateOnly);
                         const lockReason = getLockReason(advance.date, workerId || '');
 
-                        return locked ? (
+                        const tooltipContent = locked && lockReason && (
+                          <div>
+                            <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
+                              <Lock className="w-3.5 h-3.5" />
+                              <span>Locked</span>
+                            </div>
+                            <div className="text-xs text-text-secondary leading-relaxed">
+                              {lockReason}
+                            </div>
+                          </div>
+                        );
+
+                        const actionContent = locked ? (
                           <div className="flex items-center justify-center">
-                            <div
-                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg cursor-not-allowed"
-                              title={lockReason || 'Locked'}
-                            >
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-not-allowed">
                               <Lock className="w-4 h-4 text-text-disabled" />
                               <span className="text-xs text-text-secondary font-medium">
-                                {lockReason || 'Locked'}
+                                Locked
                               </span>
                             </div>
                           </div>
@@ -363,6 +375,16 @@ export default function WorkerAdvancesPage() {
                             </button>
                           </div>
                         );
+
+                        if (locked && tooltipContent) {
+                          return (
+                            <Tooltip content={tooltipContent} position="cursor">
+                              {actionContent}
+                            </Tooltip>
+                          );
+                        }
+
+                        return actionContent;
                       })()}
                     </td>
                   </tr>
