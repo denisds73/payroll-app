@@ -1,8 +1,10 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <> */
-import { Search, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { AlertCircle, Search, X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { advancesAPI } from '../../services/api';
+import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStore } from '../../store/workerStore';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
@@ -38,6 +40,8 @@ export default function IssueAdvanceModal({
 
   const { workers, fetchWorkers } = useWorkerStore();
   const activeWorkers = useMemo(() => workers.filter((w) => w.isActive), [workers]);
+
+  const { fetchPaidPeriods, isDateLocked, loading: lockLoading } = useSalaryLockStore();
 
   const [formData, setFormData] = useState<AdvanceFormData>({
     workerId: initialWorkerId,
@@ -75,6 +79,14 @@ export default function IssueAdvanceModal({
     }
   }, [isOpen, initialWorkerId, today]);
 
+  useEffect(() => {
+    const currentWorkerId = initialWorkerId || formData.workerId;
+
+    if (isOpen && currentWorkerId) {
+      fetchPaidPeriods(currentWorkerId);
+    }
+  }, [isOpen, initialWorkerId, formData.workerId, fetchPaidPeriods]);
+
   const filteredWorkers = useMemo(() => {
     if (!searchQuery.trim()) return activeWorkers;
     const query = searchQuery.toLowerCase();
@@ -89,6 +101,22 @@ export default function IssueAdvanceModal({
     return '';
   }, [initialWorkerName, formData.workerId, workers]);
 
+  const isAdvanceDateDisabled = useCallback(
+    (date: Date): boolean => {
+      if (!formData.workerId) {
+        return true;
+      }
+
+      const dateString = format(date, 'yyyy-MM-dd');
+
+      return isDateLocked(formData.workerId, dateString);
+    },
+    [formData.workerId, isDateLocked],
+  );
+
+  const currentWorkerId = formData.workerId || initialWorkerId;
+  const isPaidPeriodsLoading = currentWorkerId ? lockLoading[currentWorkerId] : false;
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError(null);
@@ -100,6 +128,11 @@ export default function IssueAdvanceModal({
 
     if (!formData.amount || Number(formData.amount) <= 0) {
       setError('Please enter a valid amount');
+      return;
+    }
+
+    if (formData.workerId && isDateLocked(formData.workerId, formData.date)) {
+      setError('Cannot issue advance for this date - salary is already paid for this period');
       return;
     }
 
@@ -263,8 +296,9 @@ export default function IssueAdvanceModal({
               value={formData.date}
               onChange={(date) => setFormData({ ...formData, date: date || today })}
               maxDate={today}
-              disabled={loading}
+              disabled={loading || isPaidPeriodsLoading}
               placeholder="Select date"
+              isDateDisabled={isAdvanceDateDisabled}
             />
           </div>
 
@@ -305,6 +339,11 @@ export default function IssueAdvanceModal({
               disabled={loading}
             />
           </div>
+
+          <p className="text-xs text-warning flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            Dates in paid salary periods or in the future are disabled
+          </p>
 
           <div className="flex gap-3 pt-2">
             <Button
