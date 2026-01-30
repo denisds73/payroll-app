@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <> */
-import { ArrowLeft, Edit2, Lock, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Edit2, Lock, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -192,16 +192,25 @@ export default function WorkerAdvancesPage() {
         Back to Advances
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">
-          Worker Advances {workerName && `— ${workerName}`}
-        </h1>
-        <p className="text-sm text-text-secondary mt-0.5">Advance history for this worker</p>
+      <div className="flex justify-between items-start">
+        {' '}
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">
+            Worker Advances {workerName && `— ${workerName}`}
+          </h1>
+          <p className="text-sm text-text-secondary mt-0.5">Advance history for this worker</p>
+        </div>
+        <Button
+          onClick={() => navigate(`/workers/${workerId}`)}
+          disabled={!workerId}
+          className="mt-4"
+        >
+          Go to worker
+          <ArrowRight className="w-4 h-4" />
+        </Button>
       </div>
 
-
       <div className="bg-card rounded-lg border border-gray-200">
-
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-end gap-8">
             <div className="relative">
@@ -267,13 +276,11 @@ export default function WorkerAdvancesPage() {
           </div>
         </div>
 
-
         {error && (
           <div className="px-4 py-3 bg-error/10 border-b border-error/20">
             <p className="text-error text-sm font-medium">{error}</p>
           </div>
         )}
-
 
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">

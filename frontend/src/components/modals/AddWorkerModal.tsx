@@ -308,7 +308,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           </div>
 
           <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
+            <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" loading={loading} disabled={loading}>

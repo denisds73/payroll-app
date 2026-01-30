@@ -25,7 +25,7 @@ export const Button: React.FC<ButtonProps> = ({
   icon,
   iconPosition = 'left',
 }) => {
-  const baseStyles = `inline-flex items-center justify-center font-medium rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2`;
+  const baseStyles = `inline-flex items-center justify-center font-medium rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer`;
 
   const variantStyles = {
     primary: `bg-primary text-white hover:bg-primary-hover focus:ring-primary`,
