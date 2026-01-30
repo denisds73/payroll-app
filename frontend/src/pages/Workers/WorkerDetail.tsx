@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import PaySalaryModal from '../../components/modals/PaySalaryModal';
 import Button from '../../components/ui/Button';
@@ -54,6 +54,8 @@ export default function WorkerDetail() {
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
 
   const worker = workers.find((w) => w.id === Number(id));
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (workers.length === 0) {
@@ -308,8 +310,8 @@ export default function WorkerDetail() {
 
             <button
               type="button"
-              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-              onClick={() => handleTabChange('history')}
+              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300 cursor-pointer"
+              onClick={() => navigate(`/advances/${worker.id}`)}
             >
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="w-5 h-5 text-warning" />

@@ -196,7 +196,7 @@ export default function WorkerAdvancesPage() {
         {' '}
         <div>
           <h1 className="text-2xl font-bold text-text-primary">
-            Worker Advances {workerName && `— ${workerName}`}
+            Worker Advances {workerName && `- ${workerName}`}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">Advance history for this worker</p>
         </div>
