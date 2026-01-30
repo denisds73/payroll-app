@@ -327,8 +327,8 @@ export default function WorkerDetail() {
 
             <button
               type="button"
-              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
-              onClick={() => handleTabChange('history')}
+              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300 cursor-pointer"
+              onClick={() => handleTabChange('expenses')}
             >
               <div className="flex items-center gap-2 mb-3">
                 <Receipt className="w-5 h-5 text-info" />
