@@ -1,26 +1,25 @@
 import {
-  attendanceAPI,
   advancesAPI,
+  attendanceAPI,
   expensesAPI,
   salariesAPI,
   workersAPI,
 } from '../../../services/api';
 import type {
-  SalaryReportData,
-  AttendanceRecord,
-  ExpenseRecord,
   AdvanceRecord,
-  AttendanceSummary,
-  ExpenseSummary,
+  AdvanceReportData,
   AdvanceSummary,
-  WorkerInfo,
+  AttendanceRecord,
+  AttendanceSummary,
+  ExpenseRecord,
+  ExpenseSummary,
   SalaryRecord,
+  SalaryReportData,
+  WorkerInfo,
 } from '../types/pdf.types';
 import { formatDateTime } from './pdfFormatters';
 
-export async function fetchSalaryReportData(
-  salaryId: number,
-): Promise<SalaryReportData> {
+export async function fetchSalaryReportData(salaryId: number): Promise<SalaryReportData> {
   try {
     console.log('📊 Fetching salary report data for ID:', salaryId);
 
@@ -39,36 +38,23 @@ export async function fetchSalaryReportData(
 
     console.log('📅 Fetching records for period:', startDate, 'to', endDate);
 
-    const [attendanceResponse, expensesResponse, advancesResponse] =
-      await Promise.all([
-        attendanceAPI.getByWorkerAndMonth(
-          salary.workerId,
-          new Date(startDate).getMonth() + 1,
-          new Date(startDate).getFullYear(),
-        ),
-        expensesAPI.getByWorker(salary.workerId, { startDate, endDate }),
-        advancesAPI.getByWorker(salary.workerId, { startDate, endDate }),
-      ]);
+    const [attendanceResponse, expensesResponse, advancesResponse] = await Promise.all([
+      attendanceAPI.getByWorkerAndMonth(
+        salary.workerId,
+        new Date(startDate).getMonth() + 1,
+        new Date(startDate).getFullYear(),
+      ),
+      expensesAPI.getByWorker(salary.workerId, { startDate, endDate }),
+      advancesAPI.getByWorker(salary.workerId, { startDate, endDate }),
+    ]);
 
     const allAttendanceRecords: AttendanceRecord[] = attendanceResponse.data;
     const allExpenseRecords: ExpenseRecord[] = expensesResponse.data;
     const allAdvanceRecords: AdvanceRecord[] = advancesResponse.data;
 
-    const attendanceRecords = filterRecordsByDateRange(
-      allAttendanceRecords,
-      startDate,
-      endDate,
-    );
-    const expenseRecords = filterRecordsByDateRange(
-      allExpenseRecords,
-      startDate,
-      endDate,
-    );
-    const advanceRecords = filterRecordsByDateRange(
-      allAdvanceRecords,
-      startDate,
-      endDate,
-    );
+    const attendanceRecords = filterRecordsByDateRange(allAttendanceRecords, startDate, endDate);
+    const expenseRecords = filterRecordsByDateRange(allExpenseRecords, startDate, endDate);
+    const advanceRecords = filterRecordsByDateRange(allAdvanceRecords, startDate, endDate);
 
     console.log('✅ Records filtered for period:', {
       attendance: attendanceRecords.length,
@@ -108,10 +94,43 @@ export async function fetchSalaryReportData(
   } catch (error) {
     console.error('❌ Error fetching salary report data:', error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
     throw new Error(`Failed to fetch salary report data: ${errorMessage}`);
+  }
+}
+
+export async function fetchAdvanceReportData(advanceId: number) {
+  try {
+    console.log('Fetching advance data for ID:', advanceId);
+
+    const advanceResponse = await advancesAPI.getById(advanceId);
+    const advance: AdvanceRecord = advanceResponse.data;
+
+    console.log('Advance fetched', advance);
+
+    const workerResponse = await workersAPI.getById(advance.workerId);
+    const worker: WorkerInfo = workerResponse.data;
+
+    console.log('Worker info fetched', worker);
+
+    const now = new Date();
+    const generatedAt = now.toISOString();
+    const generatedAtFormatted = formatDateTime(generatedAt);
+
+    const reportData: AdvanceReportData = {
+      advance,
+      worker,
+      generatedAt,
+      generatedAtFormatted,
+    };
+
+    console.log('Advance report data generated successfully');
+    return reportData;
+  } catch (error) {
+    console.error('Error fetching advance report data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Failed to fetch advance report data: ${errorMessage}`);
   }
 }
 
@@ -129,9 +148,7 @@ function filterRecordsByDateRange<T extends { date: string }>(
   });
 }
 
-function calculateAttendanceSummary(
-  records: AttendanceRecord[],
-): AttendanceSummary {
+function calculateAttendanceSummary(records: AttendanceRecord[]): AttendanceSummary {
   let presentDays = 0;
   let halfDays = 0;
   let absentDays = 0;

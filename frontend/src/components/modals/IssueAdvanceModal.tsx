@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { advancesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStore } from '../../store/workerStore';
+import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 
@@ -55,6 +56,7 @@ export default function IssueAdvanceModal({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [pdfAdvanceId, setPdfAdvanceId] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -139,12 +141,17 @@ export default function IssueAdvanceModal({
     setLoading(true);
 
     try {
-      await advancesAPI.create({
+      const response = await advancesAPI.create({
         workerId: formData.workerId,
         date: formData.date,
         amount: Number(formData.amount),
         reason: formData.reason || undefined,
       });
+
+      const newAdvanceId = response.data.id;
+      setPdfAdvanceId(newAdvanceId);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       onSuccess();
       handleClose();
@@ -362,6 +369,21 @@ export default function IssueAdvanceModal({
           </div>
         </form>
       </div>
+
+      {pdfAdvanceId && (
+        <AdvancePdfExportButton
+          advanceId={pdfAdvanceId}
+          workerName={selectedWorkerName}
+          variant="auto"
+          onSuccess={() => {
+            setPdfAdvanceId(null);
+          }}
+          onError={(error) => {
+            console.error('❌ Advance receipt download failed:', error);
+            setPdfAdvanceId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

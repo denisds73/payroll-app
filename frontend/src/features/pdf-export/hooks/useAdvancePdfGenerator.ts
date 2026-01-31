@@ -1,28 +1,23 @@
 import { useCallback, useState } from 'react';
 import { generateAndDownloadPdf } from '../services/pdfService';
-import type { UseSalaryPdfGenerator } from '../types/pdf.types';
-import { buildSalaryReportPdf } from '../utils/pdfBuilder';
-import { fetchSalaryReportData } from '../utils/pdfData';
+import type { UseAdvancePdfGenerator } from '../types/pdf.types';
+import { buildAdvanceReceiptPdf } from '../utils/advancePdfBuilder';
+import { fetchAdvanceReportData } from '../utils/pdfData';
 
-export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
+export function useAdvancePdfGenerator(): UseAdvancePdfGenerator {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const generateAndDownload = useCallback(async (salaryId: number): Promise<void> => {
+  const generateAndDownload = useCallback(async (advanceId: number): Promise<void> => {
     setIsGenerating(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const reportData = await fetchSalaryReportData(salaryId);
-      const docDefinition = buildSalaryReportPdf(reportData);
-
-      const fileName = generateFileName(
-        reportData.worker.name,
-        reportData.salary.cycleStart,
-        reportData.salary.cycleEnd,
-      );
+      const reportData = await fetchAdvanceReportData(advanceId);
+      const docDefinition = buildAdvanceReceiptPdf(reportData);
+      const fileName = generateFileName(reportData.worker.name, reportData.advance.date);
 
       await generateAndDownloadPdf(docDefinition, fileName);
 
@@ -57,12 +52,13 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
   };
 }
 
-function generateFileName(workerName: string, cycleStart: string, cycleEnd: string): string {
+function generateFileName(workerName: string, advanceDate: string): string {
   const cleanName = workerName.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
 
-  const endDate = new Date(cycleEnd);
-  const month = endDate.toLocaleDateString('en-IN', { month: 'short' });
-  const year = endDate.getFullYear();
+  const date = new Date(advanceDate);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleDateString('en-IN', { month: 'short' });
+  const year = date.getFullYear();
 
-  return `salary_report_${cleanName}_${month}${year}`;
+  return `advance_receipt_${cleanName}_${day}${month}${year}`;
 }

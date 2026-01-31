@@ -1,4 +1,4 @@
-import { Download, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Download, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
 
@@ -12,13 +12,11 @@ interface SalaryPdfExportButtonProps {
 
 export default function SalaryPdfExportButton({
   salaryId,
-  workerName,
   variant = 'default',
   onSuccess,
   onError,
 }: SalaryPdfExportButtonProps) {
-  const { generateAndDownload, isGenerating, error, success, clear } =
-    useSalaryPdfGenerator();
+  const { generateAndDownload, isGenerating, error, success, clear } = useSalaryPdfGenerator();
 
   useEffect(() => {
     if (variant === 'auto') {
@@ -31,7 +29,7 @@ export default function SalaryPdfExportButton({
       if (onSuccess) {
         onSuccess();
       }
-      
+
       const timer = setTimeout(() => {
         clear();
       }, 2000);
