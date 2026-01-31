@@ -1,14 +1,16 @@
+/** biome-ignore-all lint/complexity/noUselessFragments: <> */
 import { DollarSign, Edit2, Filter, Lock, Receipt, Trash2, TrendingUp, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { advancesAPI, expensesAPI, salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
+import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
+import SalaryPdfExportButton from '../export/SalaryPdfExportButton';
 import ConfirmModal from '../modals/ConfirmModal';
 import EditAdvanceModal from '../modals/EditAdvanceModal';
 import EditExpenseModal from '../modals/EditExpenseModal';
 import { DateRangePicker } from '../ui/DatePicker';
 import Tooltip from '../ui/Tooltip';
-import SalaryPdfExportButton from '../export/SalaryPdfExportButton';
 
 interface HistoryTabProps {
   workerId: number;
@@ -27,7 +29,6 @@ interface HistoryItem {
   typeName?: string;
   issuedAt?: string;
   createdAt: string;
-  // 🆕 Partial payment fields
   status?: 'PENDING' | 'PARTIAL' | 'PAID';
   netPay?: number;
   totalPaid?: number;
@@ -104,41 +105,41 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
       const salariesResponse = await salariesAPI.getByWorker(workerId);
       const salaries: HistoryItem[] = [];
       salariesResponse.data.forEach((sal: any) => {
-        // If we have detailed payments, create an item for each
         if (sal.payments && sal.payments.length > 0) {
-           sal.payments.forEach((payment: any, index: number) => {
-              salaries.push({
-                 id: sal.id, // Keep salary ID for locking/reference
-                 paymentId: payment.id, // Unique payment ID
-                 type: 'salary' as const,
-                 date: payment.date, // Use actual payment date
-                 amount: payment.amount,
-                 description: sal.paymentProof || `Payment for cycle ending ${formatDate(sal.cycleEnd)}`,
-                 cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
-                 issuedAt: payment.date,
-                 createdAt: payment.createdAt,
-                 status: sal.status,
-                 netPay: sal.netPay,
-                 totalPaid: sal.totalPaid,
-                 isPartial: index < sal.payments.length - 1 || sal.status === 'PARTIAL', // Mark as partial if it's not the final clearing payment or status is still partial
-              });
-           });
-        } 
-        // Legacy fallback: if paid/partial but no payments recorded
-        else if (sal.totalPaid > 0) {
-           salaries.push({
+          sal.payments.forEach((payment: any, index: number) => {
+            salaries.push({
               id: sal.id,
+              paymentId: payment.id,
               type: 'salary' as const,
-              date: sal.issuedAt || sal.cycleEnd, // Fallback date
-              amount: sal.totalPaid,
-              description: sal.paymentProof || `Salary for ${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+              date: payment.date,
+              amount: payment.amount,
+              description:
+                sal.paymentProof || `Payment for cycle ending ${formatDate(sal.cycleEnd)}`,
               cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
-              issuedAt: sal.issuedAt,
-              createdAt: sal.createdAt,
+              issuedAt: payment.date,
+              createdAt: payment.createdAt,
               status: sal.status,
               netPay: sal.netPay,
               totalPaid: sal.totalPaid,
-           });
+              isPartial: index < sal.payments.length - 1 || sal.status === 'PARTIAL',
+            });
+          });
+        } else if (sal.totalPaid > 0) {
+          salaries.push({
+            id: sal.id,
+            type: 'salary' as const,
+            date: sal.issuedAt || sal.cycleEnd,
+            amount: sal.totalPaid,
+            description:
+              sal.paymentProof ||
+              `Salary for ${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+            cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+            issuedAt: sal.issuedAt,
+            createdAt: sal.createdAt,
+            status: sal.status,
+            netPay: sal.netPay,
+            totalPaid: sal.totalPaid,
+          });
         }
       });
 
@@ -538,23 +539,29 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                               )}
                             </p>
 
-                            {/* 🆕 SHOW PARTIAL PAYMENT STATUS */}
-                            {item.status === 'PARTIAL' && item.netPay && item.totalPaid !== undefined && (
-                              <div className="mt-1 space-y-1">
-                                <p className="text-xs flex items-center gap-1">
-                                  <span className="font-medium text-warning">Partial Payment:</span>
-                                  <span className="text-text-secondary">
-                                    {formatCurrency(item.totalPaid)} of {formatCurrency(item.netPay)}
-                                  </span>
-                                </p>
-                                <p className="text-xs text-warning flex items-center gap-1">
-                                  <span className="bg-warning/20 px-1.5 py-0.5 rounded text-warning font-medium">
-                                    Carry Forward
-                                  </span>
-                                  <span>{formatCurrency(item.netPay - item.totalPaid)} to next cycle</span>
-                                </p>
-                              </div>
-                            )}
+                            {item.status === 'PARTIAL' &&
+                              item.netPay &&
+                              item.totalPaid !== undefined && (
+                                <div className="mt-1 space-y-1">
+                                  <p className="text-xs flex items-center gap-1">
+                                    <span className="font-medium text-warning">
+                                      Partial Payment:
+                                    </span>
+                                    <span className="text-text-secondary">
+                                      {formatCurrency(item.totalPaid)} of{' '}
+                                      {formatCurrency(item.netPay)}
+                                    </span>
+                                  </p>
+                                  <p className="text-xs text-warning flex items-center gap-1">
+                                    <span className="bg-warning/20 px-1.5 py-0.5 rounded text-warning font-medium">
+                                      Carry Forward
+                                    </span>
+                                    <span>
+                                      {formatCurrency(item.netPay - item.totalPaid)} to next cycle
+                                    </span>
+                                  </p>
+                                </div>
+                              )}
                           </div>
                         ) : (
                           item.type !== 'salary' && (
@@ -578,8 +585,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
                           {formatCurrency(item.amount)}
                         </p>
-                        
-                        {/* 🆕 SHOW PARTIAL STATUS BADGE */}
+
                         {item.type === 'salary' && item.status === 'PARTIAL' && (
                           <span className="text-xs text-warning font-medium">Partial</span>
                         )}
@@ -588,6 +594,14 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                       {item.type === 'salary' && (
                         <SalaryPdfExportButton
                           salaryId={item.id}
+                          workerName={workerName}
+                          variant="ghost"
+                        />
+                      )}
+
+                      {item.type === 'advance' && (
+                        <AdvancePdfExportButton
+                          advanceId={item.id}
                           workerName={workerName}
                           variant="ghost"
                         />
