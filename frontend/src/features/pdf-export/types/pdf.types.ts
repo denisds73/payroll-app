@@ -1,3 +1,22 @@
+export interface AdvanceReportData {
+  advance: AdvanceRecord;
+  worker: WorkerInfo;
+  generatedAt: string;
+  generatedAtFormatted: string;
+}
+
+export interface AdvancePdfGeneratorState {
+  isGenerating: boolean;
+  error: string | null;
+  success: boolean;
+}
+
+export interface AdvancePdfGeneratorActions {
+  generateAndDownload: (advanceId: number) => Promise<void>;
+  clear: () => void;
+}
+
+export type UseAdvancePdfGenerator = AdvancePdfGeneratorState & AdvancePdfGeneratorActions;
 export interface AttendanceRecord {
   id: number;
   workerId: number;

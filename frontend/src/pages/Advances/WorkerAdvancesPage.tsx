@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Edit2, Lock, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import AdvancePdfExportButton from '../../components/export/AdvancePdfExportButton';
 import ConfirmModal from '../../components/modals/ConfirmModal';
 import EditAdvanceModal from '../../components/modals/EditAdvanceModal';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
@@ -356,33 +357,36 @@ export default function WorkerAdvancesPage() {
                           </div>
                         );
 
-                        const actionContent = locked ? (
-                          <div className="flex items-center justify-center">
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-not-allowed">
-                              <Lock className="w-4 h-4 text-text-disabled" />
-                              <span className="text-xs text-text-secondary font-medium">
-                                Locked
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
+                        const actionContent = (
                           <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(advance)}
-                              className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(advance)}
-                              className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <AdvancePdfExportButton advanceId={advance.id} />
+                            {locked ? (
+                              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-not-allowed">
+                                <Lock className="w-4 h-4 text-text-disabled" />
+                                <span className="text-xs text-text-secondary font-medium">
+                                  Locked
+                                </span>
+                              </div>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleEdit(advance)}
+                                  className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(advance)}
+                                  className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         );
 

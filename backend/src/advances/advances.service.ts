@@ -214,4 +214,12 @@ export class AdvancesService {
 
     return result;
   }
+
+  async getById(id: number) {
+    const advance = await this.prisma.advance.findUnique({
+      where: { id },
+    });
+
+    return advance;
+  }
 }

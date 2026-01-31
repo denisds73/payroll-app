@@ -89,7 +89,7 @@ export const advancesAPI = {
 
   list: (params?: { month?: string; startDate?: string; endDate?: string }) =>
     api.get('/advances', { params }),
-  
+
   listWorkersWithLatest: () => api.get('/advances/workers'),
 
   getByWorker: (
@@ -101,6 +101,8 @@ export const advancesAPI = {
     api.patch(`/advances/${id}`, data),
 
   delete: (id: number) => api.delete(`/advances/${id}`),
+
+  getById: (id: number) => api.get(`/advances/${id}`),
 };
 
 export const expensesAPI = {

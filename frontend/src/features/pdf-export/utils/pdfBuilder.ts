@@ -1,16 +1,8 @@
-
-import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { SalaryReportData } from '../types/pdf.types';
-import {
-  formatCurrency,
-  formatDate,
-  formatDateRange,
-  capitalize,
-} from './pdfFormatters';
+import { capitalize, formatCurrency, formatDate, formatDateRange } from './pdfFormatters';
 
-export function buildSalaryReportPdf(
-  data: SalaryReportData,
-): TDocumentDefinitions {
+export function buildSalaryReportPdf(data: SalaryReportData): TDocumentDefinitions {
   return {
     info: {
       title: `Salary Report - ${data.worker.name}`,
@@ -22,7 +14,7 @@ export function buildSalaryReportPdf(
 
     pageSize: 'A4',
     pageMargins: [40, 60, 40, 60],
-    
+
     content: [
       buildHeader(data),
       buildWorkerInfo(data),
@@ -174,10 +166,7 @@ function buildSalaryPeriod(data: SalaryReportData): any {
               columns: [
                 { text: 'Period:', style: 'infoLabel', width: 80 },
                 {
-                  text: formatDateRange(
-                    data.salary.cycleStart,
-                    data.salary.cycleEnd,
-                  ),
+                  text: formatDateRange(data.salary.cycleStart, data.salary.cycleEnd),
                   style: 'infoValue',
                 },
               ],
@@ -254,7 +243,11 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                   body: [
                     [
                       { text: 'Present Days', style: 'tableCell' },
-                      { text: summary.presentDays.toString(), style: 'tableCell', alignment: 'right' },
+                      {
+                        text: summary.presentDays.toString(),
+                        style: 'tableCell',
+                        alignment: 'right',
+                      },
                     ],
                     [
                       { text: 'Half Days', style: 'tableCell' },
@@ -262,15 +255,29 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                     ],
                     [
                       { text: 'Absent Days', style: 'tableCell' },
-                      { text: summary.absentDays.toString(), style: 'tableCell', alignment: 'right' },
+                      {
+                        text: summary.absentDays.toString(),
+                        style: 'tableCell',
+                        alignment: 'right',
+                      },
                     ],
                     [
                       { text: 'Total Days Worked', style: 'tableCell', bold: true },
-                      { text: summary.totalDays.toFixed(1), style: 'tableCell', alignment: 'right', bold: true },
+                      {
+                        text: summary.totalDays.toFixed(1),
+                        style: 'tableCell',
+                        alignment: 'right',
+                        bold: true,
+                      },
                     ],
                     [
                       { text: 'Total OT Units', style: 'tableCell', bold: true },
-                      { text: summary.totalOtUnits.toFixed(1), style: 'tableCell', alignment: 'right', bold: true },
+                      {
+                        text: summary.totalOtUnits.toFixed(1),
+                        style: 'tableCell',
+                        alignment: 'right',
+                        bold: true,
+                      },
                     ],
                   ],
                 },
@@ -333,7 +340,6 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
     ],
   };
 }
-
 
 function buildAttendanceTable(data: SalaryReportData): any {
   const { records } = data.attendance;
@@ -514,7 +520,10 @@ function buildSalaryBreakdown(data: SalaryReportData): any {
         widths: ['*', 'auto'],
         body: [
           [
-            { text: `Base Pay (${attendance.summary.totalDays.toFixed(1)} days)`, style: 'tableCell' },
+            {
+              text: `Base Pay (${attendance.summary.totalDays.toFixed(1)} days)`,
+              style: 'tableCell',
+            },
             {
               text: formatCurrency(salary.basePay),
               style: 'tableCell',
@@ -522,7 +531,10 @@ function buildSalaryBreakdown(data: SalaryReportData): any {
             },
           ],
           [
-            { text: `OT Pay (${attendance.summary.totalOtUnits.toFixed(1)} units)`, style: 'tableCell' },
+            {
+              text: `OT Pay (${attendance.summary.totalOtUnits.toFixed(1)} units)`,
+              style: 'tableCell',
+            },
             {
               text: formatCurrency(salary.otPay),
               style: 'tableCell',

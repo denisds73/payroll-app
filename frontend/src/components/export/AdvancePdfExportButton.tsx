@@ -1,28 +1,29 @@
 import { AlertCircle, CheckCircle, Download, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
-import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
+import { useAdvancePdfGenerator } from '../../features/pdf-export/hooks/useAdvancePdfGenerator';
 
-interface SalaryPdfExportButtonProps {
-  salaryId: number;
+interface AdvancePdfExportButtonProps {
+  advanceId: number;
   workerName?: string;
   variant?: 'default' | 'ghost' | 'auto';
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
 
-export default function SalaryPdfExportButton({
-  salaryId,
+export default function AdvancePdfExportButton({
+  advanceId,
+  workerName,
   variant = 'default',
   onSuccess,
   onError,
-}: SalaryPdfExportButtonProps) {
-  const { generateAndDownload, isGenerating, error, success, clear } = useSalaryPdfGenerator();
+}: AdvancePdfExportButtonProps) {
+  const { generateAndDownload, isGenerating, error, success, clear } = useAdvancePdfGenerator();
 
   useEffect(() => {
-    if (variant === 'auto') {
+    if (variant === 'auto' && advanceId) {
       handleDownload();
     }
-  }, [variant]);
+  }, [variant, advanceId]);
 
   useEffect(() => {
     if (success) {
@@ -46,9 +47,9 @@ export default function SalaryPdfExportButton({
 
   const handleDownload = async () => {
     try {
-      await generateAndDownload(salaryId);
+      await generateAndDownload(advanceId);
     } catch (err) {
-      console.error('PDF generation failed:', err);
+      console.error('Failed to generate advance receipt:', err);
     }
   };
 
@@ -70,10 +71,10 @@ export default function SalaryPdfExportButton({
   };
 
   const getTooltip = () => {
-    if (isGenerating) return 'Generating PDF...';
+    if (isGenerating) return 'Generating receipt...';
     if (success) return 'Downloaded!';
     if (error) return 'Failed to download';
-    return 'Download PDF';
+    return 'Download Receipt';
   };
 
   const getIconScale = () => {
@@ -88,7 +89,7 @@ export default function SalaryPdfExportButton({
       disabled={isGenerating}
       className="p-2 text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       title={getTooltip()}
-      aria-label="Download PDF"
+      aria-label="Download Advance Receipt"
     >
       <div className={`transition-all duration-300 ease-in-out transform ${getIconScale()}`}>
         {getIcon()}
