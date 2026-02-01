@@ -96,24 +96,91 @@ export const useSignatureCapture = () => {
     strokeCountRef.current = 0;
   }, [getContext]);
 
+  const cropCanvas = useCallback((sourceCanvas: HTMLCanvasElement): string => {
+    const ctx = sourceCanvas.getContext('2d');
+    if (!ctx) return sourceCanvas.toDataURL('image/png');
+
+    const imageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+    const pixels = imageData.data;
+
+    let minX = sourceCanvas.width;
+    let minY = sourceCanvas.height;
+    let maxX = 0;
+    let maxY = 0;
+
+    for (let y = 0; y < sourceCanvas.height; y++) {
+      for (let x = 0; x < sourceCanvas.width; x++) {
+        const index = (y * sourceCanvas.width + x) * 4;
+        const alpha = pixels[index + 3];
+
+        if (alpha > 0) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    const padding = 10;
+    minX = Math.max(0, minX - padding);
+    minY = Math.max(0, minY - padding);
+    maxX = Math.min(sourceCanvas.width, maxX + padding);
+    maxY = Math.min(sourceCanvas.height, maxY + padding);
+
+    const croppedWidth = maxX - minX;
+    const croppedHeight = maxY - minY;
+
+    if (croppedWidth <= 0 || croppedHeight <= 0) {
+      return sourceCanvas.toDataURL('image/png');
+    }
+
+    const croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = croppedWidth;
+    croppedCanvas.height = croppedHeight;
+    const croppedCtx = croppedCanvas.getContext('2d');
+
+    if (!croppedCtx) return sourceCanvas.toDataURL('image/png');
+
+    croppedCtx.drawImage(
+      sourceCanvas,
+      minX,
+      minY,
+      croppedWidth,
+      croppedHeight,
+      0,
+      0,
+      croppedWidth,
+      croppedHeight,
+    );
+
+    return croppedCanvas.toDataURL('image/png');
+  }, []);
+
   const save = useCallback((): SignatureData | null => {
     const canvas = canvasRef.current;
 
     if (!canvas) return null;
 
     if (strokeCountRef.current === 0) {
-      alert('Please sign');
+      alert('Please provide a signature before saving');
       return null;
     }
 
-    const dataUrl = canvas.toDataURL('image/png');
+    const dataUrl = cropCanvas(canvas);
+
+    console.log('📐 Canvas cropped:', {
+      original: `${canvas.width}x${canvas.height}`,
+      cropped: 'optimized to content bounds',
+      saved: `${(dataUrl.length / 1024).toFixed(2)} KB`,
+    });
 
     return {
       dataUrl,
       capturedAt: new Date(),
       isEmpty: false,
     };
-  }, []);
+  }, [cropCanvas]);
 
   return {
     canvasRef,

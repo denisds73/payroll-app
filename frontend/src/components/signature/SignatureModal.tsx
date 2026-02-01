@@ -82,7 +82,7 @@ export const SignatureModal = ({ isOpen, onClose, onSave }: SignatureModalProps)
       role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-3xl w-full transition-all duration-200 ${
+        className={`bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
@@ -120,7 +120,9 @@ export const SignatureModal = ({ isOpen, onClose, onSave }: SignatureModalProps)
             <label className="block text-sm font-medium text-text-primary mb-2">
               Signature <span className="text-error">*</span>
             </label>
-            <SignatureCanvas ref={canvasRef} />
+            <div className="flex justify-center">
+              <SignatureCanvas ref={canvasRef} />
+            </div>
           </div>
 
           <p className="text-xs text-text-secondary">
