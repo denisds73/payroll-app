@@ -31,6 +31,37 @@ export const SignatureModal = ({ isOpen, onClose, onSave }: SignatureModalProps)
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      const isModifierPressed = e.ctrlKey || e.metaKey;
+
+      if (isModifierPressed && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSave();
+        return;
+      }
+
+      if (isModifierPressed && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        handleClear();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        handleClose();
+        return;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
   const handleSave = () => {
     setError(null);
 
@@ -82,19 +113,18 @@ export const SignatureModal = ({ isOpen, onClose, onSave }: SignatureModalProps)
       role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 transition-all duration-200 ${
+        className={`bg-white rounded-lg shadow-xl w-[90vw] h-[90vh] flex flex-col transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 shrink-0">
           <div>
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
-              Capture Signature
+              Sign Here
             </h2>
-            <p className="text-sm text-text-secondary mt-1">Sign using your mouse or stylus</p>
           </div>
           <button
             type="button"
@@ -106,47 +136,40 @@ export const SignatureModal = ({ isOpen, onClose, onSave }: SignatureModalProps)
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="flex-1 flex flex-col p-6 min-h-0">
           {error && (
             <div
-              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm animate-shake"
+              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm animate-shake mb-4 shrink-0"
               role="alert"
             >
               {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              Signature <span className="text-error">*</span>
-            </label>
-            <div className="flex justify-center">
-              <SignatureCanvas ref={canvasRef} />
-            </div>
+          <div className="flex-1 flex items-center justify-center mb-4 min-h-0">
+            <SignatureCanvas ref={canvasRef} />
           </div>
 
-          <p className="text-xs text-text-secondary">
-            Draw your signature in the box above. Click Clear to start over, or Save to confirm.
-          </p>
-
-          <div className="flex gap-3 pt-2">
+          <div className="flex justify-end gap-3 shrink-0">
             <Button
               type="button"
               variant="secondary"
               size="md"
               onClick={handleClear}
-              className="flex-1"
+              title="Clear signature (Ctrl+Z)"
             >
               Clear
+              <span className="ml-2 text-xs opacity-60">Ctrl+Z</span>
             </Button>
             <Button
               type="button"
               variant="primary"
               size="md"
               onClick={handleSave}
-              className="flex-1"
+              title="Save signature (Ctrl+S)"
             >
               Save Signature
+              <span className="ml-2 text-xs opacity-60">Ctrl+S</span>
             </Button>
           </div>
         </div>

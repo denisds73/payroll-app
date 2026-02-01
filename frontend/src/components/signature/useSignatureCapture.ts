@@ -6,9 +6,10 @@ export const useSignatureCapture = () => {
   const isDrawingRef = useRef(false);
   const strokeCountRef = useRef(0);
 
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+
   const getContext = useCallback(() => {
     if (!canvasRef.current) return null;
-
     return canvasRef.current.getContext('2d');
   }, []);
 
@@ -56,12 +57,15 @@ export const useSignatureCapture = () => {
       const { x, y } = getCoordinates(event);
 
       ctx.strokeStyle = '#18181b';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
+      ctx.globalCompositeOperation = 'source-over';
 
       ctx.beginPath();
       ctx.moveTo(x, y);
+
+      lastPointRef.current = { x, y };
     },
     [getContext, getCoordinates],
   );
@@ -74,15 +78,30 @@ export const useSignatureCapture = () => {
       if (!ctx) return;
 
       const { x, y } = getCoordinates(event);
+      const lastPoint = lastPointRef.current;
 
-      ctx.lineTo(x, y);
+      if (!lastPoint) {
+        lastPointRef.current = { x, y };
+        return;
+      }
+
+      const midX = (lastPoint.x + x) / 2;
+      const midY = (lastPoint.y + y) / 2;
+
+      ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, midX, midY);
       ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(midX, midY);
+
+      lastPointRef.current = { x, y };
     },
     [getContext, getCoordinates],
   );
 
   const handleMouseUp = useCallback(() => {
     isDrawingRef.current = false;
+    lastPointRef.current = null;
   }, []);
 
   const clear = useCallback(() => {
@@ -92,8 +111,8 @@ export const useSignatureCapture = () => {
     if (!canvas || !ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     strokeCountRef.current = 0;
+    lastPointRef.current = null;
   }, [getContext]);
 
   const cropCanvas = useCallback((sourceCanvas: HTMLCanvasElement): string => {
@@ -168,12 +187,6 @@ export const useSignatureCapture = () => {
     }
 
     const dataUrl = cropCanvas(canvas);
-
-    console.log('📐 Canvas cropped:', {
-      original: `${canvas.width}x${canvas.height}`,
-      cropped: 'optimized to content bounds',
-      saved: `${(dataUrl.length / 1024).toFixed(2)} KB`,
-    });
 
     return {
       dataUrl,

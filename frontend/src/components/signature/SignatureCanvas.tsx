@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useEffect, useImperativeHandle } from 'react';
 import type { SignatureData } from './signature.types';
 import { useSignatureCapture } from './useSignatureCapture';
 
@@ -14,8 +14,8 @@ interface SignatureCanvasProps {
 
 export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasProps>(
   ({ width, height }, ref) => {
-    const calculatedWidth = width || Math.min(window.innerWidth * 0.7, 900);
-    const calculatedHeight = height || Math.min(window.innerHeight * 0.4, 300);
+    const calculatedWidth = width || Math.min(window.innerWidth * 0.85, 1400);
+    const calculatedHeight = height || Math.min(window.innerHeight * 0.65, 600);
 
     const { canvasRef, handleMouseDown, handleMouseMove, handleMouseUp, save, clear } =
       useSignatureCapture();
@@ -24,6 +24,15 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
       save,
       clear,
     }));
+
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+      }
+    }, []);
 
     return (
       <canvas
@@ -34,8 +43,9 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
           width: `${calculatedWidth}px`,
           height: `${calculatedHeight}px`,
           maxWidth: '100%',
+          maxHeight: '100%',
         }}
-        className="border-2 border-gray-300 rounded-lg cursor-crosshair bg-white"
+        className="border-2 border-gray-300 rounded-lg cursor-crosshair bg-white shadow-sm"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
