@@ -7,6 +7,8 @@ import { advancesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStore } from '../../store/workerStore';
 import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
+import { SignatureModal } from '../signature/SignatureModal';
+import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 
@@ -23,6 +25,7 @@ interface AdvanceFormData {
   date: string;
   amount: string;
   reason: string;
+  signatureData?: string;
 }
 
 export default function IssueAdvanceModal({
@@ -49,6 +52,7 @@ export default function IssueAdvanceModal({
     date: today,
     amount: '',
     reason: '',
+    signatureData: undefined,
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,6 +61,7 @@ export default function IssueAdvanceModal({
   const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [pdfAdvanceId, setPdfAdvanceId] = useState<number | null>(null);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,6 +81,7 @@ export default function IssueAdvanceModal({
         date: today,
         amount: '',
         reason: '',
+        signatureData: undefined,
       });
       setSearchQuery('');
     }
@@ -119,6 +125,32 @@ export default function IssueAdvanceModal({
   const currentWorkerId = formData.workerId || initialWorkerId;
   const isPaidPeriodsLoading = currentWorkerId ? lockLoading[currentWorkerId] : false;
 
+  const handleOpenSignatureModal = () => {
+    setIsSignatureModalOpen(true);
+  };
+
+  const handleCloseSignatureModal = () => {
+    setIsSignatureModalOpen(false);
+  };
+
+  const handleSaveSignature = (signatureData: SignatureData) => {
+    setFormData({
+      ...formData,
+      signatureData: signatureData.dataUrl,
+    });
+    console.log('✅ Signature captured:', {
+      length: signatureData.dataUrl.length,
+      capturedAt: signatureData.capturedAt,
+    });
+  };
+
+  const handleClearSignature = () => {
+    setFormData({
+      ...formData,
+      signatureData: undefined,
+    });
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError(null);
@@ -150,6 +182,11 @@ export default function IssueAdvanceModal({
 
       const newAdvanceId = response.data.id;
       setPdfAdvanceId(newAdvanceId);
+
+      // ✅ Log signature status
+      if (formData.signatureData) {
+        console.log('✅ Advance created with signature (to be embedded in PDF)');
+      }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -308,6 +345,10 @@ export default function IssueAdvanceModal({
               isDateDisabled={isAdvanceDateDisabled}
             />
           </div>
+          <p className="text-xs text-warning flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            Dates in paid salary periods or in the future are disabled
+          </p>
 
           <div>
             <label htmlFor={amountId} className="block text-sm font-medium text-text-primary mb-2">
@@ -347,10 +388,49 @@ export default function IssueAdvanceModal({
             />
           </div>
 
-          <p className="text-xs text-warning flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            Dates in paid salary periods or in the future are disabled
-          </p>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              Signature (Optional)
+            </label>
+
+            {formData.signatureData ? (
+              <div className="border-2 border-gray-200 rounded-lg p-3 bg-gray-50">
+                <img
+                  src={formData.signatureData}
+                  alt="Worker signature"
+                  className="h-16 mx-auto mb-2"
+                />
+                <div className="flex gap-2 justify-center">
+                  <button
+                    type="button"
+                    onClick={handleOpenSignatureModal}
+                    className="text-xs text-primary hover:text-primary-hover transition-colors font-medium"
+                    disabled={loading}
+                  >
+                    Re-sign
+                  </button>
+                  <span className="text-xs text-text-secondary">•</span>
+                  <button
+                    type="button"
+                    onClick={handleClearSignature}
+                    className="text-xs text-error hover:text-error-hover transition-colors font-medium"
+                    disabled={loading}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleOpenSignatureModal}
+                disabled={loading}
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-text-secondary hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="text-sm font-medium">Click to add signature</span>
+              </button>
+            )}
+          </div>
 
           <div className="flex gap-3 pt-2">
             <Button
@@ -384,6 +464,12 @@ export default function IssueAdvanceModal({
           }}
         />
       )}
+
+      <SignatureModal
+        isOpen={isSignatureModalOpen}
+        onClose={handleCloseSignatureModal}
+        onSave={handleSaveSignature}
+      />
     </div>
   );
 }
