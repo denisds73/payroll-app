@@ -1,11 +1,12 @@
 import { useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
 import type { SignatureData } from './signature.types';
 
 export const useSignatureCapture = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const strokeCountRef = useRef(0);
-  const pointsRef = useRef<{ x: number; y: number }[]>([]);
+  const pointsRef = useRef<{ x: number; y: number; p: number; v: number }[]>([]);
 
   const getContext = useCallback(() => {
     if (!canvasRef.current) return null;
@@ -168,7 +169,7 @@ export const useSignatureCapture = () => {
     if (!canvas) return null;
 
     if (strokeCountRef.current === 0) {
-      alert('Please provide a signature before saving');
+      toast.error('Please provide a signature before saving');
       return null;
     }
 

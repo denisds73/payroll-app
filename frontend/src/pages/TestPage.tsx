@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import IssueAdvanceModal from '../components/modals/IssueAdvanceModal';
 import { salariesAPI } from '../services/api';
 
@@ -25,7 +26,7 @@ const TestPage = () => {
         workerName="Test Worker"
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSuccess={() => alert('Advance issued!')}
+        onSuccess={() => toast.success('Advance issued!')}
       />
       <button type="button" onClick={() => setModalOpen(true)}>
         Open IssueAdvanceModal

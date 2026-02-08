@@ -1,8 +1,7 @@
-/** biome-ignore-all lint/a11y/useSemanticElements: <explanation> */
-/** biome-ignore-all lint/a11y/useFocusableInteractive: <explanation> */
 import { Lock, Plus } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import ConfirmModal from '../modals/ConfirmModal';
 import Button from './Button';
 import ExpenseTypeGroup from './ExpenseTypeGroup';
@@ -88,11 +87,11 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
 
   const handleSave = () => {
     if (formData.typeId === 0) {
-      alert('Please select an expense type');
+      toast.error('Please select an expense type');
       return;
     }
     if (formData.amount <= 0) {
-      alert('Amount must be greater than 0');
+      toast.error('Amount must be greater than 0');
       return;
     }
 
@@ -140,7 +139,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       setShowDeleteModal(false);
     } catch (error) {
       console.error('Delete failed:', error);
-      alert('Failed to delete expense');
+      toast.error('Failed to delete expense');
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);
