@@ -3,6 +3,9 @@ import { format } from 'date-fns';
 import { AlertCircle, Search, X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { generateAndDownloadPdf } from '../../features/pdf-export/services/pdfService';
+import { buildAdvanceReceiptPdf } from '../../features/pdf-export/utils/advancePdfBuilder';
+import { fetchAdvanceReportData } from '../../features/pdf-export/utils/pdfData';
 import { advancesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStore } from '../../store/workerStore';
@@ -180,12 +183,12 @@ export default function IssueAdvanceModal({
         reason: formData.reason || undefined,
       });
 
-      const newAdvanceId = response.data.id;
-      setPdfAdvanceId(newAdvanceId);
+      const newAdvance = response.data;
 
-      // ✅ Log signature status
       if (formData.signatureData) {
-        console.log('✅ Advance created with signature (to be embedded in PDF)');
+        await generateAdvancePdfWithSignature(newAdvance, formData.signatureData);
+      } else {
+        setPdfAdvanceId(newAdvance.id);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -201,6 +204,21 @@ export default function IssueAdvanceModal({
       setError(errorMessage || 'Failed to issue advance');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateAdvancePdfWithSignature = async (
+    advance: any,
+    signatureDataUrl: string,
+  ): Promise<void> => {
+    try {
+      const reportData = await fetchAdvanceReportData(advance.id);
+      const docDefinition = buildAdvanceReceiptPdf(reportData, signatureDataUrl);
+      const fileName = `advance_receipt_${reportData.worker.name.replace(/\s+/g, '_')}_${advance.id}.pdf`;
+      await generateAndDownloadPdf(docDefinition, fileName);
+    } catch (error) {
+      console.error('Failed to generate PDF with signature:', error);
+      throw error;
     }
   };
 
