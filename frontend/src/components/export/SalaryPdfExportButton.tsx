@@ -6,6 +6,7 @@ interface SalaryPdfExportButtonProps {
   salaryId: number;
   workerName?: string;
   variant?: 'default' | 'ghost' | 'auto';
+  signatureDataUrl?: string;
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
@@ -13,6 +14,7 @@ interface SalaryPdfExportButtonProps {
 export default function SalaryPdfExportButton({
   salaryId,
   variant = 'default',
+  signatureDataUrl,
   onSuccess,
   onError,
 }: SalaryPdfExportButtonProps) {
@@ -46,7 +48,7 @@ export default function SalaryPdfExportButton({
 
   const handleDownload = async () => {
     try {
-      await generateAndDownload(salaryId);
+      await generateAndDownload(salaryId, signatureDataUrl);
     } catch (err) {
       console.error('PDF generation failed:', err);
     }

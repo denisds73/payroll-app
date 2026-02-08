@@ -4,11 +4,13 @@
 import { X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
+import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
 import { salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
+import { SignatureModal } from '../signature/SignatureModal';
+import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
-import SalaryPdfExportButton from '../export/SalaryPdfExportButton';
 
 interface PaySalaryModalProps {
   workerId: number;
@@ -60,8 +62,8 @@ export default function PaySalaryModal({
   const paymentProofId = useId();
   const modalTitleId = useId();
 
-
   const { markSalaryAsPaid } = useSalaryLockStore();
+  const { generateAndDownload } = useSalaryPdfGenerator();
 
   const [formData, setFormData] = useState<SalaryFormData>({
     paymentAmount: '',
@@ -74,7 +76,8 @@ export default function PaySalaryModal({
   const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
-  const [pdfSalaryId, setPdfSalaryId] = useState<number | null>(null);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [signatureData, setSignatureData] = useState<string | undefined>(undefined);
 
   const [pendingPartials, setPendingPartials] = useState<PendingPartialSalary[]>([]);
 
@@ -206,7 +209,13 @@ export default function PaySalaryModal({
         });
 
         markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);
-        setPdfSalaryId(salary.id);
+
+        // Auto-generate and download PDF before closing
+        try {
+          await generateAndDownload(salary.id, signatureData);
+        } catch (pdfErr) {
+          console.error('❌ Failed to auto-download salary PDF:', pdfErr);
+        }
       }
 
       onSuccess();
@@ -236,9 +245,27 @@ export default function PaySalaryModal({
         setSalaryData(null);
         setError(null);
         setIsPartialPayment(false);
+        setSignatureData(undefined);
         onClose();
       }, 200);
     }
+  };
+
+  const handleOpenSignatureModal = () => {
+    setIsSignatureModalOpen(true);
+  };
+
+  const handleCloseSignatureModal = () => {
+    setIsSignatureModalOpen(false);
+  };
+
+  const handleSaveSignature = (data: SignatureData) => {
+    setSignatureData(data.dataUrl);
+    console.log('✅ Signature captured for salary payment');
+  };
+
+  const handleClearSignature = () => {
+    setSignatureData(undefined);
   };
 
   const handleBackdropClick = (e: MouseEvent<HTMLDivElement>): void => {
@@ -414,7 +441,9 @@ export default function PaySalaryModal({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-warning font-medium">Carry Forward (Unpaid):</span>
-                      <span className="font-medium text-warning">{formatCurrency(salaryData.carryForward)}</span>
+                      <span className="font-medium text-warning">
+                        {formatCurrency(salaryData.carryForward)}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -454,79 +483,78 @@ export default function PaySalaryModal({
                     </p>
                   </div>
 
-                    {/* Simplified selection when only one option typically exists */}
-                    {salaryData.carryForward > 0 && (
-                       <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-700 mb-4 flex items-center gap-2">
-                          <span className="font-semibold">Note:</span>
-                          Payments will clear carry-forward balances first.
-                       </div>
-                    )}
-
-                    <div>
-                      <label className="block text-sm font-medium text-text-primary mb-3">
-                        Payment Type
-                      </label>
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handlePaymentTypeChange(false)}
-                          disabled={loading}
-                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                            !isPartialPayment
-                              ? 'bg-primary text-white shadow-sm'
-                              : 'bg-background text-text-secondary hover:bg-gray-200'
-                          }`}
-                        >
-                          Full Payment
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePaymentTypeChange(true)}
-                          disabled={loading}
-                          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-                            isPartialPayment
-                              ? 'bg-primary text-white shadow-sm'
-                              : 'bg-background text-text-secondary hover:bg-gray-200'
-                          }`}
-                        >
-                          Partial Payment
-                        </button>
-                      </div>
+                  {salaryData.carryForward > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-700 mb-4 flex items-center gap-2">
+                      <span className="font-semibold">Note:</span>
+                      Payments will clear carry-forward balances first.
                     </div>
+                  )}
 
-                    <div>
-                      <label
-                        htmlFor={paymentAmountId}
-                        className="block text-sm font-medium text-text-primary mb-2"
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-3">
+                      Payment Type
+                    </label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentTypeChange(false)}
+                        disabled={loading}
+                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                          !isPartialPayment
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-background text-text-secondary hover:bg-gray-200'
+                        }`}
                       >
-                        Payment Amount <span className="text-error">*</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-medium">
-                          ₹
-                        </span>
-                        <input
-                          type="number"
-                          id={paymentAmountId}
-                          value={formData.paymentAmount}
-                          onChange={(e) =>
-                            setFormData({ ...formData, paymentAmount: e.target.value })
-                          }
-                          placeholder="Enter amount"
-                          min="0"
-                          max={salaryData.totalNetPayable}
-                          step="0.01"
-                          className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                          required
-                          disabled={loading || !isPartialPayment}
-                        />
-                      </div>
-                      {isPartialPayment && (
-                        <p className="text-xs text-text-secondary mt-1">
-                          Maximum: {formatCurrency(salaryData.totalNetPayable)}
-                        </p>
-                      )}
+                        Full Payment
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentTypeChange(true)}
+                        disabled={loading}
+                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                          isPartialPayment
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-background text-text-secondary hover:bg-gray-200'
+                        }`}
+                      >
+                        Partial Payment
+                      </button>
                     </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor={paymentAmountId}
+                      className="block text-sm font-medium text-text-primary mb-2"
+                    >
+                      Payment Amount <span className="text-error">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-medium">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        id={paymentAmountId}
+                        value={formData.paymentAmount}
+                        onChange={(e) =>
+                          setFormData({ ...formData, paymentAmount: e.target.value })
+                        }
+                        placeholder="Enter amount"
+                        min="0"
+                        max={salaryData.totalNetPayable}
+                        step="0.01"
+                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                        required
+                        disabled={loading || !isPartialPayment}
+                      />
+                    </div>
+                    {isPartialPayment && (
+                      <p className="text-xs text-text-secondary mt-1">
+                        Maximum: {formatCurrency(salaryData.totalNetPayable)}
+                      </p>
+                    )}
+                  </div>
 
                   <div>
                     <label
@@ -544,6 +572,50 @@ export default function PaySalaryModal({
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
                       disabled={loading}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">
+                      Signature (Optional)
+                    </label>
+
+                    {signatureData ? (
+                      <div className="border-2 border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <img
+                          src={signatureData}
+                          alt="Worker signature"
+                          className="h-16 mx-auto mb-2"
+                        />
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            type="button"
+                            onClick={handleOpenSignatureModal}
+                            className="text-xs text-primary hover:text-primary-hover transition-colors font-medium"
+                            disabled={loading}
+                          >
+                            Re-sign
+                          </button>
+                          <span className="text-xs text-text-secondary">•</span>
+                          <button
+                            type="button"
+                            onClick={handleClearSignature}
+                            className="text-xs text-error hover:text-error-hover transition-colors font-medium"
+                            disabled={loading}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleOpenSignatureModal}
+                        disabled={loading}
+                        className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-text-secondary hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-sm font-medium">Click to add signature</span>
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -585,21 +657,11 @@ export default function PaySalaryModal({
           ) : null}
         </form>
       </div>
-      {pdfSalaryId && (
-      <SalaryPdfExportButton
-        salaryId={pdfSalaryId}
-        workerName={workerName}
-        variant="auto"
-        onSuccess={() => {
-          console.log('PDF downloaded successfully');
-          setPdfSalaryId(null);
-        }}
-        onError={(error) => {
-          console.error('PDF download failed:', error);
-          setPdfSalaryId(null);
-        }}
+      <SignatureModal
+        isOpen={isSignatureModalOpen}
+        onClose={handleCloseSignatureModal}
+        onSave={handleSaveSignature}
       />
-    )}
     </div>
   );
 }

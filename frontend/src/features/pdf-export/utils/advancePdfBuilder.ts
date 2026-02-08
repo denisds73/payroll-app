@@ -2,7 +2,10 @@ import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { AdvanceReportData } from '../types/pdf.types';
 import { formatCurrency, formatDate } from './pdfFormatters';
 
-export function buildAdvanceReceiptPdf(data: AdvanceReportData): TDocumentDefinitions {
+export function buildAdvanceReceiptPdf(
+  data: AdvanceReportData,
+  signatureDataUrl?: string,
+): TDocumentDefinitions {
   return {
     info: {
       title: `Advance Receipt - ${data.worker.name}`,
@@ -19,7 +22,7 @@ export function buildAdvanceReceiptPdf(data: AdvanceReportData): TDocumentDefini
       buildHeader(data),
       buildWorkerInfo(data),
       buildAdvanceDetails(data),
-      buildSignatureSection(data),
+      buildSignatureSection(data, signatureDataUrl),
       buildFooter(data),
     ],
 
@@ -182,48 +185,70 @@ function buildAdvanceDetails(data: AdvanceReportData): Content {
   ];
 }
 
-function buildSignatureSection(data: AdvanceReportData): Content {
-  return [
-    {
-      text: '─────────────────────────────────────────────────',
-      alignment: 'center',
-      color: '#e5e7eb',
-      margin: [0, 30, 0, 0],
-    },
-    {
-      columns: [
-        {
-          width: '*',
-          text: '',
-        },
-        {
-          width: 200,
-          stack: [
-            {
-              text: '________________________________',
-              alignment: 'center',
-              margin: [0, 40, 0, 5],
-            },
-            {
-              text: 'Worker Signature',
-              style: 'infoLabel',
-              alignment: 'center',
-            },
-            {
-              text: data.worker.name,
-              style: 'infoValue',
-              alignment: 'center',
-              margin: [0, 2, 0, 0],
-            },
-          ],
-        },
-        {
-          width: '*',
-          text: '',
-        },
-      ],
-    },
-  ];
+function buildSignatureSection(data: AdvanceReportData, signatureDataUrl?: string): Content {
+  return {
+    columns: [
+      { width: '*', text: '' },
+      {
+        width: 250,
+        stack: [
+          signatureDataUrl
+            ? {
+                image: signatureDataUrl,
+                width: 200,
+                height: 80,
+                alignment: 'center',
+                margin: [25, 40, 25, 0],
+              }
+            : {
+                text: '[Signature not captured]',
+                alignment: 'center',
+                italics: true,
+                color: '#9ca3af',
+                margin: [0, 50, 0, 20],
+              },
+          {
+            canvas: [
+              {
+                type: 'line',
+                x1: 0,
+                y1: 0,
+                x2: 200,
+                y2: 0,
+                lineWidth: 1,
+                lineColor: '#18181b',
+              },
+            ],
+            margin: [25, 5, 25, 5],
+          },
+          {
+            text: 'Worker Signature',
+            style: 'infoLabel',
+            alignment: 'center',
+            margin: [0, 5, 0, 2],
+          },
+          {
+            text: data.worker.name,
+            style: 'infoValue',
+            alignment: 'center',
+            fontSize: 11,
+            bold: true,
+          },
+          signatureDataUrl
+            ? {
+                text: `Signed on: ${formatDate(new Date().toISOString(), 'short')}`,
+                fontSize: 8,
+                color: '#6b7280',
+                italics: true,
+                alignment: 'center',
+                margin: [0, 3, 0, 0],
+              }
+            : {},
+        ],
+      },
+      { width: '*', text: '' },
+    ],
+  };
 }
 
 function buildFooter(data: AdvanceReportData): Content {

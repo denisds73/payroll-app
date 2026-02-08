@@ -9,14 +9,14 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const generateAndDownload = useCallback(async (salaryId: number): Promise<void> => {
+  const generateAndDownload = useCallback(async (salaryId: number, signatureDataUrl?: string): Promise<void> => {
     setIsGenerating(true);
     setError(null);
     setSuccess(false);
 
     try {
       const reportData = await fetchSalaryReportData(salaryId);
-      const docDefinition = buildSalaryReportPdf(reportData);
+      const docDefinition = buildSalaryReportPdf(reportData, signatureDataUrl);
 
       const fileName = generateFileName(
         reportData.worker.name,
