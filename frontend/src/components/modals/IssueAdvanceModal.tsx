@@ -181,6 +181,7 @@ export default function IssueAdvanceModal({
         date: formData.date,
         amount: Number(formData.amount),
         reason: formData.reason || undefined,
+        signature: formData.signatureData,
       });
 
       const newAdvance = response.data;

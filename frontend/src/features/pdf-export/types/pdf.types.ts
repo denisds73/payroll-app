@@ -12,7 +12,7 @@ export interface AdvancePdfGeneratorState {
 }
 
 export interface AdvancePdfGeneratorActions {
-  generateAndDownload: (advanceId: number) => Promise<void>;
+  generateAndDownload: (advanceId: number, signatureDataUrl?: string) => Promise<void>;
   clear: () => void;
 }
 
@@ -68,6 +68,7 @@ export interface AdvanceRecord {
   date: string;
   amount: number;
   reason?: string;
+  signature?: string;
 }
 
 export interface AdvanceSummary {
@@ -101,6 +102,7 @@ export interface SalaryRecord {
   status: 'PENDING' | 'PARTIAL' | 'PAID';
   issuedAt?: string;
   paymentProof?: string;
+  signature?: string;
 }
 
 export interface SalaryReportData {

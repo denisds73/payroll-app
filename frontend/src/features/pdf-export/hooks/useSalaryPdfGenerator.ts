@@ -16,11 +16,11 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
 
     try {
       const reportData = await fetchSalaryReportData(salaryId);
-      const docDefinition = buildSalaryReportPdf(reportData, signatureDataUrl);
+      const finalSignature = signatureDataUrl || reportData.salary.signature;
+      const docDefinition = buildSalaryReportPdf(reportData, finalSignature);
 
       const fileName = generateFileName(
         reportData.worker.name,
-        reportData.salary.cycleStart,
         reportData.salary.cycleEnd,
       );
 
@@ -57,7 +57,7 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
   };
 }
 
-function generateFileName(workerName: string, cycleStart: string, cycleEnd: string): string {
+function generateFileName(workerName: string, cycleEnd: string): string {
   const cleanName = workerName.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
 
   const endDate = new Date(cycleEnd);

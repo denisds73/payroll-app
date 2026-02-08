@@ -84,7 +84,7 @@ export const attendanceAPI = {
 };
 
 export const advancesAPI = {
-  create: (data: { workerId: number; date: string; amount: number; reason?: string }) =>
+  create: (data: { workerId: number; date: string; amount: number; reason?: string; signature?: string }) =>
     api.post('/advances', data),
 
   list: (params?: { month?: string; startDate?: string; endDate?: string }) =>
@@ -200,7 +200,7 @@ export const salariesAPI = {
 
   getPending: () => api.get('/salaries/pending'),
 
-  issue: (salaryId: number, data: { amount: number; paymentProof?: string }) =>
+  issue: (salaryId: number, data: { amount: number; paymentProof?: string; signature?: string }) =>
     api.post(`/salaries/${salaryId}/issue`, data),
 
   getPaidPeriods: (workerId: number) => {

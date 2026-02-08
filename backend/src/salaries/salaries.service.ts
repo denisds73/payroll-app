@@ -351,7 +351,7 @@ export class SalariesService {
     });
   }
 
-  async issueSalary(salaryId: number, amount: number, paymentProof?: string) {
+  async issueSalary(salaryId: number, amount: number, paymentProof?: string, signature?: string) {
     const salary = await this.prisma.salary.findUnique({
       where: { id: salaryId },
       include: { worker: true },
@@ -381,6 +381,7 @@ export class SalariesService {
           status: newStatus,
           issuedAt: new Date(),
           paymentProof: paymentProof || null,
+          signature: signature || null,
         },
         include: { payments: true }
       });

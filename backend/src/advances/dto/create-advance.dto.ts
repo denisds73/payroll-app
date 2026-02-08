@@ -14,4 +14,8 @@ export class CreateAdvanceDto {
   @IsOptional()
   @IsString()
   reason?: string;
+
+  @IsOptional()
+  @IsString()
+  signature?: string;
 }

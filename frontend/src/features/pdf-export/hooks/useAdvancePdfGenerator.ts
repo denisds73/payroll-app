@@ -9,14 +9,15 @@ export function useAdvancePdfGenerator(): UseAdvancePdfGenerator {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const generateAndDownload = useCallback(async (advanceId: number): Promise<void> => {
+  const generateAndDownload = useCallback(async (advanceId: number, signatureDataUrl?: string): Promise<void> => {
     setIsGenerating(true);
     setError(null);
     setSuccess(false);
 
     try {
       const reportData = await fetchAdvanceReportData(advanceId);
-      const docDefinition = buildAdvanceReceiptPdf(reportData);
+      const finalSignature = signatureDataUrl || reportData.advance.signature;
+      const docDefinition = buildAdvanceReceiptPdf(reportData, finalSignature);
       const fileName = generateFileName(reportData.worker.name, reportData.advance.date);
 
       await generateAndDownloadPdf(docDefinition, fileName);

@@ -8,4 +8,8 @@ export class IssueSalaryDto {
   @IsOptional()
   @IsString()
   paymentProof?: string;
+
+  @IsOptional()
+  @IsString()
+  signature?: string;
 }
