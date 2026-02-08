@@ -5,8 +5,7 @@ export const useSignatureCapture = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const strokeCountRef = useRef(0);
-  const pointsRef = useRef<{ x: number; y: number; p: number; v: number }[]>([]);
-  const lastWidthRef = useRef(2);
+  const pointsRef = useRef<{ x: number; y: number }[]>([]);
 
   const getContext = useCallback(() => {
     if (!canvasRef.current) return null;
@@ -35,25 +34,8 @@ export const useSignatureCapture = () => {
       p2: { x: number; y: number; p: number; v: number },
     ) => {
 
-      const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
-      const velocity = dist; 
-
-      const baseWidth = 1.2; 
-      const pressureFactor = p2.p * 5; 
-      const velocityFactor = Math.max(0, 3 - velocity / 10);
-      
-      let targetWidth = baseWidth;
-      if (p2.p !== 0.5) {
-        targetWidth = baseWidth + pressureFactor;
-      } else {
-        targetWidth = baseWidth + velocityFactor;
-      }
-
       const dpr = window.devicePixelRatio || 1;
-      targetWidth *= dpr;
-
-      const width = lastWidthRef.current * 0.5 + targetWidth * 0.5;
-      lastWidthRef.current = width;
+      const width = 2.5 * dpr;
 
       ctx.beginPath();
       ctx.lineWidth = width;
@@ -80,7 +62,6 @@ export const useSignatureCapture = () => {
       const { x, y, p } = getCoordinates(event);
       const point = { x, y, p, v: 0 };
       pointsRef.current = [point];
-      lastWidthRef.current = 2;
     },
     [getContext, getCoordinates],
   );

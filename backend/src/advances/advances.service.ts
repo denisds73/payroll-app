@@ -37,6 +37,7 @@ export class AdvancesService {
         date: advanceDate,
         amount: dto.amount,
         reason: dto.reason,
+        signature: dto.signature,
       },
       include: {
         worker: true,

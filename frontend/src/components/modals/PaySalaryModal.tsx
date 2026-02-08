@@ -187,6 +187,7 @@ export default function PaySalaryModal({
             await salariesAPI.issue(salary.id, {
               amount: payAmount,
               paymentProof: formData.paymentProof || undefined,
+              signature: signatureData,
             });
 
             // Update lock state
@@ -206,6 +207,7 @@ export default function PaySalaryModal({
         await salariesAPI.issue(salary.id, {
           amount: remainingToPay,
           paymentProof: formData.paymentProof || undefined,
+          signature: signatureData,
         });
 
         markSalaryAsPaid(workerId, salary.id, salary.cycleStart, salary.cycleEnd);

@@ -71,6 +71,6 @@ export class SalariesController {
 
   @Post(':id/issue')
   async issueSalary(@Param('id', ParseIntPipe) id: number, @Body() data: IssueSalaryDto) {
-    return this.salariesService.issueSalary(id, data.amount, data.paymentProof);
+    return this.salariesService.issueSalary(id, data.amount, data.paymentProof, data.signature);
   }
 }
