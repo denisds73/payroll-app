@@ -149,7 +149,7 @@ export interface PdfGeneratorState {
 }
 
 export interface PdfGeneratorActions {
-  generateAndDownload: (salaryId: number) => Promise<void>;
+  generateAndDownload: (salaryId: number, signatureDataUrl?: string) => Promise<void>;
   clear: () => void;
 }
 

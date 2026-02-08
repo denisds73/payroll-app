@@ -2,7 +2,10 @@ import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { SalaryReportData } from '../types/pdf.types';
 import { capitalize, formatCurrency, formatDate, formatDateRange } from './pdfFormatters';
 
-export function buildSalaryReportPdf(data: SalaryReportData): TDocumentDefinitions {
+export function buildSalaryReportPdf(
+  data: SalaryReportData,
+  signatureDataUrl?: string,
+): TDocumentDefinitions {
   return {
     info: {
       title: `Salary Report - ${data.worker.name}`,
@@ -24,6 +27,7 @@ export function buildSalaryReportPdf(data: SalaryReportData): TDocumentDefinitio
       buildExpensesTable(data),
       buildAdvancesTable(data),
       buildSalaryBreakdown(data),
+      buildSignatureSection(data, signatureDataUrl),
       buildFooter(data),
     ],
 
@@ -632,4 +636,71 @@ function buildFooter(data: SalaryReportData): any {
       margin: [0, 10, 0, 0],
     },
   ];
+}
+
+function buildSignatureSection(data: SalaryReportData, signatureDataUrl?: string): Content {
+  return {
+    columns: [
+      { width: '*', text: '' },
+      {
+        width: 250,
+        stack: [
+          signatureDataUrl
+            ? {
+                image: signatureDataUrl,
+                width: 200,
+                height: 80,
+                alignment: 'center',
+                margin: [25, 40, 25, 0],
+              }
+            : {
+                text: '[Signature not captured]',
+                alignment: 'center',
+                italics: true,
+                color: '#9ca3af',
+                margin: [0, 50, 0, 20],
+              },
+          {
+            canvas: [
+              {
+                type: 'line',
+                x1: 0,
+                y1: 0,
+                x2: 200,
+                y2: 0,
+                lineWidth: 1,
+                lineColor: '#18181b',
+              },
+            ],
+            margin: [25, 5, 25, 5],
+          },
+          {
+            text: 'Worker Signature',
+            style: 'infoLabel',
+            alignment: 'center',
+            margin: [0, 5, 0, 2],
+          },
+          {
+            text: data.worker.name,
+            style: 'infoValue',
+            alignment: 'center',
+            fontSize: 11,
+            bold: true,
+          },
+          signatureDataUrl
+            ? {
+                text: `Signed on: ${formatDate(new Date().toISOString())}`,
+                fontSize: 8,
+                color: '#6b7280',
+                italics: true,
+                alignment: 'center',
+                margin: [0, 3, 0, 0],
+              }
+            : [],
+        ],
+      },
+      { width: '*', text: '' },
+    ],
+    margin: [0, 20, 0, 0],
+  };
 }
