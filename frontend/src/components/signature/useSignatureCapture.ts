@@ -5,117 +5,129 @@ export const useSignatureCapture = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const strokeCountRef = useRef(0);
-
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const pointsRef = useRef<{ x: number; y: number; p: number; v: number }[]>([]);
+  const lastWidthRef = useRef(2);
 
   const getContext = useCallback(() => {
     if (!canvasRef.current) return null;
     return canvasRef.current.getContext('2d');
   }, []);
 
-  const getCoordinates = useCallback(
-    (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-      if (!canvasRef.current) return { x: 0, y: 0 };
+  const getCoordinates = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return { x: 0, y: 0, p: 0.5 };
 
-      const canvas = canvasRef.current;
-      const rect = canvas.getBoundingClientRect();
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
 
-      let clientX: number;
-      let clientY: number;
+    const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (event.clientY - rect.top) * (canvas.height / rect.height);
 
-      if ('clientX' in event) {
-        clientX = event.clientX;
-        clientY = event.clientY;
+
+    const p = event.pressure > 0 ? event.pressure : 0.5;
+
+    return { x, y, p };
+  }, []);
+
+  const drawLine = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      p1: { x: number; y: number; p: number; v: number },
+      p2: { x: number; y: number; p: number; v: number },
+    ) => {
+
+      const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
+      const velocity = dist; 
+
+      const baseWidth = 1.2; 
+      const pressureFactor = p2.p * 5; 
+      const velocityFactor = Math.max(0, 3 - velocity / 10);
+      
+      let targetWidth = baseWidth;
+      if (p2.p !== 0.5) {
+        targetWidth = baseWidth + pressureFactor;
       } else {
-        const touch = (event as React.TouchEvent<HTMLCanvasElement>).touches[0];
-        clientX = touch.clientX;
-        clientY = touch.clientY;
+        targetWidth = baseWidth + velocityFactor;
       }
 
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      const dpr = window.devicePixelRatio || 1;
+      targetWidth *= dpr;
 
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
+      const width = lastWidthRef.current * 0.5 + targetWidth * 0.5;
+      lastWidthRef.current = width;
 
-      return {
-        x: x * scaleX,
-        y: y * scaleY,
-      };
+      ctx.beginPath();
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#18181b';
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
     },
     [],
   );
 
-  const handleMouseDown = useCallback(
-    (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const handlePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
       const ctx = getContext();
       if (!ctx) return;
 
+      (event.target as Element).setPointerCapture(event.pointerId);
+
       isDrawingRef.current = true;
       strokeCountRef.current++;
-
-      const { x, y } = getCoordinates(event);
-
-      ctx.strokeStyle = '#18181b';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.globalCompositeOperation = 'source-over';
-
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-
-      lastPointRef.current = { x, y };
+      
+      const { x, y, p } = getCoordinates(event);
+      const point = { x, y, p, v: 0 };
+      pointsRef.current = [point];
+      lastWidthRef.current = 2;
     },
     [getContext, getCoordinates],
   );
 
-  const handleMouseMove = useCallback(
-    (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (!isDrawingRef.current) return;
 
       const ctx = getContext();
       if (!ctx) return;
 
-      const { x, y } = getCoordinates(event);
-      const lastPoint = lastPointRef.current;
+      const { x, y, p } = getCoordinates(event);
+      const lastPoint = pointsRef.current[pointsRef.current.length - 1];
+      
+      const dist = Math.sqrt((x - lastPoint.x) ** 2 + (y - lastPoint.y) ** 2);
+      if (dist < 1) return;
 
-      if (!lastPoint) {
-        lastPointRef.current = { x, y };
-        return;
-      }
-
-      const midX = (lastPoint.x + x) / 2;
-      const midY = (lastPoint.y + y) / 2;
-
-      ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, midX, midY);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(midX, midY);
-
-      lastPointRef.current = { x, y };
+      const newPoint = { x, y, p, v: dist };
+      
+      drawLine(ctx, lastPoint, newPoint);
+      
+      pointsRef.current.push(newPoint);
     },
-    [getContext, getCoordinates],
+    [getContext, getCoordinates, drawLine],
   );
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback(() => {
     isDrawingRef.current = false;
-    lastPointRef.current = null;
+    pointsRef.current = [];
   }, []);
 
   const clear = useCallback(() => {
     const canvas = canvasRef.current;
-    const ctx = getContext();
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    if (!canvas || !ctx) return;
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
     strokeCountRef.current = 0;
-    lastPointRef.current = null;
-  }, [getContext]);
+    pointsRef.current = [];
+  }, []);
 
   const cropCanvas = useCallback((sourceCanvas: HTMLCanvasElement): string => {
+    const dpr = window.devicePixelRatio || 1;
     const ctx = sourceCanvas.getContext('2d');
     if (!ctx) return sourceCanvas.toDataURL('image/png');
 
@@ -132,7 +144,7 @@ export const useSignatureCapture = () => {
         const index = (y * sourceCanvas.width + x) * 4;
         const alpha = pixels[index + 3];
 
-        if (alpha > 0) {
+        if (alpha > 5) {
           if (x < minX) minX = x;
           if (x > maxX) maxX = x;
           if (y < minY) minY = y;
@@ -141,7 +153,11 @@ export const useSignatureCapture = () => {
       }
     }
 
-    const padding = 10;
+    if (maxX <= minX || maxY <= minY) {
+       return sourceCanvas.toDataURL('image/png');
+    }
+
+    const padding = 20 * dpr;
     minX = Math.max(0, minX - padding);
     minY = Math.max(0, minY - padding);
     maxX = Math.min(sourceCanvas.width, maxX + padding);
@@ -149,10 +165,6 @@ export const useSignatureCapture = () => {
 
     const croppedWidth = maxX - minX;
     const croppedHeight = maxY - minY;
-
-    if (croppedWidth <= 0 || croppedHeight <= 0) {
-      return sourceCanvas.toDataURL('image/png');
-    }
 
     const croppedCanvas = document.createElement('canvas');
     croppedCanvas.width = croppedWidth;
@@ -163,14 +175,8 @@ export const useSignatureCapture = () => {
 
     croppedCtx.drawImage(
       sourceCanvas,
-      minX,
-      minY,
-      croppedWidth,
-      croppedHeight,
-      0,
-      0,
-      croppedWidth,
-      croppedHeight,
+      minX, minY, croppedWidth, croppedHeight,
+      0, 0, croppedWidth, croppedHeight
     );
 
     return croppedCanvas.toDataURL('image/png');
@@ -178,7 +184,6 @@ export const useSignatureCapture = () => {
 
   const save = useCallback((): SignatureData | null => {
     const canvas = canvasRef.current;
-
     if (!canvas) return null;
 
     if (strokeCountRef.current === 0) {
@@ -186,10 +191,8 @@ export const useSignatureCapture = () => {
       return null;
     }
 
-    const dataUrl = cropCanvas(canvas);
-
     return {
-      dataUrl,
+      dataUrl: cropCanvas(canvas),
       capturedAt: new Date(),
       isEmpty: false,
     };
@@ -197,11 +200,12 @@ export const useSignatureCapture = () => {
 
   return {
     canvasRef,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
     save,
     clear,
     isEmpty: strokeCountRef.current === 0,
   };
 };
+

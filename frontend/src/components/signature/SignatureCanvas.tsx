@@ -17,7 +17,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
     const calculatedWidth = width || Math.min(window.innerWidth * 0.85, 1400);
     const calculatedHeight = height || Math.min(window.innerHeight * 0.65, 600);
 
-    const { canvasRef, handleMouseDown, handleMouseMove, handleMouseUp, save, clear } =
+    const { canvasRef, handlePointerDown, handlePointerMove, handlePointerUp, save, clear } =
       useSignatureCapture();
 
     useImperativeHandle(ref, () => ({
@@ -27,11 +27,21 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
 
     useEffect(() => {
       const canvas = canvasRef.current;
-      const ctx = canvas?.getContext('2d');
-      if (ctx) {
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-      }
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
     }, []);
 
     return (
@@ -45,14 +55,13 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
           maxWidth: '100%',
           maxHeight: '100%',
         }}
-        className="border-2 border-gray-300 rounded-lg cursor-crosshair bg-white shadow-sm"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleMouseDown}
-        onTouchMove={handleMouseMove}
-        onTouchEnd={handleMouseUp}
+        className="border-2 border-gray-300 rounded-lg cursor-crosshair bg-white shadow-sm touch-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+
       />
     );
   },
