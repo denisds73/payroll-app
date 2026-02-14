@@ -95,20 +95,21 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       return;
     }
 
-    let otRateNum: number | undefined;
-    if (formData.otRate) {
-      otRateNum = Number.parseFloat(formData.otRate);
-      const otError = validateNumericRange(
-        otRateNum,
-        VALIDATION.otRate.min,
-        VALIDATION.otRate.max,
-        VALIDATION.otRate.messageMin,
-        VALIDATION.otRate.messageMax,
-      );
-      if (otError) {
-        setError(otError);
-        return;
-      }
+    const otRateNum = Number.parseFloat(formData.otRate);
+    if (!formData.otRate) {
+      setError('OT rate is required');
+      return;
+    }
+    const otError = validateNumericRange(
+      otRateNum,
+      VALIDATION.otRate.min,
+      VALIDATION.otRate.max,
+      VALIDATION.otRate.messageMin,
+      VALIDATION.otRate.messageMax,
+    );
+    if (otError) {
+      setError(otError);
+      return;
     }
 
     setLoading(true);
@@ -117,20 +118,17 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       const payload: {
         name: string;
         wage: number;
+        otRate: number;
         phone?: string;
-        otRate?: number;
         joinedAt?: string;
       } = {
         name: formData.name.trim(),
         wage: wageNum,
+        otRate: otRateNum,
       };
 
       if (formData.phone) {
         payload.phone = sanitizePhone(formData.phone);
-      }
-
-      if (otRateNum !== undefined && otRateNum > 0) {
-        payload.otRate = otRateNum;
       }
 
       if (formData.joinedAt) {
@@ -300,7 +298,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   htmlFor={otRateId}
                   className="block text-sm font-medium text-text-secondary mb-1"
                 >
-                  OT Rate
+                  OT Rate <span className="text-error">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">

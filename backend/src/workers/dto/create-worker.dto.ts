@@ -28,10 +28,9 @@ export class CreateWorkerDto {
   wage: number;
 
   @IsNumber()
-  @IsOptional()
   @Min(0, { message: 'OT rate cannot be negative' })
   @Max(100000, { message: 'OT rate must be at most ₹1,00,000' })
-  otRate?: number;
+  otRate: number;
 
   @IsOptional()
   @IsDateString({}, { message: 'Joined date must be a valid date in YYYY-MM-DD format' })
