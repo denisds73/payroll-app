@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
+import toast from 'react-hot-toast';
 import { advancesAPI } from '../../services/api';
 import { VALIDATION } from '../../utils/validation';
 import Button from '../ui/Button';
@@ -44,7 +45,6 @@ export default function EditAdvanceModal({
     reason: '',
   });
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
 
   useEffect(() => {
@@ -61,19 +61,18 @@ export default function EditAdvanceModal({
     }
   }, [isOpen, advance]);
 
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!advance) return;
 
-    setError(null);
-
     if (!formData.amount || Number(formData.amount) <= 0) {
-      setError(VALIDATION.amount.messageMin);
+      toast.error(VALIDATION.amount.messageMin);
       return;
     }
 
     if (Number(formData.amount) > VALIDATION.amount.max) {
-      setError(VALIDATION.amount.messageMax);
+      toast.error(VALIDATION.amount.messageMax);
       return;
     }
 
@@ -97,7 +96,7 @@ export default function EditAdvanceModal({
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to update advance';
 
-      setError(errorMessage || 'Failed to update advance');
+      toast.error(errorMessage || 'Failed to update advance');
     } finally {
       setLoading(false);
     }
@@ -107,7 +106,6 @@ export default function EditAdvanceModal({
     if (!loading) {
       setIsAnimating(false);
       setTimeout(() => {
-        setError(null);
         onClose();
       }, 200);
     }
@@ -162,15 +160,8 @@ export default function EditAdvanceModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div
-              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm animate-shake"
-              role="alert"
-            >
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4" noValidate>
+
 
           <div>
             <label htmlFor={dateId} className="block text-sm font-medium text-text-primary mb-2">
@@ -204,7 +195,6 @@ export default function EditAdvanceModal({
                 max={VALIDATION.amount.max}
                 step="1"
                 className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                required
                 disabled={loading}
               />
             </div>

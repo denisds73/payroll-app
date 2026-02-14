@@ -56,7 +56,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   const [originalWage, setOriginalWage] = useState<number>(0);
   const [originalOtRate, setOriginalOtRate] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [wageEditMode, setWageEditMode] = useState<'values' | 'effectiveDate'>('values');
@@ -80,7 +79,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
     setOriginalWage(worker.wage);
     setOriginalOtRate(worker.otRate);
     setWageEditMode('values');
-    setError(null);
+
   };
 
   const wageChanged = Number(formData.wage) !== originalWage;
@@ -101,21 +100,21 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
+
 
     const trimmedName = formData.name.trim();
     if (!trimmedName) {
-      setError('Name is required');
+      toast.error('Name is required');
       return;
     }
     if (trimmedName.length > VALIDATION.name.maxLength) {
-      setError(VALIDATION.name.message);
+      toast.error(VALIDATION.name.message);
       return;
     }
 
     const phoneError = validatePhone(formData.phone);
     if (phoneError) {
-      setError(phoneError);
+      toast.error(phoneError);
       return;
     }
 
@@ -128,7 +127,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
       VALIDATION.wage.messageMax,
     );
     if (!formData.wage || wageError) {
-      setError(wageError || VALIDATION.wage.messageMin);
+      toast.error(wageError || VALIDATION.wage.messageMin);
       return;
     }
 
@@ -141,7 +140,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
       VALIDATION.otRate.messageMax,
     );
     if (!formData.otRate || otError) {
-      setError(otError || VALIDATION.otRate.messageMin);
+      toast.error(otError || VALIDATION.otRate.messageMin);
       return;
     }
 
@@ -192,7 +191,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to update worker';
 
-      setError(errorMessage || 'Failed to update worker');
       toast.error(errorMessage || 'Failed to update worker');
     } finally {
       setLoading(false);
@@ -275,19 +273,11 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div
-            className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm mb-4 animate-shake"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
+
 
         {isEditing ? (
           /* Edit Mode */
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Basic Information Section */}
             <div className="bg-card border border-gray-200 rounded-lg p-6">
               <h4 className="text-md font-semibold text-text-primary mb-4">Basic Information</h4>

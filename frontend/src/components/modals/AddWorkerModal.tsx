@@ -43,7 +43,6 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
     joinedAt: today,
   });
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
 
   useEffect(() => {
@@ -56,7 +55,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
         otRate: '',
         joinedAt: today,
       });
-      setError(null);
+
     } else {
       setIsAnimating(false);
     }
@@ -64,21 +63,20 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
 
     const trimmedName = formData.name.trim();
     if (!trimmedName) {
-      setError('Name is required');
+      toast.error('Name is required');
       return;
     }
     if (trimmedName.length > VALIDATION.name.maxLength) {
-      setError(VALIDATION.name.message);
+      toast.error(VALIDATION.name.message);
       return;
     }
 
     const phoneError = validatePhone(formData.phone);
     if (phoneError) {
-      setError(phoneError);
+      toast.error(phoneError);
       return;
     }
 
@@ -91,13 +89,13 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       VALIDATION.wage.messageMax,
     );
     if (!formData.wage || wageError) {
-      setError(wageError || VALIDATION.wage.messageMin);
+      toast.error(wageError || VALIDATION.wage.messageMin);
       return;
     }
 
     const otRateNum = Number.parseFloat(formData.otRate);
     if (!formData.otRate) {
-      setError('OT rate is required');
+      toast.error('OT rate is required');
       return;
     }
     const otError = validateNumericRange(
@@ -108,7 +106,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       VALIDATION.otRate.messageMax,
     );
     if (otError) {
-      setError(otError);
+      toast.error(otError);
       return;
     }
 
@@ -150,7 +148,6 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to add worker';
 
-      setError(errorMessage || 'Failed to add worker');
       toast.error(errorMessage || 'Failed to add worker');
     } finally {
       setLoading(false);
@@ -168,7 +165,6 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           otRate: '',
           joinedAt: today,
         });
-        setError(null);
         onClose();
       }, 200);
     }
@@ -227,13 +223,9 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="p-4 space-y-4">
-            {error && (
-              <div className="p-3 bg-error/10 border border-error/20 rounded-lg animate-shake">
-                <p className="text-sm text-error">{error}</p>
-              </div>
-            )}
+
 
             <div>
               <label

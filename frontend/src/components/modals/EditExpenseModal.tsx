@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
+import toast from 'react-hot-toast';
 import { expensesAPI, expenseTypesAPI } from '../../services/api';
 import { VALIDATION } from '../../utils/validation';
 import Button from '../ui/Button';
@@ -54,7 +55,6 @@ export default function EditExpenseModal({
   });
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
 
   useEffect(() => {
@@ -88,20 +88,20 @@ export default function EditExpenseModal({
     e.preventDefault();
     if (!expense) return;
 
-    setError(null);
+
 
     if (!formData.amount || Number(formData.amount) <= 0) {
-      setError(VALIDATION.amount.messageMin);
+      toast.error(VALIDATION.amount.messageMin);
       return;
     }
 
     if (Number(formData.amount) > VALIDATION.amount.max) {
-      setError(VALIDATION.amount.messageMax);
+      toast.error(VALIDATION.amount.messageMax);
       return;
     }
 
     if (!formData.typeId) {
-      setError('Please select an expense type');
+      toast.error('Please select an expense type');
       return;
     }
 
@@ -126,7 +126,7 @@ export default function EditExpenseModal({
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to update expense';
 
-      setError(errorMessage || 'Failed to update expense');
+      toast.error(errorMessage || 'Failed to update expense');
     } finally {
       setLoading(false);
     }
@@ -136,7 +136,6 @@ export default function EditExpenseModal({
     if (!loading) {
       setIsAnimating(false);
       setTimeout(() => {
-        setError(null);
         onClose();
       }, 200);
     }
@@ -191,15 +190,8 @@ export default function EditExpenseModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div
-              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm animate-shake"
-              role="alert"
-            >
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4" noValidate>
+
 
           <div>
             <label htmlFor={dateId} className="block text-sm font-medium text-text-primary mb-2">
@@ -224,7 +216,6 @@ export default function EditExpenseModal({
               value={formData.typeId}
               onChange={(e) => setFormData({ ...formData, typeId: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-              required
               disabled={loading}
             >
               <option value="">Select type...</option>
@@ -254,7 +245,6 @@ export default function EditExpenseModal({
                 max={VALIDATION.amount.max}
                 step="1"
                 className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                required
                 disabled={loading}
               />
             </div>
