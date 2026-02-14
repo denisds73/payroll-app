@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { workersAPI } from '../../services/api';
 import { useWorkerStore } from '../../store/workerStore';
+import { VALIDATION, sanitizePhone, validateNumericRange, validatePhone } from '../../utils/validation';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 import Input from '../ui/Input';
@@ -42,7 +43,6 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
     joinedAt: today,
   });
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
         otRate: '',
         joinedAt: today,
       });
-      setError(null);
+
     } else {
       setIsAnimating(false);
     }
@@ -63,31 +63,51 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
 
-    if (!formData.name.trim()) {
-      setError('Name is required');
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) {
+      toast.error('Name is required');
+      return;
+    }
+    if (trimmedName.length > VALIDATION.name.maxLength) {
+      toast.error(VALIDATION.name.message);
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      toast.error(phoneError);
       return;
     }
 
     const wageNum = Number.parseInt(formData.wage, 10);
-    if (!formData.wage || Number.isNaN(wageNum) || wageNum <= 0) {
-      setError('Please enter a valid daily wage greater than 0');
+    const wageError = validateNumericRange(
+      wageNum,
+      VALIDATION.wage.min,
+      VALIDATION.wage.max,
+      VALIDATION.wage.messageMin,
+      VALIDATION.wage.messageMax,
+    );
+    if (!formData.wage || wageError) {
+      toast.error(wageError || VALIDATION.wage.messageMin);
       return;
     }
 
-    if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-      setError('Phone number must be 10 digits');
+    const otRateNum = Number.parseFloat(formData.otRate);
+    if (!formData.otRate) {
+      toast.error('OT rate is required');
       return;
     }
-
-    let otRateNum: number | undefined;
-    if (formData.otRate) {
-      otRateNum = Number.parseFloat(formData.otRate);
-      if (Number.isNaN(otRateNum) || otRateNum < 0) {
-        setError('Please enter a valid OT rate');
-        return;
-      }
+    const otError = validateNumericRange(
+      otRateNum,
+      VALIDATION.otRate.min,
+      VALIDATION.otRate.max,
+      VALIDATION.otRate.messageMin,
+      VALIDATION.otRate.messageMax,
+    );
+    if (otError) {
+      toast.error(otError);
+      return;
     }
 
     setLoading(true);
@@ -96,20 +116,17 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       const payload: {
         name: string;
         wage: number;
+        otRate: number;
         phone?: string;
-        otRate?: number;
         joinedAt?: string;
       } = {
         name: formData.name.trim(),
         wage: wageNum,
+        otRate: otRateNum,
       };
 
       if (formData.phone) {
-        payload.phone = formData.phone.replace(/\D/g, '');
-      }
-
-      if (otRateNum !== undefined && otRateNum > 0) {
-        payload.otRate = otRateNum;
+        payload.phone = sanitizePhone(formData.phone);
       }
 
       if (formData.joinedAt) {
@@ -131,7 +148,6 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to add worker';
 
-      setError(errorMessage || 'Failed to add worker');
       toast.error(errorMessage || 'Failed to add worker');
     } finally {
       setLoading(false);
@@ -149,7 +165,6 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           otRate: '',
           joinedAt: today,
         });
-        setError(null);
         onClose();
       }, 200);
     }
@@ -208,13 +223,9 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="p-4 space-y-4">
-            {error && (
-              <div className="p-3 bg-error/10 border border-error/20 rounded-lg animate-shake">
-                <p className="text-sm text-error">{error}</p>
-              </div>
-            )}
+
 
             <div>
               <label
@@ -228,6 +239,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Enter worker name"
+                maxLength={VALIDATION.name.maxLength}
                 autoFocus
               />
             </div>
@@ -263,7 +275,8 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   <input
                     id={wageId}
                     type="number"
-                    min="1"
+                    min={VALIDATION.wage.min}
+                    max={VALIDATION.wage.max}
                     step="1"
                     value={formData.wage}
                     onChange={(e) => setFormData({ ...formData, wage: e.target.value })}
@@ -277,7 +290,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   htmlFor={otRateId}
                   className="block text-sm font-medium text-text-secondary mb-1"
                 >
-                  OT Rate
+                  OT Rate <span className="text-error">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
@@ -286,7 +299,8 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   <input
                     id={otRateId}
                     type="number"
-                    min="0"
+                    min={VALIDATION.otRate.min}
+                    max={VALIDATION.otRate.max}
                     step="0.5"
                     value={formData.otRate}
                     onChange={(e) => setFormData({ ...formData, otRate: e.target.value })}

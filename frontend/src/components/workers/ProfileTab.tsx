@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { workersAPI } from '../../services/api';
+import { VALIDATION, validateNumericRange, validatePhone } from '../../utils/validation';
 import ConfirmModal from '../modals/ConfirmModal';
 import WorkerStatusModal from '../modals/WorkerStatusModal';
 import Button from '../ui/Button';
@@ -55,7 +56,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   const [originalWage, setOriginalWage] = useState<number>(0);
   const [originalOtRate, setOriginalOtRate] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [wageEditMode, setWageEditMode] = useState<'values' | 'effectiveDate'>('values');
@@ -79,7 +79,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
     setOriginalWage(worker.wage);
     setOriginalOtRate(worker.otRate);
     setWageEditMode('values');
-    setError(null);
+
   };
 
   const wageChanged = Number(formData.wage) !== originalWage;
@@ -100,20 +100,47 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
 
-    if (!formData.name.trim()) {
-      setError('Name is required');
+
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) {
+      toast.error('Name is required');
+      return;
+    }
+    if (trimmedName.length > VALIDATION.name.maxLength) {
+      toast.error(VALIDATION.name.message);
       return;
     }
 
-    if (!formData.wage || Number(formData.wage) <= 0) {
-      setError('Please enter a valid wage');
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      toast.error(phoneError);
       return;
     }
 
-    if (!formData.otRate || Number(formData.otRate) < 0) {
-      setError('Please enter a valid OT rate');
+    const wageNum = Number(formData.wage);
+    const wageError = validateNumericRange(
+      wageNum,
+      VALIDATION.wage.min,
+      VALIDATION.wage.max,
+      VALIDATION.wage.messageMin,
+      VALIDATION.wage.messageMax,
+    );
+    if (!formData.wage || wageError) {
+      toast.error(wageError || VALIDATION.wage.messageMin);
+      return;
+    }
+
+    const otRateNum = Number(formData.otRate);
+    const otError = validateNumericRange(
+      otRateNum,
+      VALIDATION.otRate.min,
+      VALIDATION.otRate.max,
+      VALIDATION.otRate.messageMin,
+      VALIDATION.otRate.messageMax,
+    );
+    if (!formData.otRate || otError) {
+      toast.error(otError || VALIDATION.otRate.messageMin);
       return;
     }
 
@@ -164,7 +191,6 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to update worker';
 
-      setError(errorMessage || 'Failed to update worker');
       toast.error(errorMessage || 'Failed to update worker');
     } finally {
       setLoading(false);
@@ -247,19 +273,11 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div
-            className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm mb-4 animate-shake"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
+
 
         {isEditing ? (
           /* Edit Mode */
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Basic Information Section */}
             <div className="bg-card border border-gray-200 rounded-lg p-6">
               <h4 className="text-md font-semibold text-text-primary mb-4">Basic Information</h4>
@@ -277,6 +295,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                     id={nameId}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    maxLength={VALIDATION.name.maxLength}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
                     required
                     disabled={loading}
@@ -354,7 +373,8 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       value={formData.wage}
                       onChange={(e) => setFormData({ ...formData, wage: e.target.value })}
                       placeholder="0"
-                      min="1"
+                      min={VALIDATION.wage.min}
+                      max={VALIDATION.wage.max}
                       step="1"
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-primary ${
                         wageEditMode === 'values' && wageChanged
@@ -432,7 +452,8 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       value={formData.otRate}
                       onChange={(e) => setFormData({ ...formData, otRate: e.target.value })}
                       placeholder="0"
-                      min="0"
+                      min={VALIDATION.otRate.min}
+                      max={VALIDATION.otRate.max}
                       step="1"
                       className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-primary ${
                         wageEditMode === 'values' && otRateChanged

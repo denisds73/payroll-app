@@ -2,6 +2,7 @@ import { Lock, Plus } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { VALIDATION } from '../../utils/validation';
 import ConfirmModal from '../modals/ConfirmModal';
 import Button from './Button';
 import ExpenseTypeGroup from './ExpenseTypeGroup';
@@ -91,7 +92,11 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       return;
     }
     if (formData.amount <= 0) {
-      toast.error('Amount must be greater than 0');
+      toast.error(VALIDATION.amount.messageMin);
+      return;
+    }
+    if (formData.amount > VALIDATION.amount.max) {
+      toast.error(VALIDATION.amount.messageMax);
       return;
     }
 
@@ -295,6 +300,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
           disabled={!isEditing || isLocked}
           placeholder="₹ Amount"
           min="0"
+          max={VALIDATION.amount.max}
           step="0.01"
           onWheel={(e) => e.currentTarget.blur()}
         />
@@ -306,6 +312,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
           onChange={handleNoteChange}
           disabled={!isEditing || isLocked}
           placeholder="Add notes..."
+          maxLength={VALIDATION.textField.maxLength}
         />
       </div>
 

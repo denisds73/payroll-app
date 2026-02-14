@@ -3,12 +3,14 @@ import { format } from 'date-fns';
 import { AlertCircle, Search, X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { generateAndDownloadPdf } from '../../features/pdf-export/services/pdfService';
 import { buildAdvanceReceiptPdf } from '../../features/pdf-export/utils/advancePdfBuilder';
 import { fetchAdvanceReportData } from '../../features/pdf-export/utils/pdfData';
 import { advancesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStore } from '../../store/workerStore';
+import { VALIDATION } from '../../utils/validation';
 import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
 import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
@@ -61,7 +63,6 @@ export default function IssueAdvanceModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [showWorkerDropdown, setShowWorkerDropdown] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [pdfAdvanceId, setPdfAdvanceId] = useState<number | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -156,20 +157,25 @@ export default function IssueAdvanceModal({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
+
 
     if (!formData.workerId) {
-      setError('Please select a worker');
+      toast.error('Please select a worker');
       return;
     }
 
     if (!formData.amount || Number(formData.amount) <= 0) {
-      setError('Please enter a valid amount');
+      toast.error(VALIDATION.amount.messageMin);
+      return;
+    }
+
+    if (Number(formData.amount) > VALIDATION.amount.max) {
+      toast.error(VALIDATION.amount.messageMax);
       return;
     }
 
     if (formData.workerId && isDateLocked(formData.workerId, formData.date)) {
-      setError('Cannot issue advance for this date - salary is already paid for this period');
+      toast.error('Cannot issue advance for this date - salary is already paid for this period');
       return;
     }
 
@@ -202,7 +208,7 @@ export default function IssueAdvanceModal({
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to issue advance';
 
-      setError(errorMessage || 'Failed to issue advance');
+      toast.error(errorMessage || 'Failed to issue advance');
     } finally {
       setLoading(false);
     }
@@ -228,7 +234,6 @@ export default function IssueAdvanceModal({
       setIsAnimating(false);
 
       setTimeout(() => {
-        setError(null);
         onClose();
       }, 200);
     }
@@ -285,15 +290,8 @@ export default function IssueAdvanceModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div
-              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm animate-shake"
-              role="alert"
-            >
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4" noValidate>
+
 
           {!initialWorkerId && (
             <div className="relative">
@@ -384,9 +382,9 @@ export default function IssueAdvanceModal({
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="0"
                 min="1"
+                max={VALIDATION.amount.max}
                 step="1"
                 className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                required
                 disabled={loading}
               />
             </div>
@@ -402,9 +400,15 @@ export default function IssueAdvanceModal({
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               placeholder="Add a note about this advance..."
               rows={3}
+              maxLength={VALIDATION.textField.maxLength}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
               disabled={loading}
             />
+            {formData.reason.length > 0 && (
+              <p className="text-xs text-text-secondary mt-1 text-right">
+                {formData.reason.length}/{VALIDATION.textField.maxLength}
+              </p>
+            )}
           </div>
 
           <div>

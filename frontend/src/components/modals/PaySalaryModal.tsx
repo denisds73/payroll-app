@@ -4,9 +4,11 @@
 import { X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
 import { salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
+import { VALIDATION } from '../../utils/validation';
 import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
@@ -73,7 +75,6 @@ export default function PaySalaryModal({
   const [salaryData, setSalaryData] = useState<SalaryCalculation | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [calculating, setCalculating] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -111,7 +112,7 @@ export default function PaySalaryModal({
 
   const fetchSalaryCalculation = async (payDate?: string): Promise<void> => {
     setCalculating(true);
-    setError(null);
+
 
     try {
       console.log('🔍 Fetching calculation with payDate:', payDate);
@@ -127,7 +128,7 @@ export default function PaySalaryModal({
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to calculate salary';
 
-      setError(errorMessage || 'Failed to calculate salary');
+      toast.error(errorMessage || 'Failed to calculate salary');
       setSalaryData(null);
     } finally {
       setCalculating(false);
@@ -146,24 +147,24 @@ export default function PaySalaryModal({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
+
 
     if (!salaryData) {
-      setError('No salary data available');
+      toast.error('No salary data available');
       return;
     }
 
     const paymentAmount = Number.parseFloat(formData.paymentAmount);
 
     if (Number.isNaN(paymentAmount) || paymentAmount <= 0) {
-      setError('Please enter a valid payment amount');
+      toast.error('Please enter a valid payment amount');
       return;
     }
 
     const maxAmount = salaryData.totalNetPayable;
 
     if (paymentAmount > maxAmount) {
-      setError(
+      toast.error(
         `Payment amount cannot exceed payable amount: ₹${maxAmount.toLocaleString('en-IN')}`,
       );
       return;
@@ -228,7 +229,7 @@ export default function PaySalaryModal({
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : 'Failed to process salary payment';
 
-      setError(errorMessage || 'Failed to process salary payment');
+      toast.error(errorMessage || 'Failed to process salary payment');
     } finally {
       setLoading(false);
     }
@@ -245,7 +246,6 @@ export default function PaySalaryModal({
           paymentProof: '',
         });
         setSalaryData(null);
-        setError(null);
         setIsPartialPayment(false);
         setSignatureData(undefined);
         onClose();
@@ -348,15 +348,8 @@ export default function PaySalaryModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {error && (
-            <div
-              className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm"
-              role="alert"
-            >
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6" noValidate>
+
 
           {calculating ? (
             <div className="py-8 text-center">
@@ -547,7 +540,6 @@ export default function PaySalaryModal({
                         max={salaryData.totalNetPayable}
                         step="0.01"
                         className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
-                        required
                         disabled={loading || !isPartialPayment}
                       />
                     </div>
@@ -571,9 +563,15 @@ export default function PaySalaryModal({
                       onChange={(e) => setFormData({ ...formData, paymentProof: e.target.value })}
                       placeholder="e.g., UPI Ref: 123456789, Cash, Cheque #1234..."
                       rows={3}
+                      maxLength={VALIDATION.textField.maxLength}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
                       disabled={loading}
                     />
+                    {formData.paymentProof.length > 0 && (
+                      <p className="text-xs text-text-secondary mt-1 text-right">
+                        {formData.paymentProof.length}/{VALIDATION.textField.maxLength}
+                      </p>
+                    )}
                   </div>
 
                   <div>

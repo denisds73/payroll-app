@@ -2,6 +2,7 @@
 import { AlertCircle, CheckCircle, X, XCircle } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
+import toast from 'react-hot-toast';
 import { workersAPI } from '../../services/api';
 import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
 import Button from '../ui/Button';
@@ -32,7 +33,6 @@ export default function WorkerStatusModal({
 
   const [effectiveFrom, setEffectiveFrom] = useState(today);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
@@ -77,7 +77,7 @@ export default function WorkerStatusModal({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
+
     setLoading(true);
 
     console.log(`🚀 ${mode === 'disable' ? 'Disabling' : 'Activating'} worker:`, {
@@ -102,7 +102,7 @@ export default function WorkerStatusModal({
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string }; status?: number } };
       const errorMessage = error?.response?.data?.message || `Failed to ${mode} worker`;
-      setError(errorMessage);
+      toast.error(errorMessage);
       console.error(`❌ ${mode} error:`, {
         message: error?.response?.data?.message,
         status: error?.response?.status,
@@ -117,7 +117,6 @@ export default function WorkerStatusModal({
       setIsAnimating(false);
 
       setTimeout(() => {
-        setError(null);
         setEffectiveFrom(today);
         setBlockedDates([]);
         onClose();
@@ -140,7 +139,7 @@ export default function WorkerStatusModal({
   const handleDateChange = (dateStr: string | null) => {
     if (dateStr) {
       setEffectiveFrom(dateStr);
-      setError(null);
+
     }
   };
 
@@ -218,7 +217,7 @@ export default function WorkerStatusModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6" noValidate>
           {isDisableMode ? (
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 flex gap-3">
               <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
@@ -303,11 +302,7 @@ export default function WorkerStatusModal({
             </div>
           )}
 
-          {error && (
-            <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+
 
           <div className="flex gap-3">
             <Button
