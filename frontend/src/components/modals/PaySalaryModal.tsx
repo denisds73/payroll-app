@@ -7,6 +7,7 @@ import { useEffect, useId, useState } from 'react';
 import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
 import { salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
+import { VALIDATION } from '../../utils/validation';
 import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
@@ -571,9 +572,15 @@ export default function PaySalaryModal({
                       onChange={(e) => setFormData({ ...formData, paymentProof: e.target.value })}
                       placeholder="e.g., UPI Ref: 123456789, Cash, Cheque #1234..."
                       rows={3}
+                      maxLength={VALIDATION.textField.maxLength}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
                       disabled={loading}
                     />
+                    {formData.paymentProof.length > 0 && (
+                      <p className="text-xs text-text-secondary mt-1 text-right">
+                        {formData.paymentProof.length}/{VALIDATION.textField.maxLength}
+                      </p>
+                    )}
                   </div>
 
                   <div>

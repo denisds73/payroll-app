@@ -1,5 +1,5 @@
 import { AttendanceStatus } from '@prisma/client';
-import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateAttendanceDto {
   @IsInt()
@@ -17,5 +17,8 @@ export class CreateAttendanceDto {
   otUnits?: number;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: 'Note must be at most 500 characters' })
   note?: string;
 }
+

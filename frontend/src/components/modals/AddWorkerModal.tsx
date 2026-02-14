@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { workersAPI } from '../../services/api';
 import { useWorkerStore } from '../../store/workerStore';
+import { VALIDATION, sanitizePhone, validateNumericRange, validatePhone } from '../../utils/validation';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 import Input from '../ui/Input';
@@ -65,27 +66,47 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
     e.preventDefault();
     setError(null);
 
-    if (!formData.name.trim()) {
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) {
       setError('Name is required');
+      return;
+    }
+    if (trimmedName.length > VALIDATION.name.maxLength) {
+      setError(VALIDATION.name.message);
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      setError(phoneError);
       return;
     }
 
     const wageNum = Number.parseInt(formData.wage, 10);
-    if (!formData.wage || Number.isNaN(wageNum) || wageNum <= 0) {
-      setError('Please enter a valid daily wage greater than 0');
-      return;
-    }
-
-    if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-      setError('Phone number must be 10 digits');
+    const wageError = validateNumericRange(
+      wageNum,
+      VALIDATION.wage.min,
+      VALIDATION.wage.max,
+      VALIDATION.wage.messageMin,
+      VALIDATION.wage.messageMax,
+    );
+    if (!formData.wage || wageError) {
+      setError(wageError || VALIDATION.wage.messageMin);
       return;
     }
 
     let otRateNum: number | undefined;
     if (formData.otRate) {
       otRateNum = Number.parseFloat(formData.otRate);
-      if (Number.isNaN(otRateNum) || otRateNum < 0) {
-        setError('Please enter a valid OT rate');
+      const otError = validateNumericRange(
+        otRateNum,
+        VALIDATION.otRate.min,
+        VALIDATION.otRate.max,
+        VALIDATION.otRate.messageMin,
+        VALIDATION.otRate.messageMax,
+      );
+      if (otError) {
+        setError(otError);
         return;
       }
     }
@@ -105,7 +126,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       };
 
       if (formData.phone) {
-        payload.phone = formData.phone.replace(/\D/g, '');
+        payload.phone = sanitizePhone(formData.phone);
       }
 
       if (otRateNum !== undefined && otRateNum > 0) {
@@ -228,6 +249,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Enter worker name"
+                maxLength={VALIDATION.name.maxLength}
                 autoFocus
               />
             </div>
@@ -263,7 +285,8 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   <input
                     id={wageId}
                     type="number"
-                    min="1"
+                    min={VALIDATION.wage.min}
+                    max={VALIDATION.wage.max}
                     step="1"
                     value={formData.wage}
                     onChange={(e) => setFormData({ ...formData, wage: e.target.value })}
@@ -286,7 +309,8 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   <input
                     id={otRateId}
                     type="number"
-                    min="0"
+                    min={VALIDATION.otRate.min}
+                    max={VALIDATION.otRate.max}
                     step="0.5"
                     value={formData.otRate}
                     onChange={(e) => setFormData({ ...formData, otRate: e.target.value })}

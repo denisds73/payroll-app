@@ -9,6 +9,7 @@ import { fetchAdvanceReportData } from '../../features/pdf-export/utils/pdfData'
 import { advancesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStore } from '../../store/workerStore';
+import { VALIDATION } from '../../utils/validation';
 import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
 import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
@@ -164,7 +165,12 @@ export default function IssueAdvanceModal({
     }
 
     if (!formData.amount || Number(formData.amount) <= 0) {
-      setError('Please enter a valid amount');
+      setError(VALIDATION.amount.messageMin);
+      return;
+    }
+
+    if (Number(formData.amount) > VALIDATION.amount.max) {
+      setError(VALIDATION.amount.messageMax);
       return;
     }
 
@@ -384,6 +390,7 @@ export default function IssueAdvanceModal({
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="0"
                 min="1"
+                max={VALIDATION.amount.max}
                 step="1"
                 className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
                 required
@@ -402,9 +409,15 @@ export default function IssueAdvanceModal({
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               placeholder="Add a note about this advance..."
               rows={3}
+              maxLength={VALIDATION.textField.maxLength}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
               disabled={loading}
             />
+            {formData.reason.length > 0 && (
+              <p className="text-xs text-text-secondary mt-1 text-right">
+                {formData.reason.length}/{VALIDATION.textField.maxLength}
+              </p>
+            )}
           </div>
 
           <div>
