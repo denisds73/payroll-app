@@ -9,6 +9,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Workers', path: '/workers' },
   { label: 'Advances', path: '/advances' },
+  { label: 'Settings', path: '/settings' },
 ];
 
 export default function Navbar() {

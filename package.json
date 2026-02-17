@@ -6,7 +6,7 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "NODE_ENV=development electron .",
-    "dev": "concurrently \"cd frontend && npm run dev\" \"NODE_ENV=development electron .\"",
+    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run start:dev\" \"NODE_ENV=development electron .\"",
     "build": "npm run build:frontend && npm run build:backend && npm run build:electron",
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",
