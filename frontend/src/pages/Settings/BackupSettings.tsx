@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Save, Upload, Cloud, HardDrive, Play, CheckCircle, AlertCircle, Link } from 'lucide-react';
+import { 
+  Save, Upload, Cloud, HardDrive, Play, CheckCircle, 
+  AlertCircle, Link, RefreshCw, FolderInput, 
+  ShieldCheck
+} from 'lucide-react';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
+import { Card } from '../../components/ui/card/Card';
+import Badge from '../../components/ui/Badge';
+import Tabs from '../../components/ui/Tabs';
+import Modal from '../../components/ui/Modal';
+import clsx from 'clsx';
 
 export default function BackupSettings() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
   const [folderId, setFolderId] = useState('');
-  const [credentialsFile, setCredentialsFile] = useState<File | null>(null);
   const [credentialsStatus, setCredentialsStatus] = useState<'missing' | 'configured'>('missing');
   const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isBackupRunning, setIsBackupRunning] = useState(false);
+  const [credentialsFile, setCredentialsFile] = useState<File | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
     fetchSettings();
@@ -23,15 +33,14 @@ export default function BackupSettings() {
   const checkAuthCode = async () => {
     const code = searchParams.get('code');
     if (code) {
+      const toastId = toast.loading('Connecting to Google Drive...');
       try {
-        const toastId = toast.loading('Connecting to Google Drive...');
         await api.post('/backup/callback', { code });
         toast.success('Successfully connected to Google Drive!', { id: toastId });
         setIsConnected(true);
-        // Clear code from URL
         navigate('/settings', { replace: true });
       } catch (error) {
-        toast.error('Failed to connect. Please try again.');
+        toast.error('Failed to connect. Please try again.', { id: toastId });
       }
     }
   };
@@ -44,38 +53,30 @@ export default function BackupSettings() {
         api.get('/settings/GOOGLE_DRIVE_TOKEN'),
       ]);
 
-      if (credResponse.status === 'fulfilled' && credResponse.value.data) {
-        setCredentialsStatus('configured');
-      }
-      if (folderResponse.status === 'fulfilled' && folderResponse.value.data) {
-        setFolderId(folderResponse.value.data.value);
-      }
-      if (tokenResponse.status === 'fulfilled' && tokenResponse.value.data) {
-        setIsConnected(true);
-      }
+      if (credResponse.status === 'fulfilled' && credResponse.value.data) setCredentialsStatus('configured');
+      if (folderResponse.status === 'fulfilled' && folderResponse.value.data) setFolderId(folderResponse.value.data.value);
+      if (tokenResponse.status === 'fulfilled' && tokenResponse.value.data) setIsConnected(true);
     } catch (error) {
       console.error('Failed to fetch settings', error);
+      toast.error('Could not load backup settings');
+    } finally {
+      setIsLoadingSettings(false);
     }
   };
 
   const handleCredentialsUpload = async () => {
     if (!credentialsFile) return;
-
     const reader = new FileReader();
     reader.onload = async (e) => {
       const content = e.target?.result as string;
       try {
-        JSON.parse(content); // Validate JSON
-        
-        await api.patch('/settings/GOOGLE_DRIVE_CREDENTIALS', {
-          value: content,
-          description: 'Google OAuth Client ID',
-        });
+        JSON.parse(content);
+        await api.patch('/settings/GOOGLE_DRIVE_CREDENTIALS', { value: content, description: 'Google OAuth Client ID' });
         setCredentialsStatus('configured');
-        toast.success('OAuth Client ID uploaded successfully');
+        toast.success('Credentials uploaded successfully');
         setCredentialsFile(null);
       } catch (error) {
-        toast.error('Invalid JSON file or upload failed');
+        toast.error('Invalid JSON file');
       }
     };
     reader.readAsText(credentialsFile);
@@ -84,182 +85,191 @@ export default function BackupSettings() {
   const handleConnect = async () => {
     try {
       const res = await api.get('/backup/auth-url');
-      if (res.data.url) {
-        window.location.href = res.data.url;
-      }
+      if (res.data.url) window.location.href = res.data.url;
     } catch (error) {
-      toast.error('Failed to initiate login. Check credentials.');
+      toast.error('Failed to initiate login');
     }
   };
 
   const handleSaveSettings = async () => {
     try {
-      setIsLoading(true);
-      await api.patch('/settings/BACKUP_FOLDER_ID', {
-        value: folderId,
-        description: 'Google Drive Backup Folder ID',
-      });
-      toast.success('Settings saved successfully');
+      await api.patch('/settings/BACKUP_FOLDER_ID', { value: folderId, description: 'Google Drive Backup Folder ID' });
+      toast.success('Settings saved');
     } catch (error) {
       toast.error('Failed to save settings');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleTriggerBackup = async () => {
+    setIsBackupRunning(true);
+    const toastId = toast.loading('Running backup...');
     try {
-      setIsBackupRunning(true);
-      const loadingToast = toast.loading('Running backup...');
-      
       const res = await api.post('/backup/trigger');
-      
-      toast.dismiss(loadingToast);
       if (res.data.googleDriveId) {
-        toast.success('Backup saved locally & uploaded to Google Drive!');
+        toast.success('Backup complete & uploaded to Drive!', { id: toastId });
       } else {
-        toast.success(`Local backup created! Path: ${res.data.path}`);
-        toast.error('Cloud upload skipped (not connected)', { duration: 4000 });
+        toast.success('Local backup created (Cloud skipped)', { id: toastId });
       }
     } catch (error) {
-      toast.dismiss();
-      toast.error('Backup failed. Check logs.');
+      toast.error('Backup failed', { id: toastId });
     } finally {
       setIsBackupRunning(false);
     }
   };
 
+  if (isLoadingSettings) return <div className="p-6 text-center text-text-secondary">Loading settings...</div>;
+
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="mb-6">
+    <div className="h-[calc(100vh-7rem)] flex flex-col p-6 max-w-5xl mx-auto space-y-5 animate-fadeIn">
+      <div className="flex-shrink-0">
         <h1 className="text-2xl font-bold text-text-primary">Backup & Recovery</h1>
-        <p className="text-sm text-text-secondary mt-0.5">Manage your data backup configuration (Local & Google Drive).</p>
+        <p className="text-sm text-text-secondary">Manage your data protection and disaster recovery strategies.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-card p-6 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-500/10 rounded-lg">
-              <HardDrive className="text-blue-600 w-6 h-6" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+        <StatusCard 
+          icon={<HardDrive className="w-5 h-5 text-success" />}
+          title="Local Backup"
+          status="Active"
+          detail="Daily at Midnight"
+          variant="success"
+        />
+        <StatusCard 
+          icon={<Cloud className={clsx("w-5 h-5", isConnected ? "text-info" : "text-text-disabled")} />}
+          title="Cloud Backup"
+          status={isConnected ? "Connected" : "Not Configured"}
+          detail={isConnected ? "Google Drive Ready" : "Setup Required"}
+          variant={isConnected ? "info" : "default"}
+        />
+         <div className="bg-card p-4 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-center items-center gap-2">
+            <div className="text-center">
+              <p className="text-sm font-medium text-text-secondary">Quick Action</p>
+              <p className="text-xs text-text-disabled">Trigger immediate backup</p>
             </div>
-            <h2 className="text-lg font-semibold text-text-primary">Local Backup</h2>
-          </div>
-          <p className="text-sm text-text-secondary mb-4">
-            Data is securely backed up locally every day at midnight.
-            Backups are retained indefinitely.
-          </p>
-          <div className="flex items-center gap-2 text-sm text-text-secondary bg-gray-50 p-3 rounded-md border border-gray-100">
-            <CheckCircle className="w-4 h-4 text-success" />
-            <span>Local Service Active</span>
-          </div>
-        </div>
+            <Button 
+              onClick={handleTriggerBackup} 
+              loading={isBackupRunning}
+              icon={<Play className="w-4 h-4" />}
+            >
+              Backup Now
+            </Button>
+         </div>
+      </div>
 
-        <div className="bg-card p-6 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-yellow-500/10 rounded-lg">
-              <Cloud className="text-yellow-600 w-6 h-6" />
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-5 min-h-0">
+        <div className="lg:col-span-2 flex flex-col h-full">
+          <Card className="p-5 h-full overflow-y-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-50 rounded-lg"><FolderInput className="w-5 h-5 text-blue-600" /></div>
+              <h2 className="text-lg font-semibold">Google Drive Configuration</h2>
             </div>
-            <h2 className="text-lg font-semibold text-text-primary">Google Drive Backup (OAuth)</h2>
-          </div>
-          
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">1. OAuth Client ID (JSON)</label>
-              <div className="flex gap-2">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={(e) => setCredentialsFile(e.target.files?.[0] || null)}
-                  className="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 text-text-secondary"
-                />
-                <Button
-                  onClick={handleCredentialsUpload}
-                  disabled={!credentialsFile}
-                  icon={<Upload className="w-4 h-4" />}
-                >
-                  Upload
-                </Button>
-              </div>
-              <div className="text-xs text-text-secondary flex items-center gap-1">
-                {credentialsStatus === 'configured' ? (
-                  <span className="text-success flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Credentials Configured</span>
+
+            <div className="space-y-4">
+              <ConfigStep 
+                number={1} 
+                title="Upload Credentials" 
+                isCompleted={credentialsStatus === 'configured'}
+                description='Upload the "OAuth Client ID" JSON from Google Cloud Console.'
+              >
+                 <div className="flex gap-3 items-center">
+                    <div className="flex-1">
+                      <input 
+                        type="file" 
+                        accept=".json"
+                        onChange={(e) => setCredentialsFile(e.target.files?.[0] || null)}
+                        className="block w-full text-sm text-text-secondary file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                      />
+                    </div>
+                    <Button onClick={handleCredentialsUpload} disabled={!credentialsFile} icon={<Upload className="w-4 h-4"/>}>
+                      Upload
+                    </Button>
+                 </div>
+              </ConfigStep>
+
+              <ConfigStep 
+                number={2} 
+                title="Connect Account" 
+                isCompleted={isConnected}
+                description="Authorize the application to access your Google Drive."
+                disabled={credentialsStatus !== 'configured'}
+              >
+                {!isConnected ? (
+                  <Button onClick={handleConnect} icon={<Link className="w-4 h-4" />}>Connect with Google</Button>
                 ) : (
-                  <span>Required: Download "OAuth Client ID" JSON from Google Cloud.</span>
+                   <div className="flex items-center gap-2 text-success font-medium text-sm">
+                      <CheckCircle className="w-4 h-4" /> Account Connected
+                   </div>
                 )}
-              </div>
-            </div>
+              </ConfigStep>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">2. Authorization</label>
-              <div>
-                {isConnected ? (
-                  <div className="flex items-center gap-2 text-success bg-success/5 p-3 rounded border border-success/20">
-                    <CheckCircle className="w-5 h-5" />
-                    <span className="font-medium">Connected to Google Drive</span>
-                  </div>
-                ) : (
-                  <Button 
-                    onClick={handleConnect} 
-                    disabled={credentialsStatus !== 'configured'}
-                    className="w-full"
-                    icon={<Link className="w-4 h-4" />}
-                  >
-                    Connect with Google
-                  </Button>
-                )}
-              </div>
+              <ConfigStep 
+                number={3} 
+                title="Set Backup Folder" 
+                isCompleted={!!folderId}
+                description="Enter the Google Drive folder ID where backups will be stored."
+                disabled={!isConnected}
+                isLast
+              >
+                 <div className="flex gap-3 items-center">
+                   <input
+                     type="text"
+                     placeholder="e.g. 1ABC...xyz"
+                     value={folderId}
+                     onChange={(e) => setFolderId(e.target.value)}
+                     className="flex-1 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-text-primary placeholder:text-gray-400"
+                   />
+                   <Button onClick={handleSaveSettings} icon={<Save className="w-4 h-4" />}>Save</Button>
+                 </div>
+              </ConfigStep>
             </div>
+          </Card>
+        </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">3. Backup Folder ID</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={folderId}
-                  onChange={(e) => setFolderId(e.target.value)}
-                  placeholder="ID from URL of your Drive folder"
-                  className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-text-primary placeholder:text-gray-400"
-                />
-                <Button
-                  onClick={handleSaveSettings}
-                  loading={isLoading}
-                  icon={<Save className="w-4 h-4" />}
-                >
-                  Save
-                </Button>
-              </div>
-            </div>
+        <div className="lg:col-span-1 flex flex-col h-full min-h-0">
+           <RestoreSection isConnected={isConnected} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusCard({ icon, title, status, detail, variant }: any) {
+  const colors: Record<string, string> = {
+    success: 'bg-success/5 border-success/20 text-success',
+    info: 'bg-info/5 border-info/20 text-info',
+    default: 'bg-gray-50 border-gray-200 text-text-secondary'
+  };
+  return (
+    <div className={`p-3 rounded-lg border ${colors[variant]} flex flex-col gap-0.5`}>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-text-primary">{title}</span>
+        {icon}
+      </div>
+      <div className="text-base font-bold">{status}</div>
+      <div className="text-xs opacity-75">{detail}</div>
+    </div>
+  );
+}
+
+function ConfigStep({ number, title, description, children, isCompleted, disabled, isLast }: any) {
+  return (
+    <div className={clsx("flex gap-4", disabled && "opacity-50 grayscale pointer-events-none")}>
+       <div className="flex-shrink-0 flex flex-col items-center w-7 relative">
+          {!isLast && (
+             <div className="absolute top-7 bottom-[-20px] left-1/2 w-0.5 -ml-px bg-gray-200 z-0" />
+          )}
+          <div className={clsx(
+            "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold z-10 relative",
+            isCompleted ? "bg-success text-white" : "bg-primary text-white"
+          )}>
+            {isCompleted ? <CheckCircle className="w-4 h-4" /> : number}
           </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end pt-6 mt-6 border-t border-gray-200">
-        <Button
-          onClick={handleTriggerBackup}
-          loading={isBackupRunning}
-          icon={<Play className="w-4 h-4" />}
-          size="lg"
-          disabled={!isConnected || !folderId}
-        >
-          {isBackupRunning ? 'Running Backup...' : 'Backup Now to Drive'}
-        </Button>
-      </div>
-
-      <div className="mt-12 pt-8 border-t-2 border-dashed border-gray-200">
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-warning" />
-            Restore Data
-          </h2>
-          <p className="text-sm text-text-secondary mt-0.5">
-            Select a backup to restore. 
-            <span className="font-semibold text-warning ml-1">Warning: Current data will be replaced!</span>
-            (A safety backup will be created automatically).
-          </p>
-        </div>
-
-        <RestoreSection isConnected={isConnected} />
-      </div>
+       </div>
+       <div className="flex-1 pb-6">
+          <h3 className="text-sm font-semibold text-text-primary mb-0.5">{title}</h3>
+          <p className="text-xs text-text-secondary mb-2">{description}</p>
+          {children}
+       </div>
     </div>
   );
 }
@@ -268,6 +278,7 @@ function RestoreSection({ isConnected }: { isConnected: boolean }) {
   const [activeTab, setActiveTab] = useState<'local' | 'drive'>('local');
   const [backups, setBackups] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [restoreTarget, setRestoreTarget] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     fetchBackups();
@@ -286,79 +297,98 @@ function RestoreSection({ isConnected }: { isConnected: boolean }) {
     }
   };
 
-  const handleRestore = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to restore "${name}"?\nCurrent data will be overwritten!`)) return;
-
+  const confirmRestore = async () => {
+    if (!restoreTarget) return;
     const toastId = toast.loading('Restoring database...');
     try {
       const endpoint = activeTab === 'local' ? '/backup/restore/local' : '/backup/restore/drive';
-      const payload = activeTab === 'local' ? { filename: id } : { fileId: id };
-      
+      const payload = activeTab === 'local' ? { filename: restoreTarget.id } : { fileId: restoreTarget.id };
       await api.post(endpoint, payload);
-      
-      toast.success('Database restored successfully! Reloading...', { id: toastId });
+      toast.success('Restored! Reloading...', { id: toastId });
       setTimeout(() => window.location.reload(), 2000);
     } catch (error) {
       toast.error('Restore failed', { id: toastId });
+    } finally {
+      setRestoreTarget(null);
     }
   };
 
   return (
-    <div className="bg-card rounded-lg border border-gray-200 overflow-hidden">
-      <div className="flex border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('local')}
-          className={`px-6 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'local' 
-              ? 'bg-primary/5 text-primary border-b-2 border-primary' 
-              : 'text-text-secondary hover:bg-gray-50'
-          }`}
-        >
-          Local Backups
-        </button>
-        <button
-          onClick={() => setActiveTab('drive')}
-          disabled={!isConnected}
-          className={`px-6 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'drive' 
-              ? 'bg-primary/5 text-primary border-b-2 border-primary' 
-              : 'text-text-secondary hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
-          }`}
-        >
-          Google Drive Backups
-        </button>
-      </div>
+    <Card className="h-full flex flex-col min-h-0">
+       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 rounded-t-lg flex-shrink-0">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-text-secondary" /> Restore Data
+          </h3>
+       </div>
+       
+       <div className="flex-shrink-0">
+          <Tabs 
+            activeTab={activeTab} 
+            onChange={(id) => setActiveTab(id as any)}
+            tabs={[
+              { id: 'local', label: 'Local', icon: <HardDrive className="w-3.5 h-3.5"/> },
+              { id: 'drive', label: 'Drive', icon: <Cloud className="w-3.5 h-3.5"/> }
+            ]}
+          />
+       </div>
 
-      <div className="p-4 min-h-[200px]">
-        {isLoading ? (
-          <div className="flex justify-center py-8 text-text-secondary">Loading backups...</div>
-        ) : backups.length === 0 ? (
-          <div className="flex justify-center py-8 text-text-secondary">No backups found.</div>
-        ) : (
-          <div className="space-y-2">
-            {backups.map((backup: any) => (
-              <div 
-                key={activeTab === 'local' ? backup.filename : backup.id} 
-                className="flex items-center justify-between p-3 rounded-md border border-gray-100 hover:border-primary/30 transition-colors bg-white"
-              >
-                <div>
-                  <div className="font-medium text-text-primary">{backup.filename}</div>
-                  <div className="text-xs text-text-secondary">
-                    {new Date(backup.createdAt).toLocaleString()} • {(backup.size / 1024 / 1024).toFixed(2)} MB
+       <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-0">
+          {isLoading ? (
+             <div className="text-center py-6 text-sm text-text-disabled">Loading...</div>
+          ) : backups.length === 0 ? (
+             <div className="text-center py-6 text-sm text-text-disabled">No backups found</div>
+          ) : (
+             backups.map((backup: any, index: number) => (
+               <div key={backup.id || backup.filename} className={clsx(
+                 "group p-3 hover:bg-gray-50/50 transition-colors",
+                 index !== backups.length - 1 && "border-b border-gray-100"
+               )}>
+                  <div className="flex justify-between items-start mb-2">
+                     <div className="text-sm font-semibold text-text-primary truncate max-w-[180px]" title={backup.filename}>
+                        {backup.filename}
+                     </div>
+                     <Badge 
+                       text={`${(backup.size / 1024 / 1024).toFixed(2)} MB`} 
+                       variant="default"
+                       className="opacity-75"
+                     />
                   </div>
+                  <div className="flex justify-between items-center text-xs text-text-secondary">
+                     <span>{new Date(backup.createdAt).toLocaleDateString()} at {new Date(backup.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                     <Button size="sm" variant="outline" onClick={() => setRestoreTarget({ id: backup.id || backup.filename, name: backup.filename })}>
+                        Restore
+                     </Button>
+                  </div>
+               </div>
+            ))
+          )}
+       </div>
+
+       <Modal 
+         isOpen={!!restoreTarget} 
+         onClose={() => setRestoreTarget(null)} 
+         title="Confirm Restoration"
+         size="sm"
+       >
+         <div className="space-y-4">
+             <div className="flex items-start gap-3 bg-warning/10 p-4 rounded-md text-warning">
+                <AlertCircle className="w-6 h-6 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                   <p className="font-bold">Warning: Overwrite Action</p>
+                   <p className="mt-1">Restoring <strong>{restoreTarget?.name}</strong> will replace your current database.</p>
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleRestore(activeTab === 'local' ? backup.filename : backup.id, backup.filename)}
-                >
-                  Restore
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+             </div>
+             <div className="flex items-center gap-2 text-sm text-success">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Safety backup will be created automatically.</span>
+             </div>
+             
+             <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={() => setRestoreTarget(null)}>Cancel</Button>
+                <Button variant="danger" onClick={confirmRestore}>Confirm Restore</Button>
+             </div>
+         </div>
+       </Modal>
+    </Card>
   );
 }

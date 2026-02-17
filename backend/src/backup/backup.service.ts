@@ -8,10 +8,12 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
-  private readonly dbPath = path.join(process.cwd(), 'database/database.db');
-  private readonly backupDir = path.join(process.cwd(), 'backups/local');
+  private readonly dbPath = path.join(process.cwd(), 'database', 'database.db');
+  private readonly backupDir = path.join(process.cwd(), 'backups', 'local');
 
   constructor(private prisma: PrismaService) {
+    this.logger.log(`DB path: ${this.dbPath}`);
+    this.logger.log(`Backup dir: ${this.backupDir}`);
     this.ensureBackupDir();
   }
 
@@ -261,7 +263,7 @@ export class BackupService {
   }
 
   private async createSafetyBackup() {
-    const safetyDir = path.join(process.cwd(), 'backups/safety');
+    const safetyDir = path.join(process.cwd(), 'backups', 'safety');
     if (!fs.existsSync(safetyDir)) fs.mkdirSync(safetyDir, { recursive: true });
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
