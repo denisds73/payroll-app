@@ -8,7 +8,10 @@ function App() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <Toaster
-        position="bottom-right"
+        position="top-center"
+        containerStyle={{
+          top: 80,
+        }}
         toastOptions={{
           duration: 2000,
           style: {

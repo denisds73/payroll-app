@@ -370,22 +370,36 @@ function RestoreSection({ isConnected }: { isConnected: boolean }) {
          title="Confirm Restoration"
          size="sm"
        >
-         <div className="space-y-4">
-             <div className="flex items-start gap-3 bg-warning/10 p-4 rounded-md text-warning">
-                <AlertCircle className="w-6 h-6 shrink-0 mt-0.5" />
-                <div className="text-sm">
-                   <p className="font-bold">Warning: Overwrite Action</p>
-                   <p className="mt-1">Restoring <strong>{restoreTarget?.name}</strong> will replace your current database.</p>
+         <div className="space-y-6">
+             <div className="text-center space-y-3">
+                 <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                 </div>
+                 <div>
+                    <h3 className="text-lg font-semibold text-text-primary">Ready to Restore?</h3>
+                    <p className="text-sm text-text-secondary mt-1">
+                       This action will replace your current database with the selected backup file.
+                    </p>
+                 </div>
+             </div>
+
+             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm">
+                <div className="flex justify-between items-center mb-2">
+                   <span className="text-text-secondary">File:</span>
+                   <span className="font-medium text-text-primary truncate max-w-[200px]" title={restoreTarget?.name}>{restoreTarget?.name}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-text-secondary">
+                   <div className="flex items-center gap-1.5 text-success">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Safety backup included</span>
+                   </div>
+                   <span>Overwrite Mode</span>
                 </div>
              </div>
-             <div className="flex items-center gap-2 text-sm text-success">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Safety backup will be created automatically.</span>
-             </div>
              
-             <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={() => setRestoreTarget(null)}>Cancel</Button>
-                <Button variant="danger" onClick={confirmRestore}>Confirm Restore</Button>
+             <div className="flex gap-3 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setRestoreTarget(null)}>Cancel</Button>
+                <Button variant="danger" className="flex-1" onClick={confirmRestore}>Confirm Restore</Button>
              </div>
          </div>
        </Modal>
