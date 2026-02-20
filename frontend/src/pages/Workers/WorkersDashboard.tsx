@@ -53,8 +53,8 @@ export default function WorkersDashboard() {
   ];
 
   return (
-    <div className="p-8 max-w-6xl mx-auto animate-fadeIn">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-6xl mx-auto animate-fadeIn flex flex-col h-[calc(100vh-6rem)] py-8">
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Workers</h1>
           <p className="text-sm text-text-secondary mt-0.5">
@@ -66,8 +66,8 @@ export default function WorkersDashboard() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-gray-200 px-4">
+      <div className="bg-card rounded-lg border border-gray-200 overflow-hidden flex flex-col min-h-0 flex-1">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 shrink-0">
           <div className="flex">
             {filterTabs.map((tab) => (
               <button
@@ -107,25 +107,25 @@ export default function WorkersDashboard() {
         </div>
 
         {error && (
-          <div className="p-4 bg-error/10 border-b border-error/20">
+          <div className="p-4 bg-error/10 border-b border-error/20 shrink-0">
             <p className="text-error text-sm font-medium">{error}</p>
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="overflow-auto flex-1 relative">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
+                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 bg-gray-50">
                   Worker
                 </th>
-                <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-24">
+                <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-24 bg-gray-50">
                   Status
                 </th>
-                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-32">
+                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-32 bg-gray-50">
                   Net Payable
                 </th>
-                <th className="w-10 px-2 py-3" />
+                <th className="w-10 px-2 py-3 bg-gray-50" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -248,7 +248,7 @@ export default function WorkersDashboard() {
         </div>
 
         {!loading && filteredWorkers.length > 0 && (
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-sm text-text-secondary">
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-sm text-text-secondary shrink-0">
             Showing {filteredWorkers.length} of {workers.length} workers
           </div>
         )}
