@@ -4,6 +4,7 @@ import AdvancesIndexPage from './pages/Advances/AdvancesIndexPage';
 import TestPage from './pages/TestPage';
 import WorkerDetail from './pages/Workers/WorkerDetail';
 import WorkersDashboard from './pages/Workers/WorkersDashboard';
+import BackupSettings from './pages/Settings/BackupSettings';
 
 export const routes: RouteObject[] = [
   {
@@ -31,6 +32,10 @@ export const routes: RouteObject[] = [
             element: <WorkerDetail />,
           },
         ],
+      },
+      {
+        path: 'settings',
+        element: <BackupSettings />,
       },
       {
         path: 'advances',

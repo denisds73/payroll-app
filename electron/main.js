@@ -3,11 +3,10 @@ import { app, BrowserWindow } from 'electron/main';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Get __dirname equivalent in ES modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Backend process reference
 let backendProcess = null;
+let isQuitting = false;
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -43,28 +42,52 @@ function startBackend() {
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    show: false, // Don't show until ready
+    show: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
 
-  // Maximize the window
   win.maximize();
 
-  // Show window when ready to avoid flashing
   win.once('ready-to-show', () => {
     win.show();
   });
 
+  win.on('close', async (e) => {
+    if (!isQuitting) {
+      e.preventDefault();
+      console.log('[Electron] Shutting down: triggering pre-quit backup...');
+      
+      try {
+         win.webContents.send('app-closing');
+         // We execute the backup and a 3 second timer simultaneously
+         // This guarantees the frontend "Backing up..." overlay is visible for at least 3 seconds UX-wise
+         await Promise.all([
+             fetch('http://localhost:3001/backup/trigger', { method: 'POST' }),
+             new Promise(resolve => setTimeout(resolve, 3000))
+         ]);
+         
+         win.webContents.send('app-backup-complete');
+         console.log('[Electron] Pre-quit backup complete. Exiting in 1.5s.');
+         
+         // Wait 1.5 seconds to show the completion animation tick icon
+         await new Promise(resolve => setTimeout(resolve, 1500));
+      } catch (err) {
+         console.error('[Electron] Failed to trigger backup on close:', err);
+      } finally {
+         isQuitting = true;
+         app.quit();
+      }
+    }
+  });
+
   if (isDev) {
-    // Load from Vite dev server in development
     win.loadURL('http://localhost:5173').catch((error) => {
       console.error('Failed to load app:', error);
     });
   } else {
-    // Load the built files in production
     win.loadFile(path.join(__dirname, '../frontend/dist/index.html')).catch((error) => {
       console.error('Failed to load app:', error);
     });
@@ -72,7 +95,7 @@ const createWindow = () => {
 };
 
 app.whenReady().then(() => {
-  startBackend();
+    startBackend();
   createWindow();
 
   app.on('activate', () => {
@@ -88,7 +111,6 @@ app.on('window-all-closed', () => {
   }
 });
 
-// Cleanup backend process on app quit
 app.on('before-quit', () => {
   if (backendProcess) {
     backendProcess.kill();

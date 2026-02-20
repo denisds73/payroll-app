@@ -1,6 +1,5 @@
 import { X } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,24 +10,40 @@ interface ModalProps {
 }
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
-  // Close on Escape key
+  const [isVisible, setIsVisible] = useState(isOpen);
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      // Small delay to ensure DOM is ready for transition
+      const timer = setTimeout(() => setAnimate(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setAnimate(false);
+      const timer = setTimeout(() => setIsVisible(false), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  // Handle Escape key & Scroll lock - tied to isVisible so it stays during exit animation
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
 
-    if (isOpen) {
+    if (isVisible) {
       document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden'; // Prevent background scroll
+      document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isVisible, onClose]);
 
-  if (!isOpen) return null;
+  if (!isVisible) return null;
 
   const sizeClasses = {
     sm: 'max-w-md',
@@ -37,7 +52,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ${animate ? 'opacity-100' : 'opacity-0'}`}>
       {/* Backdrop */}
       {/** biome-ignore lint/a11y/useSemanticElements: <it is correct> */}
       <div
@@ -53,7 +68,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
 
       {/* Modal */}
       <div
-        className={`relative bg-card rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto`}
+        className={`relative bg-card rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto transform transition-all duration-200 ${animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
