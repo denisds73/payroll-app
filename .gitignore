@@ -84,3 +84,6 @@ prisma/*.db-journal
 .debugger/
 # AI instructions
 .github/copilot-instructions.md
+# Backups
+backend/backups/
+*.db
