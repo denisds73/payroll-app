@@ -2,10 +2,13 @@ import './App.css';
 import { Toaster } from 'react-hot-toast';
 import { Outlet } from 'react-router-dom';
 import Navbar from './components/navbar/Navbar';
+import { BackupGuard } from './components/BackupGuard';
 
 function App() {
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <BackupGuard />
+      <div className="min-h-screen bg-background">
       <Navbar />
       <Toaster
         position="top-center"
@@ -41,7 +44,8 @@ function App() {
       <main className="pt-24 px-6">
         <Outlet />
       </main>
-    </div>
+      </div>
+    </>
   );
 }
 

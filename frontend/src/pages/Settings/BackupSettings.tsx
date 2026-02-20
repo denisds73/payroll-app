@@ -131,7 +131,7 @@ export default function BackupSettings() {
           icon={<HardDrive className="w-5 h-5 text-success" />}
           title="Local Backup"
           status="Active"
-          detail="Daily at Midnight"
+          detail="On Quit"
           variant="success"
         />
         <StatusCard 
@@ -354,7 +354,7 @@ function RestoreSection({ isConnected }: { isConnected: boolean }) {
                      />
                   </div>
                   <div className="flex justify-between items-center text-xs text-text-secondary">
-                     <span>{new Date(backup.createdAt).toLocaleDateString()} at {new Date(backup.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                     <span>{new Date(backup.createdAt).toLocaleDateString('en-GB')} at {new Date(backup.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                      <Button size="sm" variant="outline" onClick={() => setRestoreTarget({ id: backup.id || backup.filename, name: backup.filename })}>
                         Restore
                      </Button>

@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import * as fs from 'fs';
 import * as path from 'path';
 import { google } from 'googleapis';
 import { PrismaService } from '../prisma/prisma.service';
+import { getDatabasePath, getLocalBackupPath, getSafetyBackupPath } from '../utils/path.util';
 
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
-  private readonly dbPath = path.join(process.cwd(), 'database', 'database.db');
-  private readonly backupDir = path.join(process.cwd(), 'backups', 'local');
+  private readonly dbPath = getDatabasePath();
+  private readonly backupDir = getLocalBackupPath();
 
   constructor(private prisma: PrismaService) {
     this.logger.log(`DB path: ${this.dbPath}`);
@@ -23,12 +23,6 @@ export class BackupService {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async handleCron() {
-    this.logger.log('Starting scheduled backup...');
-    await this.performBackup();
-  }
-
   async performBackup() {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -40,10 +34,98 @@ export class BackupService {
 
       const googleDriveId = await this.uploadToGoogleDrive(backupPath, backupFilename);
 
+      await this.cleanupOldBackups();
+
+      await this.prisma.systemSetting.upsert({
+        where: { key: 'LAST_BACKUP_FAILED' },
+        update: { value: 'false' },
+        create: { key: 'LAST_BACKUP_FAILED', value: 'false', description: 'Tracks if the last auto-backup failed' }
+      });
+
       return { status: 'success', path: backupPath, timestamp, googleDriveId };
     } catch (error) {
       this.logger.error('Backup failed', error);
+      try {
+        await this.prisma.systemSetting.upsert({
+          where: { key: 'LAST_BACKUP_FAILED' },
+          update: { value: 'true' },
+          create: { key: 'LAST_BACKUP_FAILED', value: 'true', description: 'Tracks if the last auto-backup failed' }
+        });
+      } catch (e) {}
       throw error;
+    }
+  }
+
+  private async cleanupOldBackups() {
+    this.logger.log('Cleaning up old backups (>90 days)...');
+    try {
+      await this.deleteOldFiles(this.backupDir, 90);
+      await this.deleteOldFiles(getSafetyBackupPath(), 90);
+      await this.cleanupOldDriveBackups(90);
+    } catch (e) {
+      this.logger.error('Failed stringing together cleanup operations', e);
+    }
+  }
+
+  private async deleteOldFiles(dirPath: string, days: number) {
+    if (!fs.existsSync(dirPath)) return;
+    const files = await fs.promises.readdir(dirPath);
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    for (const f of files) {
+      if (!f.endsWith('.db')) continue;
+      const filePath = path.join(dirPath, f);
+      const stats = fs.statSync(filePath);
+      
+      let createdAt = stats.mtime;
+      try {
+        const timeStr = f.replace('backup-', '').replace('safety-before-restore-', '').replace('drive-restore-', '').replace('.db', '');
+        const [datePart, timePartRaw] = timeStr.split('T');
+        if (datePart && timePartRaw) {
+          const p = timePartRaw.replace('Z', '').split('-');
+          if (p.length >= 3) {
+            const ms = p[3] ? `.${p[3]}` : '';
+            createdAt = new Date(`${datePart}T${p[0]}:${p[1]}:${p[2]}${ms}Z`);
+          }
+        }
+      } catch (e) {}
+
+      if (createdAt < cutoffDate) {
+        await fs.promises.unlink(filePath);
+        this.logger.log(`Deleted old local file: ${f}`);
+      }
+    }
+  }
+
+  private async cleanupOldDriveBackups(days: number) {
+    const credentials = await this.getCredentials();
+    const tokenSetting = await this.prisma.systemSetting.findUnique({ where: { key: 'GOOGLE_DRIVE_TOKEN' } });
+    const folderIdSetting = await this.prisma.systemSetting.findUnique({ where: { key: 'BACKUP_FOLDER_ID' } });
+
+    if (!credentials || !tokenSetting || !folderIdSetting) return;
+
+    const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+    oAuth2Client.setCredentials({ refresh_token: tokenSetting.value });
+
+    const drive = google.drive({ version: 'v3', auth: oAuth2Client });
+    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const rfc3339Cutoff = cutoffDate.toISOString();
+
+    const res = await drive.files.list({
+      q: `'${folderIdSetting.value}' in parents and createdTime < '${rfc3339Cutoff}' and trashed = false`,
+      fields: 'files(id, name)',
+    });
+
+    const filesToDelete = res.data.files || [];
+    for (const file of filesToDelete) {
+      if (file.id) {
+        await drive.files.delete({ fileId: file.id });
+        this.logger.log(`Deleted old drive backup: ${file.name}`);
+      }
     }
   }
 
@@ -263,7 +345,7 @@ export class BackupService {
   }
 
   private async createSafetyBackup() {
-    const safetyDir = path.join(process.cwd(), 'backups', 'safety');
+    const safetyDir = getSafetyBackupPath();
     if (!fs.existsSync(safetyDir)) fs.mkdirSync(safetyDir, { recursive: true });
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
