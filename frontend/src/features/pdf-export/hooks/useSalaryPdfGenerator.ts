@@ -21,6 +21,7 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
 
       const fileName = generateFileName(
         reportData.worker.name,
+        reportData.salary.cycleStart,
         reportData.salary.cycleEnd,
       );
 
@@ -57,12 +58,16 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
   };
 }
 
-function generateFileName(workerName: string, cycleEnd: string): string {
-  const cleanName = workerName.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+function formatDateForFileName(dateStr: string): string {
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleDateString('en-IN', { month: 'short' });
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
 
-  const endDate = new Date(cycleEnd);
-  const month = endDate.toLocaleDateString('en-IN', { month: 'short' });
-  const year = endDate.getFullYear();
+function generateFileName(workerName: string, cycleStart: string, cycleEnd: string): string {
+  const cleanName = workerName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
 
-  return `salary_report_${cleanName}_${month}${year}`;
+  return `Salary_Report_${cleanName}_${formatDateForFileName(cycleStart)}_to_${formatDateForFileName(cycleEnd)}`;
 }
