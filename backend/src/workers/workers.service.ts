@@ -114,7 +114,17 @@ export class WorkersService {
       0,
     );
 
-    return grossPay - totalAdvance - totalExpense + carryForwardBalance;
+    // Include opening balance only for the first cycle (no salary history)
+    let openingBalance = 0;
+    if (!lastSalary) {
+      const worker = await this.prisma.worker.findUnique({
+        where: { id: workerId },
+        select: { openingBalance: true },
+      });
+      openingBalance = worker?.openingBalance ?? 0;
+    }
+
+    return grossPay - totalAdvance - totalExpense + carryForwardBalance + openingBalance;
   }
 
   async findOne(id: number) {
@@ -126,12 +136,13 @@ export class WorkersService {
   }
 
   async create(data: CreateWorkerDto) {
-    const { joinedAt, ...rest } = data;
+    const { joinedAt, openingBalance, ...rest } = data;
     try {
       return await this.prisma.$transaction(async (tx) => {
         const worker = await tx.worker.create({
           data: {
             ...rest,
+            openingBalance: openingBalance ?? 0,
             joinedAt: joinedAt
               ? joinedAt.includes('T')
                 ? new Date(joinedAt)
@@ -280,6 +291,18 @@ export class WorkersService {
       return this.prisma.worker.findUnique({ where: { id } });
     }
 
+    // Validate openingBalance change - only allowed before first salary
+    if (dto.openingBalance !== undefined) {
+      const hasSalary = await this.prisma.salary.findFirst({
+        where: { workerId: id },
+      });
+      if (hasSalary) {
+        throw new BadRequestException(
+          'Cannot change opening balance after a salary has been paid.',
+        );
+      }
+    }
+
     return this.prisma.worker.update({
       where: { id },
       data: {
@@ -288,6 +311,7 @@ export class WorkersService {
         ...(dto.wage !== undefined && { wage: dto.wage }),
         ...(dto.otRate !== undefined && { otRate: dto.otRate }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+        ...(dto.openingBalance !== undefined && { openingBalance: dto.openingBalance }),
       },
     });
   }

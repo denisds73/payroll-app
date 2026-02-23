@@ -37,6 +37,7 @@ interface CycleStats {
   netPay: number;
   carryForward: number;
   totalNetPayable: number;
+  openingBalance: number;
 }
 
 export default function WorkerDetail() {
@@ -107,6 +108,7 @@ export default function WorkerDetail() {
         netPay: 0,
         carryForward: 0,
         totalNetPayable: 0,
+        openingBalance: 0,
       });
 
       if (err.response?.status !== 400) {
@@ -350,8 +352,8 @@ export default function WorkerDetail() {
                 <p className="text-sm font-semibold text-text-primary">Net Payable</p>
               </div>
 
-              {/* Show breakdown if there's carry-forward */}
-              {(cycleStats?.carryForward ?? 0) > 0 && (
+              {/* Show breakdown if there's carry-forward or opening balance */}
+              {((cycleStats?.carryForward ?? 0) > 0 || (cycleStats?.openingBalance ?? 0) !== 0) && (
                 <div className="mb-2 space-y-1 pb-2 border-b border-gray-200">
                   <div className="flex justify-between text-xs">
                     <span className="text-text-secondary">Current Cycle</span>
@@ -359,12 +361,24 @@ export default function WorkerDetail() {
                       {formatCurrency(cycleStats?.netPay ?? 0)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-warning font-medium">Carry Forward</span>
-                    <span className="font-medium text-warning">
-                      {formatCurrency(cycleStats?.carryForward ?? 0)}
-                    </span>
-                  </div>
+                  {(cycleStats?.openingBalance ?? 0) !== 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className={`font-medium ${(cycleStats?.openingBalance ?? 0) >= 0 ? 'text-info' : 'text-warning'}`}>
+                        Opening Balance
+                      </span>
+                      <span className={`font-medium ${(cycleStats?.openingBalance ?? 0) >= 0 ? 'text-info' : 'text-warning'}`}>
+                        {(cycleStats?.openingBalance ?? 0) >= 0 ? '' : '-'}{formatCurrency(Math.abs(cycleStats?.openingBalance ?? 0))}
+                      </span>
+                    </div>
+                  )}
+                  {(cycleStats?.carryForward ?? 0) > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-warning font-medium">Carry Forward</span>
+                      <span className="font-medium text-warning">
+                        {formatCurrency(cycleStats?.carryForward ?? 0)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 

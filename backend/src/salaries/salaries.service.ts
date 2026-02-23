@@ -182,7 +182,11 @@ export class SalariesService {
     const totalAdvance = advanceResult._sum.amount ?? 0;
     const totalExpense = expenseResult._sum.amount ?? 0;
     const unpaidBalance = await this.getUnpaidBalance(workerId);
-    const netPay = grossPay - totalAdvance - totalExpense;
+
+    // Include opening balance only for the first cycle (no salary history)
+    const openingBalance = !lastSalary ? (worker.openingBalance ?? 0) : 0;
+
+    const netPay = grossPay - totalAdvance - totalExpense + openingBalance;
 
     return {
       cycleStart,
@@ -195,6 +199,7 @@ export class SalariesService {
       totalAdvance,
       totalExpense,
       unpaidBalance,
+      openingBalance,
       netPay,
     };
   }
