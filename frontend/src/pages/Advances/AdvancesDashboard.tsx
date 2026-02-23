@@ -139,8 +139,8 @@ export default function AdvancesDashboard() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-7xl mx-auto animate-fadeIn flex flex-col h-[calc(100vh-6rem)] py-6 px-6">
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Worker Advances</h1>
           <p className="text-sm text-text-secondary mt-0.5">
@@ -152,8 +152,8 @@ export default function AdvancesDashboard() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 overflow-visible">
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 gap-4 flex-wrap">
+      <div className="bg-card rounded-lg border border-gray-200 flex flex-col min-h-0 flex-1 overflow-visible">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 gap-4 flex-wrap shrink-0">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
@@ -190,14 +190,14 @@ export default function AdvancesDashboard() {
         </div>
 
         {error && (
-          <div className="p-4 bg-error/10 border-b border-error/20">
+          <div className="p-4 bg-error/10 border-b border-error/20 shrink-0">
             <p className="text-error text-sm font-medium">{error}</p>
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="overflow-auto flex-1 relative">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
                   Date

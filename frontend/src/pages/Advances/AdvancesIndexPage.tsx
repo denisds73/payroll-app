@@ -63,8 +63,8 @@ export default function AdvancesIndexPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6 animate-fadeIn">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto animate-fadeIn flex flex-col h-[calc(100vh-6rem)] py-8">
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Worker Advances</h1>
           <p className="text-sm text-text-secondary mt-0.5">Workers with advance history</p>
@@ -74,8 +74,8 @@ export default function AdvancesIndexPage() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 overflow-visible">
-        <div className="flex items-center justify-end border-b border-gray-200 px-4 py-3">
+      <div className="bg-card rounded-lg border border-gray-200 overflow-hidden flex flex-col min-h-0 flex-1">
+        <div className="flex items-center justify-end border-b border-gray-200 px-4 py-3 shrink-0">
           <div className="relative w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
@@ -94,9 +94,9 @@ export default function AdvancesIndexPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="overflow-auto flex-1 relative">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-[35%]">
                   Worker
