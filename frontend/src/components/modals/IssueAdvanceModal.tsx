@@ -221,7 +221,12 @@ export default function IssueAdvanceModal({
     try {
       const reportData = await fetchAdvanceReportData(advance.id);
       const docDefinition = buildAdvanceReceiptPdf(reportData, signatureDataUrl);
-      const fileName = `advance_receipt_${reportData.worker.name.replace(/\s+/g, '_')}_${advance.id}.pdf`;
+      const cleanName = reportData.worker.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+      const date = new Date(reportData.advance.date);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = date.toLocaleDateString('en-IN', { month: 'short' });
+      const year = date.getFullYear();
+      const fileName = `Advance_Receipt_${cleanName}_${day}-${month}-${year}`;
       await generateAndDownloadPdf(docDefinition, fileName);
     } catch (error) {
       console.error('Failed to generate PDF with signature:', error);

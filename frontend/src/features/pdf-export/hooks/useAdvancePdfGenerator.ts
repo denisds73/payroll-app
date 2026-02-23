@@ -54,12 +54,12 @@ export function useAdvancePdfGenerator(): UseAdvancePdfGenerator {
 }
 
 function generateFileName(workerName: string, advanceDate: string): string {
-  const cleanName = workerName.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+  const cleanName = workerName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
 
   const date = new Date(advanceDate);
   const day = date.getDate().toString().padStart(2, '0');
   const month = date.toLocaleDateString('en-IN', { month: 'short' });
   const year = date.getFullYear();
 
-  return `advance_receipt_${cleanName}_${day}${month}${year}`;
+  return `Advance_Receipt_${cleanName}_${day}-${month}-${year}`;
 }
