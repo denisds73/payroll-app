@@ -184,16 +184,16 @@ export default function WorkerAdvancesPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6 animate-fadeIn">
+    <div className="max-w-6xl mx-auto animate-fadeIn flex flex-col h-[calc(100vh-6rem)] py-8">
       <Link
         to="/advances"
-        className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors shrink-0 self-start mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Advances
       </Link>
 
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start mb-6 shrink-0">
         {' '}
         <div>
           <h1 className="text-2xl font-bold text-text-primary">
@@ -211,8 +211,8 @@ export default function WorkerAdvancesPage() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200">
-        <div className="p-4 border-b border-gray-200">
+      <div className="bg-card rounded-lg border border-gray-200 flex flex-col min-h-0 flex-1">
+        <div className="p-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-end gap-8">
             <div className="relative">
               <div className="flex items-center gap-2">
@@ -283,9 +283,9 @@ export default function WorkerAdvancesPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="overflow-auto flex-1 relative">
+          <table className="w-full table-fixed text-left border-collapse">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-[25%]">
                   Date
