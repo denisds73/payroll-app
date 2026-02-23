@@ -388,10 +388,12 @@ export default function WorkerDetail() {
         )}
       </div>
 
-      <div className="bg-card rounded-lg shadow-sm">
-        <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
+      <div className="bg-card rounded-lg shadow-sm flex flex-col max-h-[calc(100vh-12rem)] overflow-hidden">
+        <div className="shrink-0">
+          <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
+        </div>
 
-        <div className="p-6">
+        <div className="p-6 overflow-auto flex-1">
           {activeTab === 'attendance' && (
             <AttendanceTab
               workerId={worker.id}
