@@ -126,13 +126,6 @@ function buildWorkerInfo(data: SalaryReportData): any {
               ],
               margin: [0, 0, 0, 4],
             },
-            {
-              columns: [
-                { text: 'Worker ID:', style: 'infoLabel', width: 80 },
-                { text: `#${data.worker.id}`, style: 'infoValue' },
-              ],
-              margin: [0, 0, 0, 4],
-            },
             ...(data.worker.phone
               ? [
                   {
@@ -345,6 +338,43 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
   };
 }
 
+function buildAttendanceMarking(status: string, otUnits: number): any {
+  let marking = '';
+
+  switch (status.toUpperCase()) {
+    case 'PRESENT':
+      marking = 'x';
+      break;
+    case 'ABSENT':
+      marking = 'a';
+      break;
+    case 'HALF':
+      marking = '/';
+      break;
+    default:
+      marking = '-';
+      break;
+  }
+
+  const ot = otUnits ?? 0;
+  if (ot > 0) {
+    marking += '  ';
+    if (ot === 0.5) {
+      marking += '/';
+    } else if (ot === 1.0) {
+      marking += 'x';
+    } else if (ot === 1.5) {
+      marking += 'x/';
+    } else if (ot >= 2.0) {
+      marking += 'xx';
+    } else {
+      marking += `(${ot} OT)`;
+    }
+  }
+
+  return { text: marking, style: 'tableCell' };
+}
+
 function buildAttendanceTable(data: SalaryReportData): any {
   const { records } = data.attendance;
 
@@ -358,17 +388,13 @@ function buildAttendanceTable(data: SalaryReportData): any {
   const tableBody = [
     [
       { text: 'Date', style: 'tableHeader' },
-      { text: 'Status', style: 'tableHeader' },
-      { text: 'OT Units', style: 'tableHeader', alignment: 'right' },
+      { text: 'Marking', style: 'tableHeader' },
+      { text: 'Note', style: 'tableHeader' },
     ],
     ...records.map((record) => [
       { text: formatDate(record.date), style: 'tableCell' },
-      { text: capitalize(record.status), style: 'tableCell' },
-      {
-        text: record.otUnits.toFixed(1),
-        style: 'tableCell',
-        alignment: 'right',
-      },
+      buildAttendanceMarking(record.status, record.otUnits),
+      { text: record.note || '-', style: 'tableCell' },
     ]),
   ];
 
@@ -380,7 +406,7 @@ function buildAttendanceTable(data: SalaryReportData): any {
     {
       table: {
         headerRows: 1,
-        widths: ['40%', '30%', '30%'],
+        widths: ['30%', '25%', '45%'],
         body: tableBody,
       },
       layout: {
