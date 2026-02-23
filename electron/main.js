@@ -1,5 +1,8 @@
-import { spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { app, BrowserWindow } from 'electron/main';
+import { autoUpdater } from 'electron-updater';
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,22 +13,134 @@ let isQuitting = false;
 
 const isDev = process.env.NODE_ENV === 'development';
 
-function startBackend() {
-  const backendPath = isDev
-    ? path.join(__dirname, '../backend/src/main.ts')
-    : path.join(__dirname, '../backend/dist/main.js');
+// ---------------------------------------------------------------------------
+// Database Initialization
+// ---------------------------------------------------------------------------
 
-  const command = isDev ? 'ts-node' : 'node';
-  const args = isDev ? ['-r', 'tsconfig-paths/register', backendPath] : [backendPath];
+/**
+ * In production, the database lives in the user's AppData directory.
+ * On first launch the folder won't exist yet, so we run Prisma migrations
+ * to create the SQLite database and apply the schema.
+ */
+function getProductionDbPath() {
+  const appName = 'payroll-app';
+  if (process.platform === 'win32') {
+    const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+    return path.join(appData, appName, 'database', 'database.db');
+  }
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Application Support', appName, 'database', 'database.db');
+  }
+  return path.join(os.homedir(), `.${appName}`, 'database', 'database.db');
+}
 
-  backendProcess = spawn(command, args, {
-    cwd: path.join(__dirname, '../backend'),
-    env: {
-      ...process.env,
-      PORT: '3001',
-      NODE_ENV: process.env.NODE_ENV,
-    },
+function ensureDatabase() {
+  if (isDev) return Promise.resolve();
+
+  const dbPath = getProductionDbPath();
+  if (fs.existsSync(dbPath)) return Promise.resolve();
+
+  // Ensure the database directory exists
+  const dbDir = path.dirname(dbPath);
+  fs.mkdirSync(dbDir, { recursive: true });
+
+  console.log('[Electron] First launch — running Prisma migrations to create database...');
+
+  return new Promise((resolve, reject) => {
+    const prismaSchemaDir = getPrismaDir();
+
+    // Use Prisma's JS entry point directly instead of .bin shortcut
+    // (.bin uses .cmd wrappers on Windows which don't work with ELECTRON_RUN_AS_NODE)
+    const prismaCli = path.join(getBackendModulesPath(), 'prisma', 'build', 'index.js');
+
+    const migrateProcess = execFile(
+      process.execPath,
+      [
+        prismaCli,
+        'migrate',
+        'deploy',
+        '--schema',
+        path.join(prismaSchemaDir, 'schema.prisma'),
+      ],
+      {
+        env: {
+          ...process.env,
+          ELECTRON_RUN_AS_NODE: '1',
+          DATABASE_URL: `file:${dbPath}`,
+        },
+        cwd: getBackendDir(),
+      },
+      (error, stdout, stderr) => {
+        if (stdout) console.log('[Prisma Migrate]:', stdout);
+        if (stderr) console.error('[Prisma Migrate Err]:', stderr);
+        if (error) {
+          console.error('[Prisma Migrate Error]:', error);
+          reject(error);
+        } else {
+          console.log('[Electron] Database created successfully.');
+          resolve();
+        }
+      },
+    );
   });
+}
+
+// ---------------------------------------------------------------------------
+// Path Helpers
+// ---------------------------------------------------------------------------
+
+function getBackendDir() {
+  if (isDev) {
+    return path.join(__dirname, '../backend');
+  }
+  // In production, backend is in app.asar.unpacked
+  return path.join(path.dirname(app.getAppPath()), 'app.asar.unpacked', 'backend');
+}
+
+function getBackendEntryPoint() {
+  if (isDev) {
+    return path.join(__dirname, '../backend/src/main.ts');
+  }
+  return path.join(getBackendDir(), 'dist', 'main.js');
+}
+
+function getPrismaDir() {
+  return path.join(getBackendDir(), 'prisma');
+}
+
+function getBackendModulesPath() {
+  return path.join(getBackendDir(), 'node_modules');
+}
+
+// ---------------------------------------------------------------------------
+// Backend Process
+// ---------------------------------------------------------------------------
+
+function startBackend() {
+  const backendEntry = getBackendEntryPoint();
+  const backendDir = getBackendDir();
+
+  if (isDev) {
+    backendProcess = spawn('ts-node', ['-r', 'tsconfig-paths/register', backendEntry], {
+      cwd: backendDir,
+      env: {
+        ...process.env,
+        PORT: '3001',
+        NODE_ENV: 'development',
+      },
+    });
+  } else {
+    // In production, use Electron's built-in Node.js via ELECTRON_RUN_AS_NODE
+    backendProcess = spawn(process.execPath, [backendEntry], {
+      cwd: backendDir,
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
+        PORT: '3001',
+        NODE_ENV: 'production',
+      },
+    });
+  }
 
   backendProcess.stdout.on('data', (data) => {
     console.log('[Backend]:', data.toString());
@@ -39,6 +154,47 @@ function startBackend() {
     console.error('[Backend Process Error]:', error);
   });
 }
+
+// ---------------------------------------------------------------------------
+// Auto-Updater
+// ---------------------------------------------------------------------------
+
+function setupAutoUpdater() {
+  if (isDev) return; // Skip in development
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[Updater] Checking for updates...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('[Updater] Update available:', info.version);
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('[Updater] App is up to date.');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    console.log(`[Updater] Download: ${Math.round(progress.percent)}%`);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[Updater] Update downloaded. Will install on next restart:', info.version);
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[Updater] Error:', err);
+  });
+
+  autoUpdater.checkForUpdatesAndNotify();
+}
+
+// ---------------------------------------------------------------------------
+// Window
+// ---------------------------------------------------------------------------
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -88,15 +244,26 @@ const createWindow = () => {
       console.error('Failed to load app:', error);
     });
   } else {
-    win.loadFile(path.join(__dirname, '../frontend/dist/index.html')).catch((error) => {
+    win.loadFile(path.join(app.getAppPath(), 'frontend', 'dist', 'index.html')).catch((error) => {
       console.error('Failed to load app:', error);
     });
   }
 };
 
-app.whenReady().then(() => {
-    startBackend();
+// ---------------------------------------------------------------------------
+// App Lifecycle
+// ---------------------------------------------------------------------------
+
+app.whenReady().then(async () => {
+  try {
+    await ensureDatabase();
+  } catch (err) {
+    console.error('[Electron] Failed to initialise database:', err);
+  }
+
+  startBackend();
   createWindow();
+  setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
