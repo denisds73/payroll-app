@@ -24,7 +24,7 @@ export async function generateAndDownloadPdf(docDefinition: any, fileName: strin
   }
 }
 
-export async function openPdfInNewTab(docDefinition: any, fileName: string): Promise<void> {
+export async function openPdfInNewTab(docDefinition: any, _fileName: string): Promise<void> {
   try {
     if (!docDefinition) {
       throw new Error('Document definition is required');
@@ -49,8 +49,8 @@ export async function getPdfBlob(docDefinition: any): Promise<Blob> {
 
       const pdf = pdfMake.createPdf(docDefinition);
 
-      pdf.getBase64(
-        (base64) => {
+      (pdf as any).getBase64(
+        (base64: string) => {
           const binary = atob(base64);
           const bytes = new Uint8Array(binary.length);
 
@@ -61,7 +61,7 @@ export async function getPdfBlob(docDefinition: any): Promise<Blob> {
           const blob = new Blob([bytes], { type: 'application/pdf' });
           resolve(blob);
         },
-        (error) => {
+        (error: any) => {
           reject(new Error(`Failed to generate PDF blob: ${error}`));
         },
       );

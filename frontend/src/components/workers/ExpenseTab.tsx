@@ -29,7 +29,6 @@ interface Expense {
 
 export default function ExpenseTab({
   workerId,
-  workerName,
   joinedAt,
   onExpenseChange,
 }: ExpenseTabProps) {

@@ -12,7 +12,6 @@ interface AdvancePdfExportButtonProps {
 
 export default function AdvancePdfExportButton({
   advanceId,
-  workerName,
   variant = 'default',
   onSuccess,
   onError,

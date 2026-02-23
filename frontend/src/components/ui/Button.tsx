@@ -11,6 +11,7 @@ interface ButtonProps {
   className?: string;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
+  title?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -24,6 +25,7 @@ export const Button: React.FC<ButtonProps> = ({
   className,
   icon,
   iconPosition = 'left',
+  title,
 }) => {
   const baseStyles = `inline-flex items-center justify-center font-medium rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer`;
 
@@ -50,7 +52,7 @@ export const Button: React.FC<ButtonProps> = ({
   );
 
   return (
-    <button type={type} onClick={onClick} disabled={disabled || loading} className={combined}>
+    <button type={type} onClick={onClick} disabled={disabled || loading} className={combined} title={title}>
       {loading ? (
         <span className="flex items-center gap-2">
           <span className="w-4 h-4 border-2 border-t border-white rounded-full animate-spin border-t-transparent" />

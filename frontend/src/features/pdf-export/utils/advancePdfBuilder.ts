@@ -119,7 +119,7 @@ function buildWorkerInfo(data: AdvanceReportData): Content {
   ];
 }
 
-function buildAdvanceDetails(data: AdvanceReportData): Content {
+function buildAdvanceDetails(data: AdvanceReportData): any {
   return [
     {
       text: 'ADVANCE DETAILS',
@@ -185,7 +185,7 @@ function buildAdvanceDetails(data: AdvanceReportData): Content {
   ];
 }
 
-function buildSignatureSection(data: AdvanceReportData, signatureDataUrl?: string): Content {
+function buildSignatureSection(data: AdvanceReportData, signatureDataUrl?: string): any {
   return {
     columns: [
       { width: '*', text: '' },

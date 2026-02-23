@@ -52,7 +52,6 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState<boolean>(false);
 
   const [editAdvanceModalOpen, setEditAdvanceModalOpen] = useState(false);
   const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false);

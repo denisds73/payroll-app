@@ -85,7 +85,7 @@ export default function WorkerAdvancesPage() {
     return `${start.toLocaleDateString('en-IN', formatOptions)} - ${end.toLocaleDateString('en-IN', formatOptions)}`;
   };
 
-  const getLockReason = (date: string, workerId: string): string | null => {
+  const getLockReason = (date: string, _workerId: string): string | null => {
     const dateOnly = date.split('T')[0];
 
     for (const period of lockedPeriods) {

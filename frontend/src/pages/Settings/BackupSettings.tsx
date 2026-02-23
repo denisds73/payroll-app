@@ -274,7 +274,7 @@ function ConfigStep({ number, title, description, children, isCompleted, disable
   );
 }
 
-function RestoreSection({ isConnected }: { isConnected: boolean }) {
+function RestoreSection({ isConnected: _isConnected }: { isConnected: boolean }) {
   const [activeTab, setActiveTab] = useState<'local' | 'drive'>('local');
   const [backups, setBackups] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
