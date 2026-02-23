@@ -44,5 +44,9 @@ export class UpdateWorkerDto {
   @IsOptional()
   @IsDateString({}, { message: 'OT rate effective date must be a valid date in YYYY-MM-DD format' })
   otRateEffectiveDate?: string;
+
+  @IsOptional()
+  @IsNumber()
+  openingBalance?: number;
 }
 

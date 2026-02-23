@@ -142,6 +142,7 @@ export const workersAPI = {
     wage: number;
     otRate?: number;
     joinedAt?: string;
+    openingBalance?: number;
   }) => api.post('/workers', data),
 
   update: (
@@ -154,6 +155,7 @@ export const workersAPI = {
       isActive?: boolean;
       wageEffectiveDate?: string;
       otRateEffectiveDate?: string;
+      openingBalance?: number;
     },
   ) => api.patch(`/workers/${id}`, data),
 

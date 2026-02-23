@@ -37,6 +37,10 @@ export class CreateWorkerDto {
   joinedAt?: string;
 
   @IsOptional()
+  @IsNumber()
+  openingBalance?: number;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }

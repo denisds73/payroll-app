@@ -22,6 +22,7 @@ interface ProfileTabProps {
     isActive: boolean;
     inactiveFrom: string | null;
     joinedAt: string;
+    openingBalance: number;
   };
   onUpdate: () => void;
 }
@@ -33,6 +34,7 @@ interface WorkerFormData {
   otRate: string;
   wageEffectiveDate: string;
   otRateEffectiveDate: string;
+  openingBalance: string;
 }
 
 export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
@@ -53,6 +55,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
     otRate: '',
     wageEffectiveDate: today,
     otRateEffectiveDate: today,
+    openingBalance: '0',
   });
   const [originalWage, setOriginalWage] = useState<number>(0);
   const [originalOtRate, setOriginalOtRate] = useState<number>(0);
@@ -60,12 +63,19 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [wageEditMode, setWageEditMode] = useState<'values' | 'effectiveDate'>('values');
+  const [hasSalary, setHasSalary] = useState<boolean>(false);
   const [statusModalMode, setStatusModalMode] = useState<
     'disable' | 'activate' | 'cancel-scheduled' | null
   >(null);
 
   useEffect(() => {
     resetForm();
+    // Check if worker has any salary history
+    import('../../services/api').then(({ salariesAPI }) => {
+      salariesAPI.getByWorker(worker.id).then((res) => {
+        setHasSalary(res.data.length > 0);
+      }).catch(() => setHasSalary(false));
+    });
   }, [worker, today]);
 
   const resetForm = () => {
@@ -76,6 +86,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
       otRate: worker.otRate.toString(),
       wageEffectiveDate: today,
       otRateEffectiveDate: today,
+      openingBalance: worker.openingBalance.toString(),
     });
     setOriginalWage(worker.wage);
     setOriginalOtRate(worker.otRate);
@@ -179,6 +190,13 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
         }
 
         await workersAPI.update(worker.id, payload);
+      }
+
+      // Update opening balance if it changed and no salary has been paid
+      if (!hasSalary && Number(formData.openingBalance) !== worker.openingBalance) {
+        await workersAPI.update(worker.id, {
+          openingBalance: Number(formData.openingBalance),
+        });
       }
 
       setOriginalWage(Number(formData.wage));
@@ -532,6 +550,37 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
               )}
             </div>
 
+            {/* Opening Balance Section (only editable before first salary) */}
+            {!hasSalary && (
+              <div className="bg-card border border-gray-200 rounded-lg p-6">
+                <h4 className="text-md font-semibold text-text-primary mb-4">Opening Balance</h4>
+                <div>
+                  <label
+                    className="block text-sm font-medium text-text-primary mb-2"
+                  >
+                    Opening Balance
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.openingBalance}
+                      onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
+                      placeholder="0"
+                      className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                      disabled={loading}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-text-secondary">
+                    Positive = salary owed to worker, Negative = advance taken by worker. This can only be edited before the first salary is paid.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
@@ -700,6 +749,30 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                 </div>
               </div>
             </div>
+
+            {/* Opening Balance Section (read-only) */}
+            {worker.openingBalance !== 0 && (
+              <div className="bg-card border border-gray-200 rounded-lg p-6">
+                <h4 className="text-md font-semibold text-text-primary mb-4">Opening Balance</h4>
+                <div className="bg-background rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Wallet className="w-4 h-4 text-text-secondary" />
+                    <p className="text-xs text-text-secondary">Opening Balance</p>
+                  </div>
+                  <p className={`text-xl font-bold ${worker.openingBalance >= 0 ? 'text-success' : 'text-error'}`}>
+                    {formatCurrency(Math.abs(worker.openingBalance))}
+                  </p>
+                  <p className={`text-xs mt-1 ${worker.openingBalance >= 0 ? 'text-success' : 'text-error'}`}>
+                    {worker.openingBalance >= 0 ? 'Company owes worker' : 'Worker owes company'}
+                  </p>
+                  {hasSalary && (
+                    <p className="text-xs text-text-secondary mt-2 italic">
+                      This balance has been settled in the first salary cycle.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

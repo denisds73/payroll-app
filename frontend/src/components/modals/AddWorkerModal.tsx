@@ -23,6 +23,7 @@ interface WorkerFormData {
   wage: string;
   otRate: string;
   joinedAt: string;
+  openingBalance: string;
 }
 
 export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps) {
@@ -42,6 +43,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
     wage: '',
     otRate: '',
     joinedAt: today,
+    openingBalance: '',
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
@@ -55,6 +57,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
         wage: '',
         otRate: '',
         joinedAt: today,
+        openingBalance: '',
       });
 
     } else {
@@ -120,6 +123,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
         otRate: number;
         phone?: string;
         joinedAt?: string;
+        openingBalance?: number;
       } = {
         name: formData.name.trim(),
         wage: wageNum,
@@ -132,6 +136,10 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
 
       if (formData.joinedAt) {
         payload.joinedAt = formData.joinedAt;
+      }
+
+      if (formData.openingBalance) {
+        payload.openingBalance = Number.parseFloat(formData.openingBalance);
       }
 
       const response = await workersAPI.create(payload);
@@ -165,6 +173,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           wage: '',
           otRate: '',
           joinedAt: today,
+          openingBalance: '',
         });
         onClose();
       }, 200);
@@ -319,6 +328,30 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                 onChange={(date) => setFormData({ ...formData, joinedAt: date || '' })}
                 maxDate={today}
               />
+            </div>
+
+            <div>
+              <label
+                className="block text-sm font-medium text-text-secondary mb-1"
+              >
+                Opening Balance
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
+                  ₹
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.openingBalance}
+                  onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
+                  placeholder="0"
+                  className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                />
+              </div>
+              <p className="mt-1 text-xs text-text-secondary">
+                Positive = salary owed to worker, Negative = advance taken by worker
+              </p>
             </div>
           </div>
 
