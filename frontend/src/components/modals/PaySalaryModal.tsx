@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
 import { salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
+import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION } from '../../utils/validation';
 import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
@@ -58,7 +59,7 @@ export default function PaySalaryModal({
   onClose,
   onSuccess,
 }: PaySalaryModalProps) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   const paymentAmountId = useId();
   const paymentDateId = useId();
   const paymentProofId = useId();

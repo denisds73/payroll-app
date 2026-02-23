@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class DateService {
-  // Returns start of today in UTC
   startOfToday(): Date {
     const now = new Date();
     return new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0),
+      Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0),
     );
   }
 

@@ -423,7 +423,7 @@ export class SalariesService {
     const cycleStart = lastSalary
       ? new Date(lastSalary.cycleEnd.getTime() + 86400000)
       : worker?.joinedAt;
-    const cycleEnd = new Date();
+    const cycleEnd = this.dateService.startOfToday();
 
     const allAttendance = await this.prisma.attendance.findMany({
       where: { workerId },

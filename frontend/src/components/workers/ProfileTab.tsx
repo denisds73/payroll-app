@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { workersAPI } from '../../services/api';
+import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION, validateNumericRange, validatePhone } from '../../utils/validation';
 import ConfirmModal from '../modals/ConfirmModal';
 import WorkerStatusModal from '../modals/WorkerStatusModal';
@@ -36,7 +37,7 @@ interface WorkerFormData {
 
 export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
   const navigate = useNavigate();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   const nameId = useId();
   const phoneId = useId();
   const wageId = useId();

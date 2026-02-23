@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { workersAPI } from '../../services/api';
 import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
+import { getLocalToday } from '../../utils/dateUtils';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 
@@ -27,7 +28,7 @@ export default function WorkerStatusModal({
   onClose,
   onSuccess,
 }: WorkerStatusModalProps) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   const dateId = useId();
   const modalTitleId = useId();
 

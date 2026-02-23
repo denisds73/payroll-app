@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { workersAPI } from '../../services/api';
 import { useWorkerStore } from '../../store/workerStore';
+import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION, sanitizePhone, validateNumericRange, validatePhone } from '../../utils/validation';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
@@ -27,7 +28,7 @@ interface WorkerFormData {
 export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps) {
   const navigate = useNavigate();
   const { fetchWorkers } = useWorkerStore();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
 
   const modalTitleId = useId();
   const nameId = useId();

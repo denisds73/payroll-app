@@ -3,6 +3,7 @@ import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { expensesAPI, expenseTypesAPI } from '../../services/api';
+import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION } from '../../utils/validation';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
@@ -40,7 +41,7 @@ export default function EditExpenseModal({
   onClose,
   onSuccess,
 }: EditExpenseModalProps) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   const dateId = useId();
   const amountId = useId();
   const typeId = useId();

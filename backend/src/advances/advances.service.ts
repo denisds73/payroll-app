@@ -105,7 +105,7 @@ export class AdvancesService {
       where: { id },
       data: {
         ...(dto.amount !== undefined && { amount: dto.amount }),
-        ...(dto.date && { date: new Date(`${dto.date}T00:00:00Z`) }),
+        ...(dto.date && { date: this.dateService.parseDate(dto.date) }),
         ...(dto.reason !== undefined && { reason: dto.reason }),
       },
       include: {

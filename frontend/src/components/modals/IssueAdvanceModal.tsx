@@ -10,6 +10,7 @@ import { fetchAdvanceReportData } from '../../features/pdf-export/utils/pdfData'
 import { advancesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStore } from '../../store/workerStore';
+import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION } from '../../utils/validation';
 import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
 import { SignatureModal } from '../signature/SignatureModal';
@@ -40,7 +41,7 @@ export default function IssueAdvanceModal({
   onClose,
   onSuccess,
 }: IssueAdvanceModalProps) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   const dateId = useId();
   const amountId = useId();
   const reasonId = useId();
