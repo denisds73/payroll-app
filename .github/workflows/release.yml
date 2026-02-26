@@ -59,7 +59,7 @@ jobs:
 
           for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
             Write-Host "Electron build attempt $attempt/$maxAttempts"
-            npm run build:electron
+            npm run build:electron -- --publish always
 
             if ($LASTEXITCODE -eq 0) {
               Write-Host "Electron build succeeded."

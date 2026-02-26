@@ -1,6 +1,6 @@
 {
   "name": "payroll-app",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "description": "software for managing attendances, expenses, advances, salaries, and workers",
   "main": "electron/main.js",
