@@ -21,6 +21,14 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Cache Electron Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: ${{ runner.os }}-electron-cache-${{ hashFiles('package-lock.json') }}
+
       - name: Install Root Dependencies
         run: npm install
 
@@ -44,7 +52,28 @@ jobs:
         working-directory: ./backend
         run: npm run build
 
-      - name: Build and Publish Electron App
-        run: npm run build:electron
+      - name: Build and Publish Electron App (with retry)
+        shell: pwsh
+        run: |
+          $maxAttempts = 3
+
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Write-Host "Electron build attempt $attempt/$maxAttempts"
+            npm run build:electron
+
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "Electron build succeeded."
+              break
+            }
+
+            if ($attempt -eq $maxAttempts) {
+              Write-Error "Electron build failed after $maxAttempts attempts."
+              exit $LASTEXITCODE
+            }
+
+            $waitSeconds = 20 * $attempt
+            Write-Warning "Build failed. Retrying in $waitSeconds seconds..."
+            Start-Sleep -Seconds $waitSeconds
+          }
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
