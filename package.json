@@ -55,7 +55,9 @@
       "backend/dist/**/*",
       "backend/prisma/**/*",
       "backend/node_modules/**/*",
-      "backend/package.json"
+      "backend/package.json",
+      "package.json",
+      "node_modules/**/*"
     ],
     "asarUnpack": [
       "backend/**/*"

@@ -1,6 +1,7 @@
 import { execFile, spawn } from 'child_process';
 import { app, BrowserWindow } from 'electron/main';
-import { autoUpdater } from 'electron-updater';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
