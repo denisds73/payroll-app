@@ -352,8 +352,8 @@ export default function WorkerDetail() {
                 <p className="text-sm font-semibold text-text-primary">Net Payable</p>
               </div>
 
-              {/* Show breakdown if there's carry-forward or opening balance */}
-              {((cycleStats?.carryForward ?? 0) > 0 || (cycleStats?.openingBalance ?? 0) !== 0) && (
+              {/* Show breakdown if there's carry-forward, opening balance, or current cycle debt */}
+              {((cycleStats?.carryForward ?? 0) > 0 || (cycleStats?.openingBalance ?? 0) !== 0 || (cycleStats?.netPay ?? 0) < 0) && (
                 <div className="mb-2 space-y-1 pb-2 border-b border-gray-200">
                   <div className="flex justify-between text-xs">
                     <span className="text-text-secondary">Current Cycle</span>

@@ -85,6 +85,20 @@ export class SalariesService {
 
     const cycleEnd = payDate || this.dateService.startOfToday();
 
+    // Calculate unlinked advances first to support same-day post-salary display
+    const advanceResult = await this.prisma.advance.aggregate({
+      _sum: { amount: true },
+      where: {
+        workerId,
+        salaryId: null,
+        date: { lte: this.dateService.endOfDay(cycleEnd) },
+      },
+    });
+    const totalAdvance = advanceResult?._sum?.amount ?? 0;
+
+    let unpaidBalance = await this.getUnpaidBalance(workerId);
+    let openingBalance = !lastSalary ? (worker.openingBalance ?? 0) : 0;
+
     if (cycleEnd < cycleStart) {
       if (throwOnInvalidDate) {
         throw new BadRequestException(
@@ -92,7 +106,7 @@ export class SalariesService {
         );
       }
 
-      // Return zeroed stats if not throwing
+      // Even if cycle hasn't started, unlinked advances are valid debts
       return {
         cycleStart,
         cycleEnd,
@@ -101,10 +115,11 @@ export class SalariesService {
         basePay: 0,
         otPay: 0,
         grossPay: 0,
-        totalAdvance: 0,
+        totalAdvance,
         totalExpense: 0,
-        unpaidBalance: 0,
-        netPay: 0,
+        unpaidBalance,
+        openingBalance,
+        netPay: -totalAdvance + openingBalance,
       };
     }
 
@@ -151,26 +166,6 @@ export class SalariesService {
 
     const grossPay = basePay + otPay;
 
-    const advanceResult = await this.prisma.advance.aggregate({
-      _sum: { amount: true },
-      where: {
-        workerId,
-        OR: [
-          { date: { gte: cycleStart, lte: cycleEnd } },
-          {
-            AND: [
-              { date: lastSalary ? lastSalary.cycleEnd : cycleStart },
-              {
-                reason: {
-                  startsWith: 'Auto advance: salary shortfall',
-                },
-              },
-            ],
-          },
-        ],
-      },
-    });
-
     const expenseResult = await this.prisma.expense.aggregate({
       _sum: { amount: true },
       where: {
@@ -179,12 +174,10 @@ export class SalariesService {
       },
     });
 
-    const totalAdvance = advanceResult._sum.amount ?? 0;
     const totalExpense = expenseResult._sum.amount ?? 0;
-    const unpaidBalance = await this.getUnpaidBalance(workerId);
 
     // Include opening balance only for the first cycle (no salary history)
-    const openingBalance = !lastSalary ? (worker.openingBalance ?? 0) : 0;
+    openingBalance = !lastSalary ? (worker.openingBalance ?? 0) : 0;
 
     const netPay = grossPay - totalAdvance - totalExpense + openingBalance;
 
@@ -221,6 +214,19 @@ export class SalariesService {
     const breakdown = await this.calculateBreakdown(workerId, parsedDate);
 
     const result = await this.prisma.$transaction(async (tx) => {
+      // 1. Identify all unlinked advances up to this cycle end
+      // We do this BEFORE potentially creating a shortfall auto-advance
+      const unlinkedAdvances = await tx.advance.findMany({
+        where: {
+          workerId,
+          salaryId: null,
+          date: { lte: this.dateService.endOfDay(breakdown.cycleEnd) },
+        },
+        select: { id: true },
+      });
+      const unlinkedIds = unlinkedAdvances.map((a) => a.id);
+
+      // 2. Handle shortfall if net pay is negative
       if (breakdown.netPay < 0) {
         const shortfall = Math.abs(breakdown.netPay);
 
@@ -238,6 +244,7 @@ export class SalariesService {
 
       const salaryNet = breakdown.netPay < 0 ? 0 : breakdown.netPay;
 
+      // 3. Create the salary record
       const salary = await tx.salary.create({
         data: {
           workerId,
@@ -254,6 +261,18 @@ export class SalariesService {
           unpaidBalance: breakdown.unpaidBalance || 0,
         },
       });
+
+      // 4. Link the the advances that were included in the breakdown
+      if (unlinkedIds.length > 0) {
+        await tx.advance.updateMany({
+          where: {
+            id: { in: unlinkedIds },
+          },
+          data: {
+            salaryId: salary.id,
+          },
+        });
+      }
 
       return salary;
     });

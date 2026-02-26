@@ -21,7 +21,7 @@ interface SalaryLockStore {
   errors: Record<number, string | null>;
 
   fetchPaidPeriods: (workerId: number, force?: boolean) => Promise<void>;
-  isDateLocked: (workerId: number, date: string) => boolean;
+  isDateLocked: (workerId: number, date: string, type?: 'advance' | 'other') => boolean;
   markSalaryAsPaid: (
     workerId: number,
     salaryId: number,
@@ -168,7 +168,7 @@ export const useSalaryLockStore = create<SalaryLockStore>((set, get) => ({
     }, 1000);
   },
 
-  isDateLocked: (workerId: number, date: string): boolean => {
+  isDateLocked: (workerId: number, date: string, type: 'advance' | 'other' = 'other'): boolean => {
     const state = get();
     const workerData = state.lockDataByWorker[workerId];
 
@@ -187,7 +187,11 @@ export const useSalaryLockStore = create<SalaryLockStore>((set, get) => ({
       if (!period.isPaid) return false;
       const startDate = period.startDate.split('T')[0];
       const endDate = period.endDate.split('T')[0];
-      const inRange = dateOnly >= startDate && dateOnly <= endDate;
+      
+      const inRange = 
+        type === 'advance' 
+          ? dateOnly >= startDate && dateOnly < endDate
+          : dateOnly >= startDate && dateOnly <= endDate;
 
       if (inRange) {
         console.log('🔒 [LOCK CHECK] Date IS locked:', {

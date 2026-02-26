@@ -92,7 +92,9 @@ export class AdvancesService {
       throw new NotFoundException(`Advance with the id ${id} not found`);
     }
 
-    await this.salaryLock.assertNotLocked(advance.workerId, advance.date, 'advance');
+    if ((advance as any).salaryId) {
+      throw new BadRequestException('Cannot modify advance that has already been included in a salary cycle');
+    }
 
     if (dto.date) {
       const newDate = this.dateService.parseDate(dto.date);
@@ -126,7 +128,9 @@ export class AdvancesService {
       throw new NotFoundException(`Advance with id ${id} not found`);
     }
 
-    await this.salaryLock.assertNotLocked(advance.workerId, advance.date, 'advance');
+    if ((advance as any).salaryId) {
+        throw new BadRequestException('Cannot delete advance that has already been included in a salary cycle');
+    }
 
     await this.prisma.advance.delete({
       where: { id },
@@ -168,10 +172,12 @@ export class AdvancesService {
       },
     });
 
+    const totalAdvance = result?._sum?.amount ?? 0;
+
     return {
       workerId,
       workerName: worker.name,
-      totalAdvances: result._sum.amount || 0,
+      totalAdvances: totalAdvance,
       startDate: startDate || null,
       endDate: endDate || null,
     };

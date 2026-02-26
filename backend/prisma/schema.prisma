@@ -82,6 +82,7 @@ model Salary {
   updatedAt     DateTime        @updatedAt
   worker        Worker          @relation(fields: [workerId], references: [id])
   payments      SalaryPayment[]
+  advances      Advance[]
 }
 
 model SalaryPayment {
@@ -102,11 +103,14 @@ model Advance {
   reason    String?
   signature String?
   date      DateTime @default(now())
+  salaryId  Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   worker    Worker   @relation(fields: [workerId], references: [id])
+  salary    Salary?  @relation(fields: [salaryId], references: [id])
 
   @@index([workerId, date])
+  @@index([salaryId])
 }
 
 model ExpenseType {
