@@ -34,6 +34,7 @@ interface HistoryItem {
   totalPaid?: number;
   paymentId?: number;
   isPartial?: boolean;
+  salaryId?: number | null;
 }
 
 interface FilterState {
@@ -99,6 +100,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         amount: adv.amount,
         description: adv.reason || 'Advance payment',
         createdAt: adv.createdAt,
+        salaryId: adv.salaryId,
       }));
 
       const salariesResponse = await salariesAPI.getByWorker(workerId);
@@ -218,8 +220,13 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
 
   const handleEdit = (item: HistoryItem): void => {
     const dateOnly = item.date.split('T')[0];
-    if (isDateLocked(workerId, dateOnly)) {
+    if (item.type !== 'advance' && isDateLocked(workerId, dateOnly)) {
       toast.error('Cannot edit - salary has been paid for this period');
+      return;
+    }
+
+    if (item.type === 'advance' && item.salaryId) {
+      toast.error('Cannot edit - advance has already been included in a salary cycle');
       return;
     }
 
@@ -233,8 +240,13 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
 
   const handleDeleteClick = (item: HistoryItem): void => {
     const dateOnly = item.date.split('T')[0];
-    if (isDateLocked(workerId, dateOnly)) {
+    if (item.type !== 'advance' && isDateLocked(workerId, dateOnly)) {
       toast.error('Cannot delete - salary has been paid for this period');
+      return;
+    }
+
+    if (item.type === 'advance' && item.salaryId) {
+      toast.error('Cannot delete - advance has already been included in a salary cycle');
       return;
     }
 
@@ -363,6 +375,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
 
   const isItemLocked = (item: HistoryItem): boolean => {
     if (item.type === 'salary') return true;
+    if (item.type === 'advance') return !!item.salaryId;
     const dateOnly = item.date.split('T')[0];
     return isDateLocked(workerId, dateOnly);
   };

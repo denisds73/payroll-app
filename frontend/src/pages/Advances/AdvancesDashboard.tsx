@@ -18,6 +18,7 @@ interface Advance {
   amount: number;
   reason: string;
   date: string;
+  salaryId: number | null;
   createdAt: string;
   worker?: {
     name: string;
@@ -94,9 +95,8 @@ export default function AdvancesDashboard() {
   }, [advances, searchQuery, dateRange]);
 
   const handleEdit = (adv: Advance) => {
-    const dateOnly = adv.date.split('T')[0];
-    if (isDateLocked(adv.workerId, dateOnly)) {
-      toast.error('Cannot edit - salary has been paid for this period');
+    if (adv.salaryId) {
+      toast.error('Cannot edit - advance has already been included in a salary cycle');
       return;
     }
     setSelectedAdvance(adv);
@@ -104,9 +104,8 @@ export default function AdvancesDashboard() {
   };
 
   const handleDeleteClick = (adv: Advance) => {
-    const dateOnly = adv.date.split('T')[0];
-    if (isDateLocked(adv.workerId, dateOnly)) {
-      toast.error('Cannot delete - salary has been paid for this period');
+    if (adv.salaryId) {
+      toast.error('Cannot delete - advance has already been included in a salary cycle');
       return;
     }
     setSelectedAdvance(adv);
@@ -239,7 +238,7 @@ export default function AdvancesDashboard() {
                 </tr>
               ) : (
                 filteredAdvances.map((adv) => {
-                  const locked = isDateLocked(adv.workerId, adv.date.split('T')[0]);
+                  const locked = !!adv.salaryId;
                   return (
                     <tr key={adv.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-text-primary whitespace-nowrap">

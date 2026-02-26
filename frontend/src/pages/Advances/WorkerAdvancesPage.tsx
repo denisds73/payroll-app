@@ -18,6 +18,7 @@ interface Advance {
   amount: number;
   reason: string | null;
   date: string;
+  salaryId: number | null;
   createdAt: string;
   updatedAt: string;
   worker: {
@@ -341,9 +342,8 @@ export default function WorkerAdvancesPage() {
 
                     <td className="px-4 py-3 w-[20%]">
                       {(() => {
-                        const dateOnly = advance.date.split('T')[0];
-                        const locked = isDateLocked(Number(workerId), dateOnly);
-                        const lockReason = getLockReason(advance.date, workerId || '');
+                        const locked = !!advance.salaryId;
+                        const lockReason = locked ? getLockReason(advance.date, workerId || '') : null;
 
                         const tooltipContent = locked && lockReason && (
                           <div>

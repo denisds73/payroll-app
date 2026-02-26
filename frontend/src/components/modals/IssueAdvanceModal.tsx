@@ -122,7 +122,7 @@ export default function IssueAdvanceModal({
 
       const dateString = format(date, 'yyyy-MM-dd');
 
-      return isDateLocked(formData.workerId, dateString);
+      return isDateLocked(formData.workerId, dateString, 'advance');
     },
     [formData.workerId, isDateLocked],
   );
@@ -175,7 +175,7 @@ export default function IssueAdvanceModal({
       return;
     }
 
-    if (formData.workerId && isDateLocked(formData.workerId, formData.date)) {
+    if (formData.workerId && isDateLocked(formData.workerId, formData.date, 'advance')) {
       toast.error('Cannot issue advance for this date - salary is already paid for this period');
       return;
     }
