@@ -37,19 +37,28 @@ function ensureDatabase() {
   if (isDev) return Promise.resolve();
 
   const dbPath = getProductionDbPath();
-  if (fs.existsSync(dbPath)) return Promise.resolve();
+  const logDir = path.join(app.getPath('userData'), 'logs');
+  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+  const logFile = path.join(logDir, 'backend.log');
+  const logStream = fs.createWriteStream(logFile, { flags: 'a' });
 
-  // Ensure the database directory exists
+  const logToFile = (data) => {
+    const timestamp = new Date().toISOString();
+    logStream.write(`[${timestamp}] [Prisma Init] ${data}\n`);
+  };
+
+  if (fs.existsSync(dbPath)) {
+    logToFile('Database already exists at: ' + dbPath);
+    return Promise.resolve();
+  }
+
   const dbDir = path.dirname(dbPath);
   fs.mkdirSync(dbDir, { recursive: true });
 
-  console.log('[Electron] First launch — running Prisma migrations to create database...');
+  logToFile('First launch — running Prisma migrations...');
 
   return new Promise((resolve, reject) => {
     const prismaSchemaDir = getPrismaDir();
-
-    // Use Prisma's JS entry point directly instead of .bin shortcut
-    // (.bin uses .cmd wrappers on Windows which don't work with ELECTRON_RUN_AS_NODE)
     const prismaCli = path.join(getBackendModulesPath(), 'prisma', 'build', 'index.js');
 
     const migrateProcess = execFile(
@@ -70,19 +79,21 @@ function ensureDatabase() {
         cwd: getBackendDir(),
       },
       (error, stdout, stderr) => {
-        if (stdout) console.log('[Prisma Migrate]:', stdout);
-        if (stderr) console.error('[Prisma Migrate Err]:', stderr);
+        if (stdout) logToFile('[Migrate Out]: ' + stdout);
+        if (stderr) logToFile('[Migrate Err]: ' + stderr);
+        
         if (error) {
-          console.error('[Prisma Migrate Error]:', error);
+          logToFile('[Prisma Migration Failed]: ' + error.message);
           reject(error);
         } else {
-          console.log('[Electron] Database created successfully.');
+          logToFile('Database created and migrated successfully.');
           resolve();
         }
       },
     );
   });
 }
+
 
 // ---------------------------------------------------------------------------
 // Path Helpers
