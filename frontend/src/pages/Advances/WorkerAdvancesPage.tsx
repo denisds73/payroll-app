@@ -54,7 +54,7 @@ export default function WorkerAdvancesPage() {
   const [selectedAdvance, setSelectedAdvance] = useState<Advance | null>(null);
   const [lockedPeriods, setLockedPeriods] = useState<LockedPeriod[]>([]);
 
-  const { isDateLocked, fetchPaidPeriods } = useSalaryLockStore();
+  const { fetchPaidPeriods } = useSalaryLockStore();
 
   const handleMonthYearChange = (newMonth: number, newYear: number) => {
     setMonth(newMonth);

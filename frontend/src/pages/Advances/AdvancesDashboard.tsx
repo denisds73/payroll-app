@@ -42,7 +42,7 @@ export default function AdvancesDashboard() {
   const [selectedAdvance, setSelectedAdvance] = useState<Advance | null>(null);
 
   const { workers, fetchWorkers } = useWorkerStore();
-  const { isDateLocked, fetchPaidPeriods } = useSalaryLockStore();
+  const { fetchPaidPeriods } = useSalaryLockStore();
 
   useEffect(() => {
     fetchAdvances();
