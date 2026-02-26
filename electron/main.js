@@ -240,10 +240,15 @@ const createWindow = () => {
     }
   });
 
-  if (isDev) {
+  const loadDevServer = () => {
     win.loadURL('http://localhost:5173').catch((error) => {
-      console.error('Failed to load app:', error);
+      console.log('[Electron] Vite server not ready yet, retrying in 500ms...');
+      setTimeout(loadDevServer, 500);
     });
+  };
+
+  if (isDev) {
+    loadDevServer();
   } else {
     win.loadFile(path.join(app.getAppPath(), 'frontend', 'dist', 'index.html')).catch((error) => {
       console.error('Failed to load app:', error);

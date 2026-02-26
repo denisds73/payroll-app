@@ -109,13 +109,7 @@ function buildWorkerInfo(data: AdvanceReportData): Content {
       ],
       margin: [0, 0, 0, 8],
     },
-    {
-      columns: [
-        { text: 'Worker ID:', style: 'infoLabel', width: 100 },
-        { text: `#${data.worker.id}`, style: 'infoValue' },
-      ],
-      margin: [0, 0, 0, 8],
-    },
+
   ];
 }
 
@@ -125,13 +119,7 @@ function buildAdvanceDetails(data: AdvanceReportData): any {
       text: 'ADVANCE DETAILS',
       style: 'sectionHeader',
     },
-    {
-      columns: [
-        { text: 'Advance ID:', style: 'infoLabel', width: 100 },
-        { text: `#${data.advance.id}`, style: 'infoValue' },
-      ],
-      margin: [0, 0, 0, 8],
-    },
+
     {
       columns: [
         { text: 'Date Issued:', style: 'infoLabel', width: 100 },
