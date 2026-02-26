@@ -18,7 +18,7 @@ export function useAdvancePdfGenerator(): UseAdvancePdfGenerator {
       const reportData = await fetchAdvanceReportData(advanceId);
       const finalSignature = signatureDataUrl || reportData.advance.signature;
       const docDefinition = buildAdvanceReceiptPdf(reportData, finalSignature);
-      const fileName = generateFileName(reportData.worker.name, reportData.advance.date);
+      const fileName = generateFileName(reportData.worker.name, reportData.advance.date, reportData.advance.id);
 
       await generateAndDownloadPdf(docDefinition, fileName);
 
@@ -53,7 +53,7 @@ export function useAdvancePdfGenerator(): UseAdvancePdfGenerator {
   };
 }
 
-function generateFileName(workerName: string, advanceDate: string): string {
+function generateFileName(workerName: string, advanceDate: string, advanceId: number): string {
   const cleanName = workerName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
 
   const date = new Date(advanceDate);
@@ -61,5 +61,5 @@ function generateFileName(workerName: string, advanceDate: string): string {
   const month = date.toLocaleDateString('en-IN', { month: 'short' });
   const year = date.getFullYear();
 
-  return `Advance_Receipt_${cleanName}_${day}-${month}-${year}`;
+  return `Advance_Receipt_${cleanName}_${day}-${month}-${year}_ID-${advanceId}`;
 }
