@@ -1,7 +1,5 @@
 import { execFile, spawn } from 'child_process';
 import { app, BrowserWindow } from 'electron/main';
-import pkg from 'electron-updater';
-const { autoUpdater } = pkg;
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -160,8 +158,21 @@ function startBackend() {
 // Auto-Updater
 // ---------------------------------------------------------------------------
 
-function setupAutoUpdater() {
+async function loadAutoUpdater() {
+  try {
+    const updaterModule = await import('electron-updater');
+    return updaterModule.autoUpdater ?? updaterModule.default?.autoUpdater ?? null;
+  } catch (error) {
+    console.warn('[Updater] electron-updater is unavailable. Auto-updates are disabled.', error);
+    return null;
+  }
+}
+
+async function setupAutoUpdater() {
   if (isDev) return; // Skip in development
+
+  const autoUpdater = await loadAutoUpdater();
+  if (!autoUpdater) return;
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
@@ -190,7 +201,11 @@ function setupAutoUpdater() {
     console.error('[Updater] Error:', err);
   });
 
-  autoUpdater.checkForUpdatesAndNotify();
+  try {
+    autoUpdater.checkForUpdatesAndNotify();
+  } catch (err) {
+    console.error('[Updater] Failed to start update check:', err);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -269,7 +284,7 @@ app.whenReady().then(async () => {
 
   startBackend();
   createWindow();
-  setupAutoUpdater();
+  void setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
