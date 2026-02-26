@@ -3,19 +3,26 @@ import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { routes } from './routes';
 import { ensureExpenseTypes } from './utils/ensureExpenseTypes';
+import { ServerInitializationLoader } from './components/ServerInitializationLoader';
 import './index.css';
 
 const router = createBrowserRouter(routes);
 
-function Root() {
+function MainApp() {
   useEffect(() => {
     // Ensure expense types exist when app loads
     ensureExpenseTypes();
   }, []);
 
+  return <RouterProvider router={router} />;
+}
+
+function Root() {
   return (
     <React.StrictMode>
-      <RouterProvider router={router} />
+      <ServerInitializationLoader>
+        <MainApp />
+      </ServerInitializationLoader>
     </React.StrictMode>
   );
 }
