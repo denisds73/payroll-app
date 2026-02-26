@@ -47,11 +47,14 @@ export function ServerInitializationLoader({ children }: { children: React.React
 
     const checkServer = async () => {
       try {
-        await api.get('/', { timeout: 2000 });
+        // Increased timeout to 5s to allow slower machines to boot NestJS
+        await api.get('/', { timeout: 5000 });
         if (mounted) {
           setIsServerReady(true);
         }
       } catch (error) {
+        // We expect errors (timeouts/refused) during the polling phase
+        // while the backend is still booting.
         if (mounted) {
           pollTimeout = window.setTimeout(checkServer, 1000);
         }

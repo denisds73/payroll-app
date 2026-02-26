@@ -100,7 +100,18 @@ function getBackendEntryPoint() {
   if (isDev) {
     return path.join(__dirname, '../backend/src/main.ts');
   }
-  return path.join(getBackendDir(), 'dist', 'main.js');
+  // In production, NestJS build usually puts main.js inside dist/src
+  const possiblePaths = [
+    path.join(getBackendDir(), 'dist', 'src', 'main.js'),
+    path.join(getBackendDir(), 'dist', 'main.js'),
+  ];
+
+  for (const entryPath of possiblePaths) {
+    if (fs.existsSync(entryPath)) {
+      return entryPath;
+    }
+  }
+  return possiblePaths[0]; // fallback
 }
 
 function getPrismaDir() {
@@ -119,26 +130,45 @@ function startBackend() {
   const backendEntry = getBackendEntryPoint();
   const backendDir = getBackendDir();
 
-  if (isDev) {
-    backendProcess = spawn('ts-node', ['-r', 'tsconfig-paths/register', backendEntry], {
-      cwd: backendDir,
-      env: {
+  const env = isDev
+    ? {
         ...process.env,
         PORT: '3001',
         NODE_ENV: 'development',
-      },
-    });
-  } else {
-    // In production, use Electron's built-in Node.js via ELECTRON_RUN_AS_NODE
-    backendProcess = spawn(process.execPath, [backendEntry], {
-      cwd: backendDir,
-      env: {
+      }
+    : {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
         PORT: '3001',
         NODE_ENV: 'production',
-      },
+      };
+
+  console.log('[Electron] Starting backend at:', backendEntry);
+
+  if (isDev) {
+    backendProcess = spawn('ts-node', ['-r', 'tsconfig-paths/register', backendEntry], {
+      cwd: backendDir,
+      env,
     });
+  } else {
+    backendProcess = spawn(process.execPath, [backendEntry], {
+      cwd: backendDir,
+      env,
+    });
+
+    // In production, also log backend output to a file for easier debugging
+    const logDir = path.join(app.getPath('userData'), 'logs');
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    const logFile = path.join(logDir, 'backend.log');
+    const logStream = fs.createWriteStream(logFile, { flags: 'a' });
+    
+    const logToFile = (data) => {
+      const timestamp = new Date().toISOString();
+      logStream.write(`[${timestamp}] ${data}`);
+    };
+
+    backendProcess.stdout.on('data', logToFile);
+    backendProcess.stderr.on('data', logToFile);
   }
 
   backendProcess.stdout.on('data', (data) => {
