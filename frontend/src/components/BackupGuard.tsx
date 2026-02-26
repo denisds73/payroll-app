@@ -52,7 +52,10 @@ export function BackupGuard() {
     <div className="fixed inset-0 z-[99999] bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center animate-fadeIn">
       <div className="bg-card p-8 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center max-w-sm text-center transform transition-all duration-300 scale-100">
         {status === 'backing-up' ? (
-          <div className="w-12 h-12 border-4 border-gray-200 border-t-primary rounded-full animate-spin mb-5"></div>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 animate-spin mb-5 text-primary" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" className="stroke-gray-200" />
+            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeDasharray="30 100" transform="rotate(-90 25 25)" />
+          </svg>
         ) : (
           <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mb-5 animate-fadeIn shadow-[0_0_20px_rgba(16,185,129,0.2)]">
             <ShieldCheck className="w-6 h-6 text-success" />

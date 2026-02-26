@@ -76,7 +76,10 @@ export function ServerInitializationLoader({ children }: { children: React.React
   return (
     <div className="fixed inset-0 z-[99999] bg-background flex flex-col items-center justify-center">
       <div className="flex flex-col items-center max-w-md text-center px-6">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-primary rounded-full animate-spin mb-5"></div>
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 animate-spin mb-5 text-primary" viewBox="0 0 50 50">
+          <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" className="stroke-gray-200" />
+          <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeDasharray="30 100" transform="rotate(-90 25 25)" />
+        </svg>
         <h2 
           className={`text-xl font-bold text-text-primary mb-2 transition-opacity duration-300 ${isFading ? 'opacity-0' : 'opacity-100'}`}
         >
