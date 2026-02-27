@@ -45,21 +45,28 @@ function ensureDatabase() {
   const logToFile = (data) => {
     const timestamp = new Date().toISOString();
     logStream.write(`[${timestamp}] [Prisma Init] ${data}\n`);
+    console.log('[Prisma Init]:', data);
   };
 
-  if (fs.existsSync(dbPath)) {
-    logToFile('Database already exists at: ' + dbPath);
-    return Promise.resolve();
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  const dbDir = path.dirname(dbPath);
-  fs.mkdirSync(dbDir, { recursive: true });
-
-  logToFile('First launch — running Prisma migrations...');
+  logToFile('Checking database at: ' + dbPath);
 
   return new Promise((resolve, reject) => {
     const prismaSchemaDir = getPrismaDir();
     const prismaCli = path.join(getBackendModulesPath(), 'prisma', 'build', 'index.js');
+    const schemaPath = path.join(prismaSchemaDir, 'schema.prisma');
+
+    if (!fs.existsSync(schemaPath)) {
+      const err = 'Prisma schema not found at: ' + schemaPath;
+      logToFile(err);
+      return reject(new Error(err));
+    }
+
+    logToFile('Running prisma migrate deploy...');
 
     const migrateProcess = execFile(
       process.execPath,
@@ -68,7 +75,7 @@ function ensureDatabase() {
         'migrate',
         'deploy',
         '--schema',
-        path.join(prismaSchemaDir, 'schema.prisma'),
+        schemaPath,
       ],
       {
         env: {
@@ -84,15 +91,17 @@ function ensureDatabase() {
         
         if (error) {
           logToFile('[Prisma Migration Failed]: ' + error.message);
+          // If the table doesn't exist, we MUST NOT ignore this error
           reject(error);
         } else {
-          logToFile('Database created and migrated successfully.');
+          logToFile('Database schema is up to date.');
           resolve();
         }
       },
     );
   });
 }
+
 
 
 // ---------------------------------------------------------------------------
