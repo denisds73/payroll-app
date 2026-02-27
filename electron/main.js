@@ -66,7 +66,10 @@ function ensureDatabase() {
       return reject(new Error(err));
     }
 
-    logToFile('Running prisma migrate deploy...');
+    const normalizedDbPath = dbPath.replace(/\\/g, '/');
+    const databaseUrl = `file:${normalizedDbPath}`;
+
+    logToFile(`Running prisma migrate deploy on ${databaseUrl}...`);
 
     const migrateProcess = execFile(
       process.execPath,
@@ -81,20 +84,26 @@ function ensureDatabase() {
         env: {
           ...process.env,
           ELECTRON_RUN_AS_NODE: '1',
-          DATABASE_URL: `file:${dbPath}`,
+          DATABASE_URL: databaseUrl,
         },
         cwd: getBackendDir(),
       },
       (error, stdout, stderr) => {
-        if (stdout) logToFile('[Migrate Out]: ' + stdout);
-        if (stderr) logToFile('[Migrate Err]: ' + stderr);
+        if (stdout) {
+          logToFile('[Migrate Out]: ' + stdout);
+          console.log('[Prisma Migrate]:', stdout);
+        }
+        if (stderr) {
+          logToFile('[Migrate Err]: ' + stderr);
+          console.error('[Prisma Migrate Err]:', stderr);
+        }
         
         if (error) {
           logToFile('[Prisma Migration Failed]: ' + error.message);
           // If the table doesn't exist, we MUST NOT ignore this error
           reject(error);
         } else {
-          logToFile('Database schema is up to date.');
+          logToFile('Database migration check completed successfully.');
           resolve();
         }
       },
@@ -328,13 +337,17 @@ const createWindow = () => {
 app.whenReady().then(async () => {
   try {
     await ensureDatabase();
+    startBackend();
+    createWindow();
+    void setupAutoUpdater();
   } catch (err) {
-    console.error('[Electron] Failed to initialise database:', err);
+    const { dialog } = await import('electron');
+    dialog.showErrorBox(
+      'Database Initialization Failed',
+      `The application was unable to set up the database. This usually means a file is locked or permissions are missing.\n\nError: ${err.message}\n\nPlease share this error and the log file at %APPDATA%\\payroll-app\\logs\\backend.log`
+    );
+    app.quit();
   }
-
-  startBackend();
-  createWindow();
-  void setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -5,10 +5,12 @@ import { getDatabasePath } from '../utils/path.util';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
+    const dbPath = getDatabasePath();
+    const normalizedPath = dbPath.replace(/\\/g, '/');
     super({
       datasources: {
         db: {
-          url: `file:${getDatabasePath()}`,
+          url: `file:${normalizedPath}`,
         },
       },
     });
