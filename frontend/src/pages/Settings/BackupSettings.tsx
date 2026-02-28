@@ -31,7 +31,7 @@ export default function BackupSettings() {
   }, [searchParams]);
 
   const checkAuthCode = async () => {
-    const code = searchParams.get('code');
+    const code = searchParams.get('code') || new URLSearchParams(window.location.search).get('code');
     if (code) {
       const toastId = toast.loading('Connecting to Google Drive...');
       try {
@@ -85,7 +85,38 @@ export default function BackupSettings() {
   const handleConnect = async () => {
     try {
       const res = await api.get('/backup/auth-url');
-      if (res.data.url) window.location.href = res.data.url;
+      if (res.data.url) {
+        // Open in a new window to avoid losing app state
+        const width = 600;
+        const height = 700;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        const popup = window.open(
+          res.data.url, 
+          'google-auth', 
+          `width=${width},height=${height},left=${left},top=${top}`
+        );
+
+        // Check for closure or success
+        const pollTimer = window.setInterval(() => {
+          if (popup?.closed) {
+            window.clearInterval(pollTimer);
+            fetchSettings(); // Refresh to see if it's connected now
+          }
+        }, 1000);
+
+        // Also listen for postMessage from the backend response
+        const messageHandler = (event: MessageEvent) => {
+          if (event.data === 'google-drive-connected') {
+            toast.success('Successfully connected to Google Drive!');
+            setIsConnected(true);
+            fetchSettings();
+            window.removeEventListener('message', messageHandler);
+          }
+        };
+        window.addEventListener('message', messageHandler);
+      }
     } catch (error) {
       toast.error('Failed to initiate login');
     }
@@ -169,7 +200,7 @@ export default function BackupSettings() {
                 number={1} 
                 title="Upload Credentials" 
                 isCompleted={credentialsStatus === 'configured'}
-                description='Upload the "OAuth Client ID" JSON from Google Cloud Console.'
+                description='Upload the "OAuth Client ID" JSON. Ensure you added "http://localhost:3001/backup/callback" to Authorized Redirect URIs in Google Console.'
               >
                  <div className="flex gap-3 items-center">
                     <div className="flex-1">

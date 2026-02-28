@@ -145,6 +145,7 @@ export class BackupService {
       return oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: ['https://www.googleapis.com/auth/drive.file'],
+        prompt: 'consent',
       });
     } catch (error) {
       this.logger.error('Failed to generate Auth URL', error);
