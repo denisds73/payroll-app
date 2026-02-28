@@ -255,6 +255,29 @@ export default function BackupSettings() {
                    <Button onClick={handleSaveSettings} icon={<Save className="w-4 h-4" />}>Save</Button>
                  </div>
               </ConfigStep>
+
+              <div className="pt-6 border-t border-gray-100 mt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-text-disabled uppercase tracking-wider">Developer Debug</h4>
+                    <p className="text-[10px] text-text-disabled">Simulate system events for testing</p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-[10px] py-1 h-auto"
+                    onClick={() => {
+                        if (typeof window !== 'undefined' && (window as any).require) {
+                            const { ipcRenderer } = (window as any).require('electron');
+                            ipcRenderer.send('test-update-notify');
+                            toast.success('Simulation triggered');
+                        }
+                    }}
+                  >
+                    Test Update UI
+                  </Button>
+                </div>
+              </div>
             </div>
           </Card>
         </div>

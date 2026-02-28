@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'child_process';
-import { app, BrowserWindow } from 'electron/main';
+import { app, BrowserWindow, ipcMain } from 'electron/main';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -269,6 +269,13 @@ async function setupAutoUpdater() {
     console.error('[Updater] Failed to start update check:', err);
   }
 }
+
+// Allow frontend to trigger a test notification
+ipcMain.on('test-update-notify', () => {
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('update-available', { version: '1.2.0-test' });
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Window
