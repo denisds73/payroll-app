@@ -211,11 +211,14 @@ export default function BackupSettings() {
                         className="block w-full text-sm text-text-secondary file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                       />
                     </div>
-                    <Button onClick={handleCredentialsUpload} disabled={!credentialsFile} icon={<Upload className="w-4 h-4"/>}>
-                      Upload
-                    </Button>
-                 </div>
-              </ConfigStep>
+                     <Button onClick={handleCredentialsUpload} disabled={!credentialsFile} icon={<Upload className="w-4 h-4"/>}>
+                       Upload
+                     </Button>
+                  </div>
+                  <div className="mt-2 text-[10px] text-text-disabled font-mono bg-gray-50 p-1.5 rounded border border-gray-100">
+                    Authorized Redirect URI: http://localhost:3001/backup/callback
+                  </div>
+               </ConfigStep>
 
               <ConfigStep 
                 number={2} 

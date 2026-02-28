@@ -140,7 +140,10 @@ export class BackupService {
 
       const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
       
-      const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+      const targetRedirectUri = redirect_uris.find(u => u.includes('/backup/callback')) || redirect_uris[0];
+      this.logger.log(`Generating Auth URL with redirect: ${targetRedirectUri}`);
+
+      const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, targetRedirectUri);
 
       return oAuth2Client.generateAuthUrl({
         access_type: 'offline',
@@ -158,9 +161,13 @@ export class BackupService {
     if (!credentials) throw new Error('No credentials configured');
 
     const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
-    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+    const targetRedirectUri = redirect_uris.find(u => u.includes('/backup/callback')) || redirect_uris[0];
+    this.logger.log(`Exchanging code for tokens using redirect: ${targetRedirectUri}`);
+
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, targetRedirectUri);
 
     const { tokens } = await oAuth2Client.getToken(code);
+    this.logger.log('Tokens received successfully');
     
     if (tokens.refresh_token) {
       await this.prisma.systemSetting.upsert({
