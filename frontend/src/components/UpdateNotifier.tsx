@@ -9,7 +9,7 @@ export function UpdateNotifier() {
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && (window as any).require) {
-        const { ipcRenderer, shell } = (window as any).require('electron');
+        const { ipcRenderer } = (window as any).require('electron');
         
         const handleUpdateAvailable = (_event: any, info: any) => {
           console.log('Update available event received:', info);
