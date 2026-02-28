@@ -3,11 +3,13 @@ import { Toaster } from 'react-hot-toast';
 import { Outlet } from 'react-router-dom';
 import Navbar from './components/navbar/Navbar';
 import { BackupGuard } from './components/BackupGuard';
+import { UpdateNotifier } from './components/UpdateNotifier';
 
 function App() {
   return (
     <>
       <BackupGuard />
+      <UpdateNotifier />
       <div className="min-h-screen bg-background">
       <Navbar />
       <Toaster

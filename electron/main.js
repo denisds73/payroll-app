@@ -242,6 +242,9 @@ async function setupAutoUpdater() {
 
   autoUpdater.on('update-available', (info) => {
     console.log('[Updater] Update available:', info.version);
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('update-available', info);
+    });
   });
 
   autoUpdater.on('update-not-available', () => {
