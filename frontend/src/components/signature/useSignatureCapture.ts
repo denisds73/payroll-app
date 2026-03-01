@@ -42,7 +42,7 @@ export const useSignatureCapture = () => {
       ctx.lineWidth = width;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#18181b';
+      ctx.strokeStyle = '#f8fafc';
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.stroke();

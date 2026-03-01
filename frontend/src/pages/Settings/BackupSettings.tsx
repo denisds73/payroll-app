@@ -406,8 +406,8 @@ function RestoreSection({ isConnected: _isConnected }: { isConnected: boolean })
                      </div>
                      <Badge 
                        text={`${(backup.size / 1024 / 1024).toFixed(2)} MB`} 
-                       variant="default"
-                       className="opacity-75"
+                       variant="outline"
+                       className="text-text-secondary border-border"
                      />
                   </div>
                   <div className="flex justify-between items-center text-xs text-text-secondary">
