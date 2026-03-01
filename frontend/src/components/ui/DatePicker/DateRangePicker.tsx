@@ -268,8 +268,8 @@ export function DateRangePicker({
             px-3 py-1.5 text-sm
             border rounded-md transition-all
             focus:outline-none focus:ring-2 focus:ring-primary
-            ${error ? 'border-error focus:ring-error' : 'border-gray-300'}
-            ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-white hover:border-gray-400'}
+            ${error ? 'border-error focus:ring-error' : 'border-border'}
+            ${disabled ? 'opacity-50 cursor-not-allowed bg-surface' : 'bg-card hover:border-border-hover'}
           `}
         >
           <Calendar className="w-4 h-4 text-text-secondary shrink-0" />
@@ -284,7 +284,7 @@ export function DateRangePicker({
             <button
               type="button"
               onClick={handleClear}
-              className="p-0.5 hover:bg-gray-100 rounded transition-colors shrink-0"
+              className="p-0.5 hover:bg-surface-hover rounded transition-colors shrink-0"
               aria-label="Clear dates"
             >
               <X className="w-3.5 h-3.5 text-text-secondary" />
@@ -295,7 +295,7 @@ export function DateRangePicker({
         {/* Calendar popover */}
         {isOpen && (
           <div
-            className={`absolute left-0 z-50 bg-card border border-gray-300 rounded-lg shadow-lg animate-fadeIn ${
+            className={`absolute left-0 z-50 bg-card border border-border rounded-lg shadow-lg animate-fadeIn ${
               popoverPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
             }`}
             role="dialog"
@@ -305,7 +305,7 @@ export function DateRangePicker({
             <div className="flex">
               {/* Presets sidebar */}
               {showPresets && (
-                <div className="border-r border-gray-200 p-2 min-w-30">
+                <div className="border-r border-border p-2 min-w-30">
                   <div className="text-xs font-medium text-text-secondary mb-2 px-2">
                     Quick Select
                   </div>
@@ -344,15 +344,15 @@ export function DateRangePicker({
                   caption_label: 'text-sm font-semibold text-text-primary',
                   nav: 'absolute top-3 left-3 right-3 flex justify-between items-center h-7 z-10',
                   button_previous:
-                    'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                    'h-7 w-7 flex items-center justify-center hover:bg-surface-hover rounded-md transition-colors text-text-primary cursor-pointer',
                   button_next:
-                    'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                    'h-7 w-7 flex items-center justify-center hover:bg-surface-hover rounded-md transition-colors text-text-primary cursor-pointer',
                   weekdays: 'flex',
                   weekday: 'w-9 text-xs font-medium text-text-secondary text-center',
                   week: 'flex mt-1',
                   day: 'w-9 h-9 text-center text-sm relative p-0 group',
                   day_button:
-                    'w-9 h-9 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer rounded-md hover:bg-gray-100 group-data-[selected]:hover:bg-primary group-data-[range-middle]:hover:bg-primary/20',
+                    'w-9 h-9 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer rounded-md hover:bg-surface-hover group-data-[selected]:hover:bg-primary group-data-[range-middle]:hover:bg-primary/20',
                   selected: 'bg-primary text-white font-semibold rounded-md',
                   range_start: 'rounded-r-none data-[range-end]:rounded-r-md',
                   range_end: 'rounded-l-none data-[range-start]:rounded-l-md',

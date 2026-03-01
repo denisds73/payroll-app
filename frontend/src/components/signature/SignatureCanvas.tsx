@@ -55,7 +55,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
           maxWidth: '100%',
           maxHeight: '100%',
         }}
-        className="border-2 border-gray-300 rounded-lg cursor-crosshair bg-white shadow-sm touch-none"
+        className="border-2 border-border rounded-lg cursor-crosshair bg-card shadow-sm touch-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

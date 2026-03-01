@@ -56,7 +56,7 @@ const OTInputStepper: React.FC<OTInputStepperProps> = ({
   );
 
   const buttonDisabledClass =
-    'bg-background text-text-disabled border-gray-300 cursor-not-allowed opacity-50';
+    'bg-background text-text-disabled border-border cursor-not-allowed opacity-50';
 
   const minusButtonClass = clsx(
     buttonBaseClass,
@@ -93,7 +93,7 @@ const OTInputStepper: React.FC<OTInputStepperProps> = ({
           'bg-card text-text-primary text-sm font-medium',
           'transition-all duration-150 ease-out',
           'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-secondary',
-          'disabled:bg-background disabled:text-text-disabled disabled:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed',
+          'disabled:bg-background disabled:text-text-disabled disabled:border-border disabled:opacity-50 disabled:cursor-not-allowed',
           '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
         )}
         aria-label="Input value"

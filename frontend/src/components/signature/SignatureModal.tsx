@@ -113,14 +113,14 @@ export const SignatureModal = ({ isOpen, onClose, onSave }: SignatureModalProps)
       role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-[90vw] h-[90vh] flex flex-col transition-all duration-200 ${
+        className={`bg-card rounded-lg shadow-xl w-[90vw] h-[90vh] flex flex-col transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-border shrink-0">
           <div>
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
               Sign Here

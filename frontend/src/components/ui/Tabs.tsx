@@ -14,7 +14,7 @@ interface TabsProps {
 
 export default function Tabs({ tabs, activeTab, onChange }: TabsProps) {
   return (
-    <div className="border-b border-gray-200">
+    <div className="border-b border-border">
       <div className="flex space-x-1">
         {tabs.map((tab) => (
           <button
@@ -27,7 +27,7 @@ export default function Tabs({ tabs, activeTab, onChange }: TabsProps) {
               ${
                 activeTab === tab.id
                   ? 'border-primary text-primary'
-                  : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-300'
+                  : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
               }
             `}
           >

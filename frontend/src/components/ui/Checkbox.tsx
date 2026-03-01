@@ -19,9 +19,9 @@ export default function Checkbox({ label, error, ...props }: CheckboxProps) {
           type="checkbox"
           id={id}
           className={clsx(
-            'w-4 h-4 rounded border border-gray-300 accent-primary focus:ring-primary transition-all cursor-pointer',
+            'w-4 h-4 rounded border border-border bg-card accent-primary focus:ring-primary transition-all cursor-pointer',
             error && 'border-error focus:ring-error',
-            props.disabled && 'text-text-disabled bg-gray-100 cursor-not-allowed',
+            props.disabled && 'text-text-disabled bg-surface cursor-not-allowed',
           )}
           aria-invalid={!!error}
           {...props}

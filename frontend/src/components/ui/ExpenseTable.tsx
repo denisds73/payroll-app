@@ -117,7 +117,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
 
   return (
     <div className="rounded-xl bg-card shadow-md w-full">
-      <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
+      <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border rounded-t-xl shadow-sm">
         <div className="flex gap-x-15 font-semibold text-text-primary text-base w-full items-center">
           <div className="w-8 shrink-0" />
           <div className="w-21 shrink-0 ml-4">Date</div>
@@ -128,7 +128,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
         <div className="relative">
           <div className="flex items-center gap-2 ml-6 shrink-0">
             <select
-              className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
+              className="px-3 py-1 rounded-md border border-border bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
               value={month}
               onChange={(e) => onMonthYearChange(Number(e.target.value), year)}
               aria-label="Select month"
@@ -143,7 +143,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
               })}
             </select>
             <select
-              className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
+              className="px-3 py-1 rounded-md border border-border bg-background text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
               value={year}
               onChange={(e) => onMonthYearChange(month, Number(e.target.value))}
               aria-label="Select year"

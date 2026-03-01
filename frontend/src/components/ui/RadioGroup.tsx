@@ -50,10 +50,10 @@ export default function RadioGroup({
               value === option.value
                 ? 'bg-primary border-primary'
                 : 'bg-background border-primary/80',
-              disabled && 'bg-gray-200 border-gray-200',
+              disabled && 'bg-surface border-border',
             )}
           >
-            {value === option.value && <span className="w-2.5 h-2.5 rounded-full bg-white" />}
+            {value === option.value && <span className="w-2.5 h-2.5 rounded-full bg-background" />}
           </span>
           {/* Label Text - NEW */}
           {showLabels && (

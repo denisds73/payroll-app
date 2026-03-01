@@ -176,9 +176,9 @@ export default function WorkerDetail() {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="h-12 bg-gray-200 rounded" />
-          <div className="h-64 bg-gray-200 rounded" />
+          <div className="h-8 bg-surface rounded w-1/4" />
+          <div className="h-12 bg-surface rounded" />
+          <div className="h-64 bg-surface rounded" />
         </div>
       </div>
     );
@@ -213,7 +213,7 @@ export default function WorkerDetail() {
                 className={`px-3 py-1 rounded-full text-xs font-medium border ${
                   worker.isActive
                     ? 'bg-success/10 text-success border-success/20'
-                    : 'bg-gray-100 text-gray-600 border-gray-300'
+                    : 'bg-surface-hover text-text-secondary border-border'
                 }`}
               >
                 {worker.isActive ? 'Active' : 'Inactive'}
@@ -289,14 +289,14 @@ export default function WorkerDetail() {
         {loadingStats && !cycleStats ? (
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-28" />
+              <div key={i} className="animate-pulse bg-surface rounded-lg h-28" />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-4">
             <button
               type="button"
-              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300"
+              className="bg-card rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-border hover:border-border"
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="w-5 h-5 text-success" />
@@ -312,7 +312,7 @@ export default function WorkerDetail() {
 
             <button
               type="button"
-              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300 cursor-pointer"
+              className="bg-card rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-border hover:border-border cursor-pointer"
               onClick={() => navigate(`/advances/${worker.id}`)}
             >
               <div className="flex items-center gap-2 mb-3">
@@ -329,7 +329,7 @@ export default function WorkerDetail() {
 
             <button
               type="button"
-              className="bg-white rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-gray-200 hover:border-gray-300 cursor-pointer"
+              className="bg-card rounded-lg p-4 text-left hover:shadow-md transition-shadow border border-border hover:border-border cursor-pointer"
               onClick={() => handleTabChange('expenses')}
             >
               <div className="flex items-center gap-2 mb-3">
@@ -344,7 +344,7 @@ export default function WorkerDetail() {
               </p>
             </button>
 
-            <div className="bg-white rounded-lg p-4 border-2 border-primary">
+            <div className="bg-card rounded-lg p-4 border-2 border-primary">
               <div className="flex items-center gap-2 mb-3">
                 <FileText
                   className={`w-5 h-5 ${(cycleStats?.totalNetPayable ?? 0) >= 0 ? 'text-success' : 'text-error'}`}
@@ -354,7 +354,7 @@ export default function WorkerDetail() {
 
               {/* Show breakdown if there's carry-forward, opening balance, or current cycle debt */}
               {((cycleStats?.carryForward ?? 0) > 0 || (cycleStats?.openingBalance ?? 0) !== 0 || (cycleStats?.netPay ?? 0) < 0) && (
-                <div className="mb-2 space-y-1 pb-2 border-b border-gray-200">
+                <div className="mb-2 space-y-1 pb-2 border-b border-border">
                   <div className="flex justify-between text-xs">
                     <span className="text-text-secondary">Current Cycle</span>
                     <span className="font-medium text-text-primary">

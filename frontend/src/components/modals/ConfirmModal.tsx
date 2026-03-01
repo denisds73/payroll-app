@@ -74,7 +74,7 @@ export default function ConfirmModal({
       role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-md w-full transition-all duration-200 ${
+        className={`bg-card rounded-lg shadow-xl max-w-md w-full transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="alertdialog"

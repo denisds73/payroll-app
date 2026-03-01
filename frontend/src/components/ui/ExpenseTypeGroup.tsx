@@ -81,7 +81,7 @@ export default function ExpenseTypeGroup({
               isActive
                 ? style.activeClass
                 : clsx(
-                    'bg-background border-gray-300 text-text-secondary',
+                    'bg-background border-border text-text-secondary',
                     !disabled && style.hoverClass,
                   ),
             )}

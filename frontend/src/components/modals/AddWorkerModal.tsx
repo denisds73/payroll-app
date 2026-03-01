@@ -204,14 +204,14 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto transition-all duration-200 ${
+        className={`bg-card rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg">
               <User className="w-5 h-5 text-primary" />
@@ -226,10 +226,10 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           <button
             type="button"
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
             aria-label="Close modal"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-text-secondary" />
           </button>
         </div>
 
@@ -291,7 +291,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                     value={formData.wage}
                     onChange={(e) => setFormData({ ...formData, wage: e.target.value })}
                     placeholder="500"
-                    className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                    className="w-full pl-7 pr-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                   />
                 </div>
               </div>
@@ -315,7 +315,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                     value={formData.otRate}
                     onChange={(e) => setFormData({ ...formData, otRate: e.target.value })}
                     placeholder="100"
-                    className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                    className="w-full pl-7 pr-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                   />
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   value={formData.openingBalance}
                   onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
                   placeholder="0"
-                  className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                  className="w-full pl-7 pr-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                 />
               </div>
               <p className="mt-1 text-xs text-text-secondary">
@@ -355,7 +355,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+          <div className="flex items-center justify-end gap-3 p-4 border-t border-border bg-surface rounded-b-lg">
             <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
               Cancel
             </Button>

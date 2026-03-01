@@ -324,14 +324,14 @@ export default function PaySalaryModal({
       onKeyDown={handleBackdropKeyDown}
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto transition-all duration-200 ${
+        className={`bg-card rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
           <div>
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
               Pay Salary
@@ -374,7 +374,7 @@ export default function PaySalaryModal({
               )}
 
               <div className="bg-background rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-gray-300">
+                <div className="flex items-center justify-between pb-2 border-b border-border">
                   <span className="text-sm font-semibold text-text-primary">Salary Cycle</span>
                   <span className="text-sm text-text-secondary">
                     {formatDate(salaryData.cycleStart)} - {formatDate(salaryData.cycleEnd)}
@@ -398,7 +398,7 @@ export default function PaySalaryModal({
                       {formatCurrency(salaryData.otPay)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-300">
+                  <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
                     <span className="font-medium text-text-primary">Gross Pay</span>
                     <span className="font-semibold text-text-primary">
                       {formatCurrency(salaryData.grossPay)}
@@ -406,7 +406,7 @@ export default function PaySalaryModal({
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-gray-300">
+                <div className="space-y-2 pt-2 border-t border-border">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-text-secondary">Advances</span>
                     <span className="font-medium text-warning">
@@ -421,7 +421,7 @@ export default function PaySalaryModal({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t-2 border-gray-400">
+                <div className="flex items-center justify-between pt-3 border-t-2 border-border-hover">
                   <span className="text-base font-bold text-text-primary">Net Payable</span>
                   <span
                     className={`text-xl font-bold ${salaryData.totalNetPayable >= 0 ? 'text-success' : 'text-error'}`}
@@ -430,7 +430,7 @@ export default function PaySalaryModal({
                   </span>
                 </div>
                 {salaryData.carryForward > 0 && (
-                  <div className="text-xs space-y-1 bg-gray-50 p-2 rounded border border-gray-200 mt-2">
+                  <div className="text-xs space-y-1 bg-surface p-2 rounded border border-border mt-2">
                     <div className="flex justify-between">
                       <span className="text-text-secondary">Current Cycle:</span>
                       <span className="font-medium">{formatCurrency(salaryData.netPay)}</span>
@@ -498,7 +498,7 @@ export default function PaySalaryModal({
                         className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
                           !isPartialPayment
                             ? 'bg-primary text-white shadow-sm'
-                            : 'bg-background text-text-secondary hover:bg-gray-200'
+                            : 'bg-background text-text-secondary hover:bg-surface'
                         }`}
                       >
                         Full Payment
@@ -510,7 +510,7 @@ export default function PaySalaryModal({
                         className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
                           isPartialPayment
                             ? 'bg-primary text-white shadow-sm'
-                            : 'bg-background text-text-secondary hover:bg-gray-200'
+                            : 'bg-background text-text-secondary hover:bg-surface'
                         }`}
                       >
                         Partial Payment
@@ -540,7 +540,7 @@ export default function PaySalaryModal({
                         min="0"
                         max={salaryData.totalNetPayable}
                         step="0.01"
-                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                        className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                         disabled={loading || !isPartialPayment}
                       />
                     </div>
@@ -565,7 +565,7 @@ export default function PaySalaryModal({
                       placeholder="e.g., UPI Ref: 123456789, Cash, Cheque #1234..."
                       rows={3}
                       maxLength={VALIDATION.textField.maxLength}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
                       disabled={loading}
                     />
                     {formData.paymentProof.length > 0 && (
@@ -581,7 +581,7 @@ export default function PaySalaryModal({
                     </label>
 
                     {signatureData ? (
-                      <div className="border-2 border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <div className="border-2 border-border rounded-lg p-3 bg-surface">
                         <img
                           src={signatureData}
                           alt="Worker signature"
@@ -612,7 +612,7 @@ export default function PaySalaryModal({
                         type="button"
                         onClick={handleOpenSignatureModal}
                         disabled={loading}
-                        className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-text-secondary hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 border-2 border-dashed border-border rounded-lg text-text-secondary hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="text-sm font-medium">Click to add signature</span>
                       </button>

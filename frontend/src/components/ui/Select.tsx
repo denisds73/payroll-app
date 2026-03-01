@@ -24,9 +24,9 @@ export default function Select({ label, options, error, placeholder, ...props }:
       <select
         id={id}
         className={clsx(
-          'px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all',
+          'px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all bg-card',
           error && 'border-error',
-          props.disabled && 'text-text-disabled bg-gray-100 cursor-not-allowed',
+          props.disabled && 'text-text-disabled bg-surface cursor-not-allowed',
         )}
         aria-invalid={!!error}
         {...props}

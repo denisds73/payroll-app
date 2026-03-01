@@ -269,14 +269,14 @@ export default function IssueAdvanceModal({
       role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-md w-full transition-all duration-200 ${
+        className={`bg-card rounded-lg shadow-xl max-w-md w-full transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
               Issue Advance
@@ -322,13 +322,13 @@ export default function IssueAdvanceModal({
                     setShowWorkerDropdown(true);
                   }}
                   onFocus={() => setShowWorkerDropdown(true)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                  className="w-full pl-9 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                   autoComplete="off"
                 />
               </div>
 
               {showWorkerDropdown && (
-                <div className="absolute z-60 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-60 left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {filteredWorkers.length === 0 ? (
                     <div className="p-3 text-sm text-text-secondary text-center">
                       No workers found
@@ -390,7 +390,7 @@ export default function IssueAdvanceModal({
                 min="1"
                 max={VALIDATION.amount.max}
                 step="1"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                 disabled={loading}
               />
             </div>
@@ -407,7 +407,7 @@ export default function IssueAdvanceModal({
               placeholder="Add a note about this advance..."
               rows={3}
               maxLength={VALIDATION.textField.maxLength}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
+              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
               disabled={loading}
             />
             {formData.reason.length > 0 && (
@@ -423,7 +423,7 @@ export default function IssueAdvanceModal({
             </label>
 
             {formData.signatureData ? (
-              <div className="border-2 border-gray-200 rounded-lg p-3 bg-gray-50">
+              <div className="border-2 border-border rounded-lg p-3 bg-surface">
                 <img
                   src={formData.signatureData}
                   alt="Worker signature"
@@ -454,7 +454,7 @@ export default function IssueAdvanceModal({
                 type="button"
                 onClick={handleOpenSignatureModal}
                 disabled={loading}
-                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-text-secondary hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 border-2 border-dashed border-border rounded-lg text-text-secondary hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="text-sm font-medium">Click to add signature</span>
               </button>

@@ -70,7 +70,7 @@ export default function Tooltip({
           }}
           className={`absolute ${positionClasses[position]} z-50`}
         >
-          <div className="bg-card border border-gray-200 rounded-lg py-2.5 px-3.5 shadow-md max-w-xs">
+          <div className="bg-card border border-border rounded-lg py-2.5 px-3.5 shadow-md max-w-xs">
             {typeof content === 'string' ? (
               <div className="text-xs text-text-secondary leading-relaxed">{content}</div>
             ) : (

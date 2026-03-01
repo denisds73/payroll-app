@@ -190,14 +190,14 @@ export default function WorkerStatusModal({
       onKeyDown={handleBackdropKeyDown}
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-lg w-full transition-all duration-200 ${
+        className={`bg-card rounded-lg shadow-xl max-w-lg w-full transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <Icon className={`w-6 h-6 ${iconColor}`} />
             <div>
