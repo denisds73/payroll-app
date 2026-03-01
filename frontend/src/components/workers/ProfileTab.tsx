@@ -298,7 +298,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
           /* Edit Mode */
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Basic Information Section */}
-            <div className="bg-card border border-gray-200 rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <h4 className="text-md font-semibold text-text-primary mb-4">Basic Information</h4>
 
               <div className="space-y-4">
@@ -315,7 +315,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     maxLength={VALIDATION.name.maxLength}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                     required
                     disabled={loading}
                   />
@@ -336,7 +336,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="Enter phone number"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                       disabled={loading}
                     />
                   </div>
@@ -345,7 +345,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
             </div>
 
             {/* Wage & OT Rate Section */}
-            <div className="bg-card border border-gray-200 rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-md font-semibold text-text-primary">Wage & Overtime</h4>
 
@@ -356,7 +356,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                       wageEditMode === 'values'
                         ? 'bg-primary text-white'
-                        : 'bg-gray-100 text-text-secondary hover:bg-gray-200'
+                        : 'bg-surface-hover text-text-secondary hover:bg-surface'
                     }`}
                   >
                     Edit Values
@@ -367,7 +367,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                       wageEditMode === 'effectiveDate'
                         ? 'bg-primary text-white'
-                        : 'bg-gray-100 text-text-secondary hover:bg-gray-200'
+                        : 'bg-surface-hover text-text-secondary hover:bg-surface'
                     }`}
                   >
                     Change Effective Date
@@ -398,7 +398,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-primary ${
                         wageEditMode === 'values' && wageChanged
                           ? 'border-warning'
-                          : 'border-gray-300'
+                          : 'border-border'
                       }`}
                       required
                       disabled={loading || wageEditMode === 'effectiveDate'}
@@ -477,7 +477,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       className={`w-full pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-primary ${
                         wageEditMode === 'values' && otRateChanged
                           ? 'border-warning'
-                          : 'border-gray-300'
+                          : 'border-border'
                       }`}
                       required
                       disabled={loading || wageEditMode === 'effectiveDate'}
@@ -552,7 +552,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
 
             {/* Opening Balance Section (only editable before first salary) */}
             {!hasSalary && (
-              <div className="bg-card border border-gray-200 rounded-lg p-6">
+              <div className="bg-card border border-border rounded-lg p-6">
                 <h4 className="text-md font-semibold text-text-primary mb-4">Opening Balance</h4>
                 <div>
                   <label
@@ -570,7 +570,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                       value={formData.openingBalance}
                       onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
                       placeholder="0"
-                      className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                      className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                       disabled={loading}
                     />
                   </div>
@@ -610,7 +610,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
           /* Read-only Mode */
           <div className="space-y-6">
             {/* Basic Information Section */}
-            <div className="bg-card border border-gray-200 rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <h4 className="text-md font-semibold text-text-primary mb-4">Basic Information</h4>
 
               <div className="space-y-4">
@@ -631,7 +631,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-3 pt-2 border-t border-border">
                   <Calendar className="w-4 h-4 text-text-secondary" />
                   <div>
                     <p className="text-xs text-text-secondary">Joined On</p>
@@ -642,7 +642,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                 </div>
 
                 {/* Worker Status */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-2 border-t border-border">
                   <div>
                     <p className="text-xs text-text-secondary">Status</p>
                     <div className="flex items-center gap-2">
@@ -724,7 +724,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
             </div>
 
             {/* Wage & OT Rate Section */}
-            <div className="bg-card border border-gray-200 rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <h4 className="text-md font-semibold text-text-primary mb-4">Wage & Overtime</h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -752,7 +752,7 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
 
             {/* Opening Balance Section (read-only) */}
             {worker.openingBalance !== 0 && (
-              <div className="bg-card border border-gray-200 rounded-lg p-6">
+              <div className="bg-card border border-border rounded-lg p-6">
                 <h4 className="text-md font-semibold text-text-primary mb-4">Opening Balance</h4>
                 <div className="bg-background rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">

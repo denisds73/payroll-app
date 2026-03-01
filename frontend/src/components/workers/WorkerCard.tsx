@@ -37,7 +37,7 @@ export default function WorkerCard({ worker, onClick }: WorkerCardProps) {
         hover:shadow-md 
         transition-shadow 
         cursor-pointer
-        border border-gray-100
+        border border-border
       "
     >
       {/* Left side: Status + Name */}
@@ -46,7 +46,7 @@ export default function WorkerCard({ worker, onClick }: WorkerCardProps) {
           className={`w-3 h-3 ${
             worker.isActive
               ? 'fill-success text-success'
-              : 'fill-gray-300 text-gray-300'
+              : 'fill-text-disabled text-text-disabled'
           }`}
         />
         <h3 className="text-text-primary font-medium text-base">{worker.name}</h3>

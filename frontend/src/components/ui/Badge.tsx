@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import type React from 'react';
 
-type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'default';
+type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'default' | 'outline';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   text: string;
@@ -15,6 +15,7 @@ const variantClasses: Record<string, string> = {
   warning: 'bg-warning/10 text-warning',
   info: 'bg-info/10 text-info',
   default: 'bg-secondary/10 text-secondary',
+  outline: 'bg-transparent border border-border text-text-secondary',
 };
 
 export default function Badge({

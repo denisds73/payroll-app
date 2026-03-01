@@ -187,8 +187,8 @@ export function DatePicker({
             border rounded-md transition-all
             focus:outline-none focus:ring-2 focus:ring-primary
             ${sizeClasses[size]}
-            ${error ? 'border-error focus:ring-error' : 'border-gray-300'}
-            ${disabled || loading ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-white hover:border-gray-400'}
+            ${error ? 'border-error focus:ring-error' : 'border-border'}
+            ${disabled || loading ? 'opacity-50 cursor-not-allowed bg-surface' : 'bg-card hover:border-border-hover'}
           `}
         >
           <span className="text-text-secondary shrink-0">
@@ -209,7 +209,7 @@ export function DatePicker({
             <button
               type="button"
               onClick={handleClear}
-              className="p-0.5 hover:bg-gray-100 rounded transition-colors shrink-0"
+              className="p-0.5 hover:bg-surface-hover rounded transition-colors shrink-0"
               aria-label="Clear date"
             >
               <X className="w-3.5 h-3.5 text-text-secondary" />
@@ -220,7 +220,7 @@ export function DatePicker({
         {isOpen && (
           <div
             ref={popoverRef}
-            className={`absolute left-0 z-50 bg-card border border-gray-300 rounded-lg shadow-lg animate-fadeIn ${
+            className={`absolute left-0 z-50 bg-card border border-border rounded-lg shadow-lg animate-fadeIn ${
               popoverPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
             }`}
             role="dialog"
@@ -246,15 +246,15 @@ export function DatePicker({
                 caption_label: 'text-sm font-semibold text-text-primary',
                 nav: 'absolute top-3 left-3 right-3 flex justify-between items-center h-7 z-10',
                 button_previous:
-                  'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                  'h-7 w-7 flex items-center justify-center hover:bg-surface-hover rounded-md transition-colors text-text-primary cursor-pointer',
                 button_next:
-                  'h-7 w-7 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-text-primary cursor-pointer',
+                  'h-7 w-7 flex items-center justify-center hover:bg-surface-hover rounded-md transition-colors text-text-primary cursor-pointer',
                 weekdays: 'flex',
                 weekday: 'w-9 text-xs font-medium text-text-secondary text-center',
                 week: 'flex mt-1',
                 day: 'w-9 h-9 text-center text-sm relative p-0 group',
                 day_button:
-                  'w-9 h-9 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer [not([data-selected])]:hover:bg-gray-100 group-data-[selected]:bg-primary group-data-[selected]:text-white group-data-[selected]:font-semibold group-data-[today]:bg-info/10 group-data-[today]:text-info group-data-[today]:font-semibold',
+                  'w-9 h-9 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset cursor-pointer [not([data-selected])]:hover:bg-surface-hover group-data-[selected]:bg-primary group-data-[selected]:text-white group-data-[selected]:font-semibold group-data-[today]:bg-info/10 group-data-[today]:text-info group-data-[today]:font-semibold',
                 selected: '',
                 today: '',
                 outside: 'text-text-disabled opacity-40',

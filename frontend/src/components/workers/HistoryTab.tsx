@@ -462,7 +462,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                       : type === 'salary'
                         ? 'bg-success/10 text-success border-success/30 hover:bg-success/20'
                         : 'bg-info/10 text-info border-info/30 hover:bg-info/20'
-                    : 'bg-background text-text-disabled border-gray-300 opacity-60 hover:opacity-80'
+                    : 'bg-background text-text-disabled border-border opacity-60 hover:opacity-80'
                 }`}
               >
                 {filters.types[type] && <span className="mr-1">✓</span>}
@@ -631,7 +631,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                               <button
                                 type="button"
                                 onClick={() => handleEdit(item)}
-                                className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
                                 aria-label="Edit"
                               >
                                 <Edit2 className="w-4 h-4" />

@@ -1,33 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand / Main Colors (Apple-inspired, professional) */
-  --color-primary: #18181b;             /* Near-black for main UI (Apple style) */
-  --color-primary-hover: #27272a;       /* Slightly lighter for hover state */
-  --color-secondary: #334155;           /* Slate blue-gray for elegant accent */
-  --color-secondary-hover: #475569;     /* Lighter slate for hover */
+  /* Brand / Main Colors (Dark Theme) */
+  --color-primary: #3b82f6;             /* Blue-500 for primary actions */
+  --color-primary-hover: #60a5fa;       /* Blue-400 for hover */
+  --color-secondary: #475569;           /* Slate-600 */
+  --color-secondary-hover: #64748b;     /* Slate-500 */
 
-  /* Feedback / Alerts (Tailwind recommended) */
-  --color-success: #10B981;             /* Green-500 */
-  --color-success-hover: #059669;       /* Green-600 */
-  --color-error: #DC2626;               /* Red-500 */
-  --color-error-hover: #B91C1C;         /* Red-700, darker for hover */
-  --color-warning: #F59E0B;             /* Amber-500 */
-  --color-warning-hover: #D97706;       /* Amber-600 */
-  --color-info: #3B82F6;                /* Blue-500 (info) */
-  --color-info-hover: #2563EB;          /* Blue-600 */
+  /* Feedback / Alerts */
+  --color-success: #10b981;             /* Emerald-500 */
+  --color-success-hover: #34d399;       /* Emerald-400 */
+  --color-error: #ef4444;               /* Red-500 */
+  --color-error-hover: #f87171;         /* Red-400 */
+  --color-warning: #f59e0b;             /* Amber-500 */
+  --color-warning-hover: #fbbf24;       /* Amber-400 */
+  --color-info: #3b82f6;                /* Blue-500 */
+  --color-info-hover: #60a5fa;          /* Blue-400 */
 
-  /* Backgrounds */
-  --color-background: #F5F5F7;          /* Apple off-white */
-  --color-card: #FFFFFF;                /* Pure card white */
+  /* Backgrounds & Surfaces (Elevation Layers) */
+  --color-background: #0f1115;          /* Deepest background */
+  --color-surface: #16181d;             /* Section surfaces / headers */
+  --color-surface-hover: #1e2128;       /* Surface hover */
+  --color-card: #1c1f26;                /* Cards */
+  --color-card-hover: #232730;          /* Card hover */
+  --color-modal: #232730;               /* Modals / Elevated */
+  --color-border: #2d3340;              /* Dividers / Borders */
+  --color-border-hover: #3f4757;        /* Hover borders */
+  --color-ring: #3b82f6;                /* Focus rings */
 
-  /* Text (Apple-inspired grayscale hierarchy) */
-  --color-text-primary: #18181b;
-  --color-text-secondary: #52525b;      /* Subdued label */
-  --color-text-disabled: #a1a1aa;       /* Low emphasis/disabled */
+  /* Shadows (Dark mode optimized) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+
+  /* Text Hierarchy */
+  --color-text-primary: #f8fafc;        /* High emphasis (Slate-50) */
+  --color-text-secondary: #94a3b8;      /* Medium emphasis (Slate-400) */
+  --color-text-disabled: #475569;       /* Low emphasis (Slate-600) */
 }
 
+/* Base dark scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-hover);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border);
+}
 
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
 @keyframes fadeIn {
   from {
     opacity: 0;

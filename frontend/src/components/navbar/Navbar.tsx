@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 bg-card px-6 py-4">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-card px-6 py-4">
       <div className="flex items-center justify-between max-w-6xl mx-auto">
         <Link
           to="/"

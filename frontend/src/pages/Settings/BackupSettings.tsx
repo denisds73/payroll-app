@@ -172,7 +172,7 @@ export default function BackupSettings() {
           detail={isConnected ? "Google Drive Ready" : "Setup Required"}
           variant={isConnected ? "info" : "default"}
         />
-         <div className="bg-card p-4 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-center items-center gap-2">
+         <div className="bg-card p-4 rounded-lg border border-border shadow-sm flex flex-col justify-center items-center gap-2">
             <div className="text-center">
               <p className="text-sm font-medium text-text-secondary">Quick Action</p>
               <p className="text-xs text-text-disabled">Trigger immediate backup</p>
@@ -215,7 +215,7 @@ export default function BackupSettings() {
                        Upload
                      </Button>
                   </div>
-                  <div className="mt-2 text-[10px] text-text-disabled font-mono bg-gray-50 p-1.5 rounded border border-gray-100">
+                  <div className="mt-2 text-[10px] text-text-disabled font-mono bg-surface p-1.5 rounded border border-border">
                     Authorized Redirect URI: http://localhost:3001/backup/callback
                   </div>
                </ConfigStep>
@@ -250,13 +250,13 @@ export default function BackupSettings() {
                      placeholder="e.g. 1ABC...xyz"
                      value={folderId}
                      onChange={(e) => setFolderId(e.target.value)}
-                     className="flex-1 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-text-primary placeholder:text-gray-400"
+                     className="flex-1 px-3 py-1.5 text-sm bg-card border border-border rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-text-primary placeholder:text-text-disabled"
                    />
                    <Button onClick={handleSaveSettings} icon={<Save className="w-4 h-4" />}>Save</Button>
                  </div>
               </ConfigStep>
 
-              <div className="pt-6 border-t border-gray-100 mt-6">
+              <div className="pt-6 border-t border-border mt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-text-disabled uppercase tracking-wider">Developer Debug</h4>
@@ -294,7 +294,7 @@ function StatusCard({ icon, title, status, detail, variant }: any) {
   const colors: Record<string, string> = {
     success: 'bg-success/5 border-success/20 text-success',
     info: 'bg-info/5 border-info/20 text-info',
-    default: 'bg-gray-50 border-gray-200 text-text-secondary'
+    default: 'bg-surface border-border text-text-secondary'
   };
   return (
     <div className={`p-3 rounded-lg border ${colors[variant]} flex flex-col gap-0.5`}>
@@ -313,7 +313,7 @@ function ConfigStep({ number, title, description, children, isCompleted, disable
     <div className={clsx("flex gap-4", disabled && "opacity-50 grayscale pointer-events-none")}>
        <div className="flex-shrink-0 flex flex-col items-center w-7 relative">
           {!isLast && (
-             <div className="absolute top-7 bottom-[-20px] left-1/2 w-0.5 -ml-px bg-gray-200 z-0" />
+             <div className="absolute top-7 bottom-[-20px] left-1/2 w-0.5 -ml-px bg-surface z-0" />
           )}
           <div className={clsx(
             "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold z-10 relative",
@@ -372,7 +372,7 @@ function RestoreSection({ isConnected: _isConnected }: { isConnected: boolean })
 
   return (
     <Card className="h-full flex flex-col min-h-0">
-       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 rounded-t-lg flex-shrink-0">
+       <div className="px-4 py-3 border-b border-border bg-surface/50 rounded-t-lg flex-shrink-0">
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-text-secondary" /> Restore Data
           </h3>
@@ -397,8 +397,8 @@ function RestoreSection({ isConnected: _isConnected }: { isConnected: boolean })
           ) : (
              backups.map((backup: any, index: number) => (
                <div key={backup.id || backup.filename} className={clsx(
-                 "group p-3 hover:bg-gray-50/50 transition-colors",
-                 index !== backups.length - 1 && "border-b border-gray-100"
+                 "group p-3 hover:bg-surface/50 transition-colors",
+                 index !== backups.length - 1 && "border-b border-border"
                )}>
                   <div className="flex justify-between items-start mb-2">
                      <div className="text-sm font-semibold text-text-primary truncate max-w-[180px]" title={backup.filename}>
@@ -406,8 +406,8 @@ function RestoreSection({ isConnected: _isConnected }: { isConnected: boolean })
                      </div>
                      <Badge 
                        text={`${(backup.size / 1024 / 1024).toFixed(2)} MB`} 
-                       variant="default"
-                       className="opacity-75"
+                       variant="outline"
+                       className="text-text-secondary border-border"
                      />
                   </div>
                   <div className="flex justify-between items-center text-xs text-text-secondary">
@@ -440,7 +440,7 @@ function RestoreSection({ isConnected: _isConnected }: { isConnected: boolean })
                  </div>
              </div>
 
-             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm">
+             <div className="bg-surface p-4 rounded-lg border border-border text-sm">
                 <div className="flex justify-between items-center mb-2">
                    <span className="text-text-secondary">File:</span>
                    <span className="font-medium text-text-primary truncate max-w-[200px]" title={restoreTarget?.name}>{restoreTarget?.name}</span>

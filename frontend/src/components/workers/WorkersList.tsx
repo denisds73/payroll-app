@@ -21,7 +21,7 @@ export default function WorkersList({ workers, loading }: WorkersListProps) {
         {Array.from({ length: 5 }).map((_, index) => (
           <div
             key={`skeleton-${index}`}
-            className="animate-pulse h-16 bg-gray-200 rounded-lg"
+            className="animate-pulse h-16 bg-surface rounded-lg"
           />
         ))}
       </div>

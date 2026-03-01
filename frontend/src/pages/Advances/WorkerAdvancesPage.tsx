@@ -212,13 +212,13 @@ export default function WorkerAdvancesPage() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 flex flex-col min-h-0 flex-1">
-        <div className="p-4 border-b border-gray-200 shrink-0">
+      <div className="bg-card rounded-lg border border-border flex flex-col min-h-0 flex-1">
+        <div className="p-4 border-b border-border shrink-0">
           <div className="flex items-center justify-end gap-8">
             <div className="relative">
               <div className="flex items-center gap-2">
                 <select
-                  className="px-3 py-1 rounded-md border border-gray-200 text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
+                  className="px-3 py-1 rounded-md border border-border text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
                   value={month}
                   onChange={(e) => handleMonthYearChange(Number(e.target.value), year)}
                   aria-label="Select month"
@@ -233,7 +233,7 @@ export default function WorkerAdvancesPage() {
                   })}
                 </select>
                 <select
-                  className="px-3 py-1 rounded-md border border-gray-200 text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
+                  className="px-3 py-1 rounded-md border border-border text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
                   value={year}
                   onChange={(e) => handleMonthYearChange(month, Number(e.target.value))}
                   aria-label="Select year"
@@ -250,7 +250,7 @@ export default function WorkerAdvancesPage() {
                 </select>
               </div>
               {(month !== currentMonth || year !== currentYear) && (
-                <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-amber-100 border border-amber-400 rounded-md shadow-md text-amber-800 text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
+                <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-warning/10 border border-warning/20 rounded-md shadow-md text-warning text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-3.5 w-3.5"
@@ -286,7 +286,7 @@ export default function WorkerAdvancesPage() {
 
         <div className="overflow-auto flex-1 relative">
           <table className="w-full table-fixed text-left border-collapse">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+            <thead className="bg-surface border-b border-border sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-[25%]">
                   Date
@@ -307,7 +307,7 @@ export default function WorkerAdvancesPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
                     <td colSpan={4} className="px-4 py-4">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse w-full" />
+                      <div className="h-4 bg-border rounded animate-pulse w-full" />
                     </td>
                   </tr>
                 ))
@@ -325,7 +325,7 @@ export default function WorkerAdvancesPage() {
                 </tr>
               ) : (
                 advances.map((advance) => (
-                  <tr key={advance.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={advance.id} className="hover:bg-surface/50 transition-colors">
                     <td className="px-4 py-3 text-sm text-text-primary whitespace-nowrap w-[25%] text-center">
                       {formatDate(advance.date)}
                     </td>
@@ -336,7 +336,7 @@ export default function WorkerAdvancesPage() {
 
                     <td className="px-4 py-3 text-sm text-text-secondary w-[35%] text-center">
                       <div className="truncate mx-auto max-w-full">
-                        {advance.reason || <span className="text-gray-400 italic">No reason</span>}
+                        {advance.reason || <span className="text-text-disabled italic">No reason</span>}
                       </div>
                     </td>
 
@@ -372,7 +372,7 @@ export default function WorkerAdvancesPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleEdit(advance)}
-                                  className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
+                                  className="p-2 text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
                                   title="Edit"
                                 >
                                   <Edit2 className="w-4 h-4" />

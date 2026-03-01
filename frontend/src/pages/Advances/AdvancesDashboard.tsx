@@ -151,8 +151,8 @@ export default function AdvancesDashboard() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 flex flex-col min-h-0 flex-1 overflow-visible">
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 gap-4 flex-wrap shrink-0">
+      <div className="bg-card rounded-lg border border-border flex flex-col min-h-0 flex-1 overflow-visible">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 gap-4 flex-wrap shrink-0">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
@@ -160,7 +160,7 @@ export default function AdvancesDashboard() {
               placeholder="Search by worker name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:border-primary"
             />
           </div>
 
@@ -196,7 +196,7 @@ export default function AdvancesDashboard() {
 
         <div className="overflow-auto flex-1 relative">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+            <thead className="bg-surface border-b border-border sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3">
                   Date
@@ -220,7 +220,7 @@ export default function AdvancesDashboard() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
                     <td colSpan={5} className="px-4 py-4">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse w-full" />
+                      <div className="h-4 bg-border rounded animate-pulse w-full" />
                     </td>
                   </tr>
                 ))
@@ -228,7 +228,7 @@ export default function AdvancesDashboard() {
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center">
-                      <DollarSign className="w-12 h-12 text-gray-300 mb-3" />
+                      <DollarSign className="w-12 h-12 text-text-disabled mb-3" />
                       <p className="text-text-secondary font-medium mb-1">No advances found</p>
                       <p className="text-sm text-text-secondary">
                         Try adjusting your filters or issue a new advance
@@ -240,7 +240,7 @@ export default function AdvancesDashboard() {
                 filteredAdvances.map((adv) => {
                   const locked = !!adv.salaryId;
                   return (
-                    <tr key={adv.id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={adv.id} className="hover:bg-surface/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-text-primary whitespace-nowrap">
                         {formatDate(adv.date)}
                       </td>
@@ -257,7 +257,7 @@ export default function AdvancesDashboard() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-text-secondary">
-                        {adv.reason || <span className="text-gray-400 italic">No reason provided</span>}
+                        {adv.reason || <span className="text-text-disabled italic">No reason provided</span>}
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-warning whitespace-nowrap">
                         {formatCurrency(adv.amount)}
@@ -274,7 +274,7 @@ export default function AdvancesDashboard() {
                             <>
                               <button
                                 onClick={() => handleEdit(adv)}
-                                className="p-2 text-text-secondary hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
                                 title="Edit"
                               >
                                 <Edit2 className="w-4 h-4" />

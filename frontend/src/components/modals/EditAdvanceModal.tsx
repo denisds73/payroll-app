@@ -136,14 +136,14 @@ export default function EditAdvanceModal({
       role="presentation"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl max-w-md w-full transition-all duration-200 ${
+        className={`bg-card rounded-lg shadow-xl max-w-md w-full transition-all duration-200 ${
           isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
               Edit Advance
@@ -195,7 +195,7 @@ export default function EditAdvanceModal({
                 min="1"
                 max={VALIDATION.amount.max}
                 step="1"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+                className="w-full pl-8 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
                 disabled={loading}
               />
             </div>
@@ -212,7 +212,7 @@ export default function EditAdvanceModal({
               placeholder="Add a note about this advance..."
               rows={3}
               maxLength={VALIDATION.textField.maxLength}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary resize-none"
+              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
               disabled={loading}
             />
             {formData.reason.length > 0 && (

@@ -15,7 +15,7 @@ export default function Input({ label, error, ...props }: InputProps) {
       </label>
       <input
         id={id}
-        className="px-3 py-2 transition-all border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+        className="px-3 py-2 transition-all border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
         {...props}
       />
       {error && <span className="text-xs text-error">{error}</span>}

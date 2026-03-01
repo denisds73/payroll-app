@@ -117,7 +117,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
 
   return (
     <div className="rounded-xl bg-card shadow-md w-full">
-      <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-gray-200 rounded-t-xl shadow-sm">
+      <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border rounded-t-xl shadow-sm">
         <div className="flex gap-x-15 font-semibold text-text-primary text-base w-full items-center">
           <div className="w-8 shrink-0" />
           <div className="w-21 shrink-0 ml-4">Date</div>
@@ -128,7 +128,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
         <div className="relative">
           <div className="flex items-center gap-2 ml-6 shrink-0">
             <select
-              className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
+              className="px-3 py-1 rounded-md border border-border bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
               value={month}
               onChange={(e) => onMonthYearChange(Number(e.target.value), year)}
               aria-label="Select month"
@@ -143,7 +143,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
               })}
             </select>
             <select
-              className="px-3 py-1 rounded-md border border-gray-200 bg-background text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
+              className="px-3 py-1 rounded-md border border-border bg-background text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
               value={year}
               onChange={(e) => onMonthYearChange(month, Number(e.target.value))}
               aria-label="Select year"
@@ -160,7 +160,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
             </select>
           </div>
           {isNotCurrentPeriod && (
-            <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-amber-100 border border-amber-400 rounded-md shadow-md text-amber-800 text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
+            <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-warning/10 border border-warning/20 rounded-md shadow-md text-warning text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-3.5 w-3.5"
@@ -191,7 +191,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
           Array.from({ length: 5 }, (_, i) => (
             <div
               key={`loading-skeleton-${i + 1}`}
-              className="animate-pulse h-14 bg-background rounded-lg w-full mb-2"
+              className="animate-pulse h-14 bg-surface rounded-lg w-full mb-2"
             />
           ))
         ) : (

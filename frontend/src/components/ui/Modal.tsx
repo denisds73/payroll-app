@@ -71,12 +71,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
         className={`relative bg-card rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto transform transition-all duration-200 ${animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-bold text-text-primary">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 hover:bg-surface-hover rounded transition-colors"
           >
             <X className="w-5 h-5 text-text-secondary" />
           </button>

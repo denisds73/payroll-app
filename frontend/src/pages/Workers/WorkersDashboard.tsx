@@ -66,8 +66,8 @@ export default function WorkersDashboard() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 overflow-hidden flex flex-col min-h-0 flex-1">
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 shrink-0">
+      <div className="bg-card rounded-lg border border-border overflow-hidden flex flex-col min-h-0 flex-1">
+        <div className="flex items-center justify-between border-b border-border px-4 shrink-0">
           <div className="flex">
             {filterTabs.map((tab) => (
               <button
@@ -85,7 +85,7 @@ export default function WorkersDashboard() {
                   className={`ml-2 px-1.5 py-0.5 rounded text-xs ${
                     activeFilter === tab.id
                       ? 'bg-primary/10 text-primary'
-                      : 'bg-gray-100 text-text-secondary'
+                      : 'bg-surface-hover text-text-secondary'
                   }`}
                 >
                   {tab.count}
@@ -101,7 +101,7 @@ export default function WorkersDashboard() {
               placeholder="Search by name or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary w-64"
+              className="pl-9 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:border-primary w-64"
             />
           </div>
         </div>
@@ -114,18 +114,18 @@ export default function WorkersDashboard() {
 
         <div className="overflow-auto flex-1 relative">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+            <thead className="bg-surface border-b border-border sticky top-0 z-10 shadow-sm">
               <tr>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 bg-gray-50">
+                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 bg-surface">
                   Worker
                 </th>
-                <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-24 bg-gray-50">
+                <th className="text-center text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-24 bg-surface">
                   Status
                 </th>
-                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-32 bg-gray-50">
+                <th className="text-right text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-32 bg-surface">
                   Net Payable
                 </th>
-                <th className="w-10 px-2 py-3 bg-gray-50" />
+                <th className="w-10 px-2 py-3 bg-surface" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -134,21 +134,21 @@ export default function WorkersDashboard() {
                   <tr key={`skeleton-${i}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse" />
+                        <div className="w-9 h-9 rounded-full bg-surface animate-pulse" />
                         <div className="min-w-0 flex-1">
-                          <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mb-1.5" />
-                          <div className="h-3 bg-gray-200 rounded animate-pulse w-24" />
+                          <div className="h-4 bg-surface rounded animate-pulse w-32 mb-1.5" />
+                          <div className="h-3 bg-surface rounded animate-pulse w-24" />
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 w-24">
-                      <div className="h-6 bg-gray-200 rounded-full animate-pulse w-16 mx-auto" />
+                      <div className="h-6 bg-surface rounded-full animate-pulse w-16 mx-auto" />
                     </td>
                     <td className="px-4 py-3 w-28">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-20 ml-auto" />
+                      <div className="h-4 bg-surface rounded animate-pulse w-20 ml-auto" />
                     </td>
                     <td className="px-2 py-3 w-10">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-4 mx-auto" />
+                      <div className="h-4 bg-surface rounded animate-pulse w-4 mx-auto" />
                     </td>
                   </tr>
                 ))
@@ -156,7 +156,7 @@ export default function WorkersDashboard() {
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center">
-                      <Users className="w-12 h-12 text-gray-300 mb-3" />
+                      <Users className="w-12 h-12 text-text-disabled mb-3" />
                       <p className="text-text-secondary font-medium mb-1">
                         {searchQuery ? 'No workers found' : 'No workers yet'}
                       </p>
@@ -182,7 +182,7 @@ export default function WorkersDashboard() {
                   <tr
                     key={worker.id}
                     onClick={() => navigate(`/workers/${worker.id}`)}
-                    className="group hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="group hover:bg-surface cursor-pointer transition-colors"
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 min-w-0">
@@ -202,7 +202,7 @@ export default function WorkersDashboard() {
                                 {worker.phone}
                               </>
                             ) : (
-                              <span className="text-gray-400">No phone</span>
+                              <span className="text-text-disabled">No phone</span>
                             )}
                           </p>
                         </div>
@@ -213,7 +213,7 @@ export default function WorkersDashboard() {
                         className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           worker.isActive
                             ? 'bg-success/10 text-success'
-                            : 'bg-gray-100 text-gray-500'
+                            : 'bg-surface-hover text-text-secondary'
                         }`}
                       >
                         {worker.isActive ? 'Active' : 'Inactive'}
@@ -238,7 +238,7 @@ export default function WorkersDashboard() {
                       </div>
                     </td>
                     <td className="px-2 py-3 w-10">
-                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors mx-auto" />
+                      <ChevronRight className="w-4 h-4 text-text-disabled group-hover:text-text-secondary transition-colors mx-auto" />
                     </td>
                   </tr>
                 ))
@@ -248,7 +248,7 @@ export default function WorkersDashboard() {
         </div>
 
         {!loading && filteredWorkers.length > 0 && (
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-sm text-text-secondary shrink-0">
+          <div className="px-4 py-3 bg-surface border-t border-border text-sm text-text-secondary shrink-0">
             Showing {filteredWorkers.length} of {workers.length} workers
           </div>
         )}

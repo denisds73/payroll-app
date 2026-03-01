@@ -74,8 +74,8 @@ export default function AdvancesIndexPage() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border border-gray-200 overflow-hidden flex flex-col min-h-0 flex-1">
-        <div className="flex items-center justify-end border-b border-gray-200 px-4 py-3 shrink-0">
+      <div className="bg-card rounded-lg border border-border overflow-hidden flex flex-col min-h-0 flex-1">
+        <div className="flex items-center justify-end border-b border-border px-4 py-3 shrink-0">
           <div className="relative w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
@@ -83,7 +83,7 @@ export default function AdvancesIndexPage() {
               placeholder="Search by worker name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:border-primary"
             />
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function AdvancesIndexPage() {
 
         <div className="overflow-auto flex-1 relative">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+            <thead className="bg-surface border-b border-border sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wide px-4 py-3 w-[35%]">
                   Worker
@@ -120,7 +120,7 @@ export default function AdvancesIndexPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
                     <td colSpan={5} className="px-4 py-4">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse w-full" />
+                      <div className="h-4 bg-border rounded animate-pulse w-full" />
                     </td>
                   </tr>
                 ))
@@ -134,7 +134,7 @@ export default function AdvancesIndexPage() {
                 filteredWorkers.map((worker) => (
                   <tr
                     key={worker.workerId}
-                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                    className="hover:bg-surface/50 transition-colors cursor-pointer"
                     onClick={() => handleViewHistory(worker.workerId)}
                   >
                     <td className="px-4 py-3 w-[35%]">
@@ -161,7 +161,7 @@ export default function AdvancesIndexPage() {
                     <td className="px-4 py-3 text-sm text-text-secondary w-[20%] text-center">
                       <div className="truncate mx-auto max-w-full">
                         {worker.lastAdvanceReason || (
-                          <span className="text-gray-400 italic">No reason</span>
+                          <span className="text-text-disabled italic">No reason</span>
                         )}
                       </div>
                     </td>
