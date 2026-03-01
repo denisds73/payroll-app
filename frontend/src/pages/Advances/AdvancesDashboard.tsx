@@ -220,7 +220,7 @@ export default function AdvancesDashboard() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
                     <td colSpan={5} className="px-4 py-4">
-                      <div className="h-4 bg-surface-hover rounded animate-pulse w-full" />
+                      <div className="h-4 bg-border rounded animate-pulse w-full" />
                     </td>
                   </tr>
                 ))
