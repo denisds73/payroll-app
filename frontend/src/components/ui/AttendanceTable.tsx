@@ -150,7 +150,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
             </select>
           </div>
           {isNotCurrentPeriod && (
-            <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-amber-100 border border-amber-400 rounded-md shadow-md text-amber-800 text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
+            <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-warning/10 border border-warning/20 rounded-md shadow-md text-warning text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-3.5 w-3.5"
@@ -181,7 +181,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           Array.from({ length: 5 }, (_, i) => (
             <div
               key={`loading-skeleton-${i + 1}`}
-              className="animate-pulse h-14 bg-background rounded-lg w-full mb-2"
+              className="animate-pulse h-14 bg-surface rounded-lg w-full mb-2"
             />
           ))
         ) : (
