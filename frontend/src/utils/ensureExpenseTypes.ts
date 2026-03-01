@@ -1,6 +1,6 @@
 import { expenseTypesAPI } from '../services/api';
 
-const REQUIRED_TYPES = ['Food', 'Other'];
+const REQUIRED_TYPES = ['Expenses', 'Food', 'Site', 'Other'];
 
 export async function ensureExpenseTypes(): Promise<void> {
   try {

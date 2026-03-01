@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
 
-  const types = ['Food', 'Other'];
+  const types = ['Expenses', 'Food', 'Site', 'Other'];
   const expenseTypes = await Promise.all(
     types.map((name) =>
       prisma.expenseType.upsert({
@@ -15,7 +15,7 @@ async function main() {
     ),
   );
 
-  console.log(`✅ Created ${expenseTypes.length} expense types: Food, Other`);
+  console.log(`✅ Created ${expenseTypes.length} expense types: Expenses, Food, Site, Other`);
 
   // Seed workers
   const workers = [
