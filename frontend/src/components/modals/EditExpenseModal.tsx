@@ -79,7 +79,15 @@ export default function EditExpenseModal({
   const fetchExpenseTypes = async (): Promise<void> => {
     try {
       const response = await expenseTypesAPI.getAll();
-      setExpenseTypes(response.data);
+      const preferredOrder = ['Expenses', 'Food', 'Site', 'Other'];
+      const sortedTypes = response.data.sort((a: ExpenseType, b: ExpenseType) => {
+        const indexA = preferredOrder.indexOf(a.name);
+        const indexB = preferredOrder.indexOf(b.name);
+        const orderA = indexA === -1 ? preferredOrder.length : indexA;
+        const orderB = indexB === -1 ? preferredOrder.length : indexB;
+        return orderA - orderB;
+      });
+      setExpenseTypes(sortedTypes);
     } catch (err) {
       console.error('Failed to fetch expense types:', err);
     }
