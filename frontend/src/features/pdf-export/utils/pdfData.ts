@@ -38,17 +38,28 @@ export async function fetchSalaryReportData(salaryId: number): Promise<SalaryRep
 
     console.log('📅 Fetching records for period:', startDate, 'to', endDate);
 
-    const [attendanceResponse, expensesResponse, advancesResponse] = await Promise.all([
-      attendanceAPI.getByWorkerAndMonth(
-        salary.workerId,
-        new Date(startDate).getMonth() + 1,
-        new Date(startDate).getFullYear(),
-      ),
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    const months: { month: number; year: number }[] = [];
+    
+    let current = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), 1);
+    while (current <= endDateObj) {
+      months.push({
+        month: current.getMonth() + 1,
+        year: current.getFullYear(),
+      });
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    console.log('📅 Fetching records for months:', months);
+
+    const [attendanceResponses, expensesResponse, advancesResponse] = await Promise.all([
+      Promise.all(months.map(m => attendanceAPI.getByWorkerAndMonth(salary.workerId, m.month, m.year))),
       expensesAPI.getByWorker(salary.workerId, { startDate, endDate }),
       advancesAPI.getByWorker(salary.workerId, { startDate, endDate }),
     ]);
 
-    const allAttendanceRecords: AttendanceRecord[] = attendanceResponse.data;
+    const allAttendanceRecords: AttendanceRecord[] = attendanceResponses.flatMap(r => r.data);
     const allExpenseRecords: ExpenseRecord[] = expensesResponse.data;
     const allAdvanceRecords: AdvanceRecord[] = advancesResponse.data;
 
@@ -139,11 +150,12 @@ function filterRecordsByDateRange<T extends { date: string }>(
   startDate: string,
   endDate: string,
 ): T[] {
-  const start = new Date(startDate).setHours(0, 0, 0, 0);
-  const end = new Date(endDate).setHours(23, 59, 59, 999);
+  // Ensure we compare strings in YYYY-MM-DD format
+  const start = startDate.split('T')[0];
+  const end = endDate.split('T')[0];
 
   return records.filter((record) => {
-    const recordDate = new Date(record.date).getTime();
+    const recordDate = record.date.split('T')[0];
     return recordDate >= start && recordDate <= end;
   });
 }

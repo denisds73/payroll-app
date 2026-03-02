@@ -656,7 +656,7 @@ function buildSalaryBreakdown(data: SalaryReportData): any {
     advances.records.forEach((adv) => {
       rows.push([
         {
-          text: `Less: Advance (${formatDate(adv.date)})`,
+          text: 'Less: Advance',
           style: 'tableCell',
           color: '#d63031',
         },
@@ -670,29 +670,26 @@ function buildSalaryBreakdown(data: SalaryReportData): any {
     });
   }
 
-  // Add all expenses by type
-  if (expenses.records.length > 0) {
-    const expenseTypes = Object.entries(expenses.summary.byType);
-    expenseTypes.forEach(([typeName, summary]) => {
-      rows.push([
-        {
-          text: `Less: ${typeName} expenses`,
-          style: 'tableCell',
-          color: '#d63031',
-        },
-        {
-          text: `-${formatCurrency(summary.total)}`,
-          style: 'tableCell',
-          alignment: 'right',
-          color: '#d63031',
-        },
-      ]);
-    });
+  // Add total expenses as a single line
+  if (expenses.summary.total > 0) {
+    rows.push([
+      {
+        text: 'Less: Total expenses',
+        style: 'tableCell',
+        color: '#d63031',
+      },
+      {
+        text: `-${formatCurrency(expenses.summary.total)}`,
+        style: 'tableCell',
+        alignment: 'right',
+        color: '#d63031',
+      },
+    ]);
   }
 
   // Current Cycle Subtotal (Gross - Advances - Expenses)
   const currentCycleTotal =
-    salary.grossPay - salary.totalAdvance - salary.totalExpense;
+    Number(salary.grossPay || 0) - Number(salary.totalAdvance || 0) - Number(salary.totalExpense || 0);
 
   rows.push([
     {
@@ -708,45 +705,26 @@ function buildSalaryBreakdown(data: SalaryReportData): any {
     },
   ]);
 
-  // Previous Cycle Balances
-  if (salary.openingBalance !== 0) {
+  // Robust Math: Calculate anything not in the current cycle as "Previous Balance"
+  const totalUnpaid = Number(salary.unpaidBalance || 0);
+  const finalNetPayable = Number(salary.netPay || 0) + totalUnpaid;
+  const previousBalance = finalNetPayable - currentCycleTotal;
+
+  if (Math.abs(previousBalance) > 0.01) {
     rows.push([
       {
-        text:
-          salary.openingBalance < 0
-            ? 'Less: Previous Debt Carry Forward'
-            : 'Add: Previous Opening Balance Credit',
+        text: previousBalance < 0 ? 'Less: Previous Balance' : 'Add: Previous Balance',
         style: 'tableCell',
-        color: salary.openingBalance < 0 ? '#d63031' : '#00b894',
+        color: previousBalance < 0 ? '#d63031' : '#00b894',
       },
       {
-        text: `${salary.openingBalance < 0 ? '-' : '+'}${formatCurrency(
-          Math.abs(salary.openingBalance),
-        )}`,
+        text: `${previousBalance < 0 ? '-' : '+'}${formatCurrency(Math.abs(previousBalance))}`,
         style: 'tableCell',
         alignment: 'right',
-        color: salary.openingBalance < 0 ? '#d63031' : '#00b894',
+        color: previousBalance < 0 ? '#d63031' : '#00b894',
       },
     ]);
   }
-
-  if (salary.unpaidBalance !== 0) {
-    rows.push([
-      {
-        text: 'Add: Unpaid balance from previous pending salaries',
-        style: 'tableCell',
-        color: '#00b894',
-      },
-      {
-        text: `+${formatCurrency(salary.unpaidBalance)}`,
-        style: 'tableCell',
-        alignment: 'right',
-        color: '#00b894',
-      },
-    ]);
-  }
-
-  const finalNetPayable = salary.netPay + (salary.unpaidBalance || 0);
 
   rows.push(
     [
