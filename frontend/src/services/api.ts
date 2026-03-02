@@ -218,3 +218,18 @@ export const salariesAPI = {
   closeCycle: (workerId: number, data?: { note?: string; signature?: string; closureDate?: string }) =>
     api.post(`/salaries/${workerId}/close-cycle`, data || {}),
 };
+
+export const reportsAPI = {
+  save: (file: Blob, workerName: string, reportType: string, fileName: string) => {
+    const formData = new FormData();
+    formData.append('file', file, `${fileName}.pdf`);
+    formData.append('workerName', workerName);
+    formData.append('reportType', reportType);
+    formData.append('fileName', fileName);
+    return api.post('/reports/save', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    });
+  },
+};
+

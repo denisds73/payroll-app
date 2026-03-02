@@ -26,7 +26,7 @@ export function useClosurePdfGenerator(): UseSalaryPdfGenerator {
         reportData.salary.cycleEnd,
       );
 
-      await generateAndDownloadPdf(docDefinition, fileName);
+      await generateAndDownloadPdf(docDefinition, fileName, reportData.worker.name, 'Closure');
 
       setSuccess(true);
       setIsGenerating(false);
