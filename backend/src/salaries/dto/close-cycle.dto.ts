@@ -8,4 +8,8 @@ export class CloseCycleDto {
   @IsOptional()
   @IsString()
   signature?: string;
+
+  @IsOptional()
+  @IsString()
+  closureDate?: string;
 }

@@ -7,10 +7,12 @@ import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useClosurePdfGenerator } from '../../features/pdf-export/hooks/useClosurePdfGenerator';
 import { salariesAPI } from '../../services/api';
+import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION } from '../../utils/validation';
 import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
+import { DatePicker } from '../ui/DatePicker';
 
 interface CloseCycleModalProps {
   workerId: number;
@@ -42,12 +44,15 @@ export default function CloseCycleModal({
   onClose,
   onSuccess,
 }: CloseCycleModalProps) {
+  const today = getLocalToday();
   const modalTitleId = useId();
   const noteFieldId = useId();
+  const closureDateId = useId();
 
   const { generateAndDownload } = useClosurePdfGenerator();
 
   const [note, setNote] = useState('');
+  const [closureDate, setClosureDate] = useState(today);
   const [cycleData, setCycleData] = useState<CycleData | null>(null);
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
@@ -64,10 +69,10 @@ export default function CloseCycleModal({
     }
   }, [isOpen, workerId]);
 
-  const fetchCycleData = async (): Promise<void> => {
+  const fetchCycleData = async (payDate?: string): Promise<void> => {
     setCalculating(true);
     try {
-      const response = await salariesAPI.calculate(workerId);
+      const response = await salariesAPI.calculate(workerId, payDate);
       setCycleData(response.data);
     } catch (err) {
       const errorMessage =
@@ -78,6 +83,13 @@ export default function CloseCycleModal({
       setCycleData(null);
     } finally {
       setCalculating(false);
+    }
+  };
+
+  const handleClosureDateChange = async (newDate: string): Promise<void> => {
+    setClosureDate(newDate);
+    if (newDate) {
+      await fetchCycleData(newDate);
     }
   };
 
@@ -95,6 +107,7 @@ export default function CloseCycleModal({
       const response = await salariesAPI.closeCycle(workerId, {
         note: note || undefined,
         signature: signatureData,
+        closureDate: closureDate !== today ? closureDate : undefined,
       });
 
       const closureId = response.data.id;
@@ -124,6 +137,7 @@ export default function CloseCycleModal({
       setIsAnimating(false);
       setTimeout(() => {
         setNote('');
+        setClosureDate(today);
         setCycleData(null);
         setSignatureData(undefined);
         onClose();
@@ -161,6 +175,8 @@ export default function CloseCycleModal({
   };
 
   if (!isOpen) return null;
+
+  const isRetroactive = closureDate !== today;
 
   return (
     <div
@@ -200,10 +216,25 @@ export default function CloseCycleModal({
           {calculating ? (
             <div className="py-8 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              <p className="text-sm text-text-secondary mt-3">Loading cycle data...</p>
+              <p className="text-sm text-text-secondary mt-3">
+                {isRetroactive ? 'Recalculating for selected date...' : 'Loading cycle data...'}
+              </p>
             </div>
           ) : cycleData ? (
             <>
+              {/* Retroactive Warning */}
+              {isRetroactive && (
+                <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-warning flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" /> Retroactive Closure
+                  </p>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Balance calculated up to {formatDate(closureDate)}. Transactions after
+                    this date will be included in the next cycle.
+                  </p>
+                </div>
+              )}
+
               {/* Info Banner */}
               <div className="bg-info/10 border border-info/20 p-3 rounded-lg">
                 <p className="text-sm font-medium text-info flex items-center gap-2">
@@ -282,6 +313,34 @@ export default function CloseCycleModal({
                     Worker owes company — balance will carry forward to next cycle
                   </p>
                 )}
+              </div>
+
+              {/* Closure Date */}
+              <div>
+                <label
+                  htmlFor={closureDateId}
+                  className="block text-sm font-medium text-text-primary mb-2"
+                >
+                  Closure Date <span className="text-error">*</span>
+                </label>
+                <DatePicker
+                  id={closureDateId}
+                  value={closureDate}
+                  onChange={(date) => handleClosureDateChange(date || today)}
+                  minDate={
+                    cycleData
+                      ? new Date(cycleData.cycleStart).toISOString().split('T')[0]
+                      : undefined
+                  }
+                  maxDate={today}
+                  disabled={loading || calculating}
+                  placeholder="Select closure date"
+                />
+                <p className="text-xs text-text-secondary mt-1">
+                  {isRetroactive
+                    ? '💡 Balance recalculated for this date'
+                    : 'Select today or any past date'}
+                </p>
               </div>
 
               {/* Note / Reason */}

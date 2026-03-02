@@ -290,8 +290,9 @@ export class SalariesService {
     return result;
   }
 
-  async closeCycle(workerId: number, note?: string, signature?: string) {
-    const breakdown = await this.calculateBreakdown(workerId);
+  async closeCycle(workerId: number, note?: string, signature?: string, closureDate?: string) {
+    const parsedDate = closureDate ? this.dateService.parseDate(closureDate) : undefined;
+    const breakdown = await this.calculateBreakdown(workerId, parsedDate, false);
 
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. Identify all unlinked advances up to this cycle end
@@ -326,7 +327,7 @@ export class SalariesService {
           openingBalance: breakdown.openingBalance || 0,
           paymentProof: note || null,
           signature: signature || null,
-          issuedAt: new Date(),
+          issuedAt: parsedDate || new Date(),
         },
       });
 
