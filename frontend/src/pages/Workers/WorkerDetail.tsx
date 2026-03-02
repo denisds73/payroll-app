@@ -271,7 +271,7 @@ export default function WorkerDetail() {
             </Button>
             {canCloseCycle ? (
               <Button
-                variant="secondary"
+                variant="primary"
                 size="md"
                 className="flex items-center gap-2"
                 onClick={() => setIsCloseCycleModalOpen(true)}
