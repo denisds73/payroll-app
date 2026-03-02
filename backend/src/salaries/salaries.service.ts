@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, SalaryStatus } from '@prisma/client';
+import { Prisma, SalaryStatus, SalaryType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DateService } from '../shared/date.service';
 import { FilterSalariesDto } from './dto/filter-salaries.dto';
@@ -99,6 +99,11 @@ export class SalariesService {
     let unpaidBalance = await this.getUnpaidBalance(workerId);
     let openingBalance = !lastSalary ? (worker.openingBalance ?? 0) : 0;
 
+    // If last salary was a CLOSURE with negative netPay, carry that as opening balance
+    if (lastSalary && lastSalary.type === SalaryType.CLOSURE && lastSalary.netPay < 0) {
+      openingBalance = lastSalary.netPay;
+    }
+
     if (cycleEnd < cycleStart) {
       if (throwOnInvalidDate) {
         throw new BadRequestException(
@@ -177,7 +182,11 @@ export class SalariesService {
     const totalExpense = expenseResult._sum.amount ?? 0;
 
     // Include opening balance only for the first cycle (no salary history)
+    // or if last salary was a CLOSURE with negative netPay (previous cycle balance)
     openingBalance = !lastSalary ? (worker.openingBalance ?? 0) : 0;
+    if (lastSalary && lastSalary.type === SalaryType.CLOSURE && lastSalary.netPay < 0) {
+      openingBalance = lastSalary.netPay;
+    }
 
     const netPay = grossPay - totalAdvance - totalExpense + openingBalance;
 
@@ -275,6 +284,59 @@ export class SalariesService {
       }
 
       return salary;
+    });
+
+    return result;
+  }
+
+  async closeCycle(workerId: number, note?: string, signature?: string) {
+    const breakdown = await this.calculateBreakdown(workerId);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 1. Identify all unlinked advances up to this cycle end
+      const unlinkedAdvances = await tx.advance.findMany({
+        where: {
+          workerId,
+          salaryId: null,
+          date: { lte: this.dateService.endOfDay(breakdown.cycleEnd) },
+        },
+        select: { id: true },
+      });
+      const unlinkedIds = unlinkedAdvances.map((a) => a.id);
+
+      // 2. Create the closure record
+      // netPay is preserved as-is (can be negative)
+      // No auto-advance: the negative balance is carried forward via openingBalance
+      const closure = await tx.salary.create({
+        data: {
+          workerId,
+          type: SalaryType.CLOSURE,
+          cycleStart: breakdown.cycleStart,
+          cycleEnd: breakdown.cycleEnd,
+          basePay: breakdown.basePay,
+          otPay: breakdown.otPay,
+          grossPay: breakdown.grossPay,
+          totalAdvance: breakdown.totalAdvance,
+          totalExpense: breakdown.totalExpense,
+          netPay: breakdown.netPay,
+          totalPaid: 0,
+          status: SalaryStatus.PAID, // No payment needed
+          unpaidBalance: breakdown.unpaidBalance || 0,
+          paymentProof: note || null,
+          signature: signature || null,
+          issuedAt: new Date(),
+        },
+      });
+
+      // 3. Link unlinked advances to this closure
+      if (unlinkedIds.length > 0) {
+        await tx.advance.updateMany({
+          where: { id: { in: unlinkedIds } },
+          data: { salaryId: closure.id },
+        });
+      }
+
+      return closure;
     });
 
     return result;

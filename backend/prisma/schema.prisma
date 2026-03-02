@@ -64,6 +64,7 @@ model WageHistory {
 model Salary {
   id            Int             @id @default(autoincrement())
   workerId      Int
+  type          SalaryType      @default(SALARY)
   cycleStart    DateTime
   cycleEnd      DateTime
   basePay       Float           @default(0)
@@ -156,6 +157,11 @@ enum SalaryStatus {
   PENDING
   PARTIAL
   PAID
+}
+
+enum SalaryType {
+  SALARY
+  CLOSURE
 }
 
 model SystemSetting {

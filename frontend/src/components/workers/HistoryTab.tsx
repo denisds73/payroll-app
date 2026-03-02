@@ -1,10 +1,11 @@
 /** biome-ignore-all lint/complexity/noUselessFragments: <> */
-import { DollarSign, Edit2, Filter, Lock, Receipt, Trash2, TrendingUp, X } from 'lucide-react';
+import { CheckCircle, DollarSign, Edit2, Filter, Lock, Receipt, Trash2, TrendingUp, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { advancesAPI, expensesAPI, salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
+import ClosurePdfExportButton from '../export/ClosurePdfExportButton';
 import SalaryPdfExportButton from '../export/SalaryPdfExportButton';
 import ConfirmModal from '../modals/ConfirmModal';
 import EditAdvanceModal from '../modals/EditAdvanceModal';
@@ -20,7 +21,7 @@ interface HistoryTabProps {
 
 interface HistoryItem {
   id: number;
-  type: 'advance' | 'salary' | 'expense';
+  type: 'advance' | 'salary' | 'expense' | 'closure';
   date: string;
   amount: number;
   description: string;
@@ -42,6 +43,7 @@ interface FilterState {
     advance: boolean;
     salary: boolean;
     expense: boolean;
+    closure: boolean;
   };
   dateFrom: string;
   dateTo: string;
@@ -64,6 +66,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
       advance: true,
       salary: true,
       expense: true,
+      closure: true,
     },
     dateFrom: '',
     dateTo: '',
@@ -141,6 +144,20 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
             netPay: sal.netPay,
             totalPaid: sal.totalPaid,
           });
+        } else if (sal.type === 'CLOSURE') {
+          salaries.push({
+            id: sal.id,
+            type: 'closure' as const,
+            date: sal.issuedAt || sal.cycleEnd,
+            amount: sal.netPay, // netPay is the balance (could be negative)
+            description: sal.paymentProof || `Cycle closed without payment`,
+            cycleInfo: `${formatDate(sal.cycleStart)} - ${formatDate(sal.cycleEnd)}`,
+            issuedAt: sal.issuedAt,
+            createdAt: sal.createdAt,
+            status: sal.status,
+            netPay: sal.netPay,
+            totalPaid: sal.totalPaid,
+          });
         }
       });
 
@@ -197,7 +214,8 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   }, [history, filters]);
 
   const hasActiveFilters = useMemo(() => {
-    const allTypesSelected = filters.types.advance && filters.types.salary && filters.types.expense;
+    const allTypesSelected =
+      filters.types.advance && filters.types.salary && filters.types.expense && filters.types.closure;
     const hasDateFilter = filters.dateFrom || filters.dateTo;
     const hasAmountFilter = filters.amountMin || filters.amountMax;
 
@@ -210,6 +228,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         advance: true,
         salary: true,
         expense: true,
+        closure: true,
       },
       dateFrom: '',
       dateTo: '',
@@ -322,6 +341,8 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         return <TrendingUp className="w-5 h-5 text-success" />;
       case 'expense':
         return <Receipt className="w-5 h-5 text-info" />;
+      case 'closure':
+        return <CheckCircle className="w-5 h-5 text-text-secondary" />;
       default:
         return null;
     }
@@ -335,6 +356,8 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
         return 'border-l-success bg-success/5';
       case 'expense':
         return 'border-l-info bg-info/5';
+      case 'closure':
+        return 'border-l-text-secondary bg-surface';
       default:
         return 'border-l-gray-300';
     }
@@ -374,7 +397,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   };
 
   const isItemLocked = (item: HistoryItem): boolean => {
-    if (item.type === 'salary') return true;
+    if (item.type === 'salary' || item.type === 'closure') return true;
     if (item.type === 'advance') return !!item.salaryId;
     const dateOnly = item.date.split('T')[0];
     return isDateLocked(workerId, dateOnly);
@@ -442,7 +465,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
           </button>
 
           <div className="flex items-center gap-2">
-            {(['salary', 'advance', 'expense'] as const).map((type) => (
+            {(['salary', 'advance', 'expense', 'closure'] as const).map((type) => (
               <button
                 key={type}
                 type="button"
@@ -461,7 +484,9 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                       ? 'bg-warning/10 text-warning border-warning/30 hover:bg-warning/20'
                       : type === 'salary'
                         ? 'bg-success/10 text-success border-success/30 hover:bg-success/20'
-                        : 'bg-info/10 text-info border-info/30 hover:bg-info/20'
+                        : type === 'expense'
+                          ? 'bg-info/10 text-info border-info/30 hover:bg-info/20'
+                          : 'bg-surface hover:bg-surface-hover text-text-secondary border-border'
                     : 'bg-background text-text-disabled border-border opacity-60 hover:opacity-80'
                 }`}
               >
@@ -531,7 +556,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                             </>
                           )}
                           <span className="text-xs text-text-disabled">•</span>
-                          {item.type === 'salary' && item.cycleInfo ? (
+                          {(item.type === 'salary' || item.type === 'closure') && item.cycleInfo ? (
                             <span className="text-xs text-text-secondary">{item.cycleInfo}</span>
                           ) : (
                             <span className="text-xs text-text-secondary">
@@ -540,7 +565,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           )}
                         </div>
 
-                        {item.type === 'salary' && item.issuedAt ? (
+                        {(item.type === 'salary' || item.type === 'closure') && item.issuedAt ? (
                           <div className="space-y-1">
                             <p className="text-xs text-success flex items-center gap-1">
                               <span className="font-medium">Processed on:</span>
@@ -576,7 +601,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                               )}
                           </div>
                         ) : (
-                          item.type !== 'salary' && (
+                          (item.type === 'advance' || item.type === 'expense') && (
                             <p className="text-sm text-text-secondary">{item.description}</p>
                           )
                         )}
@@ -585,18 +610,22 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
 
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p
-                          className={`text-lg font-bold ${
-                            item.type === 'salary' && item.amount >= 0
-                              ? 'text-success'
-                              : item.type === 'advance' || item.type === 'expense'
-                                ? 'text-warning'
-                                : 'text-text-primary'
-                          }`}
-                        >
-                          {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
-                          {formatCurrency(item.amount)}
-                        </p>
+                        {item.type === 'closure' ? (
+                          <p className="text-lg font-bold text-text-secondary">Cycle Closed</p>
+                        ) : (
+                          <p
+                            className={`text-lg font-bold ${
+                              item.type === 'salary' && item.amount >= 0
+                                ? 'text-success'
+                                : item.type === 'advance' || item.type === 'expense'
+                                  ? 'text-warning'
+                                  : 'text-text-primary'
+                            }`}
+                          >
+                            {item.type === 'advance' || item.type === 'expense' ? '-' : ''}
+                            {formatCurrency(item.amount)}
+                          </p>
+                        )}
 
                         {item.type === 'salary' && item.status === 'PARTIAL' && (
                           <span className="text-xs text-warning font-medium">Partial</span>
@@ -606,6 +635,14 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                       {item.type === 'salary' && (
                         <SalaryPdfExportButton
                           salaryId={item.id}
+                          workerName={workerName}
+                          variant="ghost"
+                        />
+                      )}
+
+                      {item.type === 'closure' && (
+                        <ClosurePdfExportButton
+                          closureId={item.id}
                           workerName={workerName}
                           variant="ghost"
                         />
@@ -653,7 +690,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                 </div>
               );
 
-              if (locked && lockReason && item.type !== 'salary') {
+              if (locked && lockReason && item.type !== 'salary' && item.type !== 'closure') {
                 const tooltipContent = (
                   <div>
                     <div className="flex items-center gap-2 text-text-primary font-semibold text-sm mb-1.5">
