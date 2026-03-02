@@ -161,6 +161,29 @@ export const useSignatureCapture = () => {
       0, 0, croppedWidth, croppedHeight
     );
 
+    // Invert signature colors for PDF: light strokes on dark canvas
+    // become dark strokes (#1e293b) on transparent background
+    const croppedImageData = croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight);
+    const croppedPixels = croppedImageData.data;
+    // Dark ink color for the PDF signature
+    const inkR = 0x1e, inkG = 0x29, inkB = 0x3b; // #1e293b (slate-800)
+
+    for (let i = 0; i < croppedPixels.length; i += 4) {
+      const alpha = croppedPixels[i + 3];
+      if (alpha > 5) {
+        // Replace light stroke color with dark ink color
+        croppedPixels[i] = inkR;     // R
+        croppedPixels[i + 1] = inkG; // G
+        croppedPixels[i + 2] = inkB; // B
+        // Keep alpha as-is for smooth edges
+      } else {
+        // Make background fully transparent
+        croppedPixels[i + 3] = 0;
+      }
+    }
+
+    croppedCtx.putImageData(croppedImageData, 0, 0);
+
     return croppedCanvas.toDataURL('image/png');
   }, []);
 

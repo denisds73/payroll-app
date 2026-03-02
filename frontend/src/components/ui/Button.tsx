@@ -34,7 +34,7 @@ export const Button: React.FC<ButtonProps> = ({
     secondary: `bg-secondary text-white hover:bg-secondary-hover focus:ring-secondary`,
     danger: `bg-error text-white hover:bg-error-hover focus:ring-error`,
     dangerLight: `border border-error text-error hover:bg-error/10 focus:ring-error`,
-    outline: `border border-primary text-primary hover:bg-neutral-50 focus:ring-primary`,
+    outline: `border border-primary text-primary hover:bg-primary/10 focus:ring-primary`,
   };
 
   const sizeStyles = {

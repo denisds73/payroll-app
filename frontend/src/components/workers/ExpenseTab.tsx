@@ -5,6 +5,7 @@ import { expensesAPI, expenseTypesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
 import ExpenseTable, { type ExpenseData } from '../ui/ExpenseTable';
+import type { ExpenseRowData } from '../ui/ExpenseRow';
 
 interface ExpenseTabProps {
   workerId: number;
@@ -153,51 +154,57 @@ export default function ExpenseTab({
     }
   };
 
-  const handleSaveExpense = (date: string, data: ExpenseData): void => {
-    const expenseWithMetadata: Expense = {
-      id: data.id || `temp-${Date.now()}`,
-      ...data,
-      workerId,
-      date,
-    };
-    handleSaveExpenseInternal(date, expenseWithMetadata);
-  };
-
-  const handleSaveExpenseInternal = async (date: string, data: Expense) => {
+  /**
+   * Save handler for the new multi-type row format.
+   * For each expense type with a non-zero amount, create or update the expense record.
+   * For expense types with zero amount that previously had a record, delete them.
+   */
+  const handleSaveExpense = async (date: string, data: ExpenseRowData): Promise<void> => {
     try {
-      const isTempId = typeof data.id === 'string' && data.id.startsWith('temp-');
+      const promises: Promise<unknown>[] = [];
 
-      if (data.id && !isTempId) {
-        await expensesAPI.update(data.id as number, {
-          amount: data.amount,
-          typeId: data.typeId,
-          note: data.note,
-        });
+      // Collect the first non-empty note to use across all expenses
+      const note = data.note || '';
 
-        setExpenses((prev) =>
-          prev.map((exp) =>
-            exp.id === data.id
-              ? { ...exp, amount: data.amount, typeId: data.typeId, note: data.note }
-              : exp,
-          ),
-        );
-      } else {
-        const response = await expensesAPI.create({
-          workerId,
-          amount: data.amount,
-          typeId: data.typeId,
-          date,
-          note: data.note,
-        });
+      for (const type of expenseTypes) {
+        const amount = data.amounts[type.id] || 0;
+        const existingId = data.existingIds[type.id];
 
-        setExpenses((prev) => {
-          const filtered = isTempId ? prev.filter((exp) => exp.id !== data.id) : prev;
-          return [...filtered, response.data];
-        });
+        if (amount > 0) {
+          if (existingId && !(typeof existingId === 'string' && String(existingId).startsWith('temp-'))) {
+            // Update existing record
+            promises.push(
+              expensesAPI.update(existingId as number, {
+                amount,
+                typeId: type.id,
+                note,
+              }),
+            );
+          } else {
+            // Create new record
+            promises.push(
+              expensesAPI.create({
+                workerId,
+                amount,
+                typeId: type.id,
+                date,
+                note,
+              }),
+            );
+          }
+        } else if (existingId && !(typeof existingId === 'string' && String(existingId).startsWith('temp-'))) {
+          // Amount is 0 but there was an existing record — delete it
+          promises.push(expensesAPI.delete(existingId as number));
+        }
       }
 
+      await Promise.all(promises);
+
       onExpenseChange();
-      toast.success('Expense saved successfully');
+      toast.success('Expenses saved successfully');
+
+      // Refresh to get updated IDs
+      fetchExpenses();
     } catch (err: unknown) {
       console.error('Save failed:', err);
       const errorMessage =
@@ -213,26 +220,32 @@ export default function ExpenseTab({
         toast.error('Cannot edit - salary has been paid for this period');
         fetchPaidPeriods(workerId, true);
       } else {
-        toast.error(errorMessage || 'Failed to save expense');
+        toast.error(errorMessage || 'Failed to save expenses');
       }
 
       fetchExpenses();
     }
   };
 
-  const handleDeleteExpense = async (expenseId: number | string) => {
+  /**
+   * Delete handler: deletes all existing expense records for this date row.
+   */
+  const handleDeleteExpense = async (date: string, data: ExpenseRowData): Promise<void> => {
     try {
-      if (typeof expenseId === 'string' && expenseId.startsWith('temp-')) {
-        setExpenses((prev) => prev.filter((exp) => exp.id !== expenseId));
-        return;
+      const promises: Promise<unknown>[] = [];
+
+      for (const [, id] of Object.entries(data.existingIds)) {
+        if (id && !(typeof id === 'string' && String(id).startsWith('temp-'))) {
+          promises.push(expensesAPI.delete(id as number));
+        }
       }
 
-      setExpenses((prev) => prev.filter((exp) => exp.id !== expenseId));
-
-      await expensesAPI.delete(expenseId as number);
+      await Promise.all(promises);
 
       onExpenseChange();
-      toast.success('Expense deleted successfully');
+      toast.success('Expenses deleted successfully');
+
+      fetchExpenses();
     } catch (err: unknown) {
       console.error('Delete failed:', err);
       const errorMessage =
@@ -248,24 +261,11 @@ export default function ExpenseTab({
         toast.error('Cannot delete - salary has been paid for this period');
         fetchPaidPeriods(workerId, true);
       } else {
-        toast.error(errorMessage || 'Failed to delete expense');
+        toast.error(errorMessage || 'Failed to delete expenses');
       }
 
       fetchExpenses();
     }
-  };
-
-  const handleAddNewExpense = (date: string) => {
-    const tempExpense: Expense = {
-      id: `temp-${Date.now()}`,
-      workerId,
-      amount: 0,
-      date,
-      note: '',
-      typeId: 0,
-    };
-
-    setExpenses((prev) => [...prev, tempExpense]);
   };
 
   const handleMonthYearChange = (newMonth: number, newYear: number) => {
@@ -389,7 +389,6 @@ export default function ExpenseTab({
       onMonthYearChange={handleMonthYearChange}
       onSaveExpense={handleSaveExpense}
       onDeleteExpense={handleDeleteExpense}
-      onAddNewExpense={handleAddNewExpense}
       lockedDates={lockedDates}
       lockedPeriods={lockedPeriods}
     />

@@ -1,5 +1,5 @@
 import React from 'react';
-import ExpenseRow from './ExpenseRow';
+import ExpenseRow, { type ExpenseRowData } from './ExpenseRow';
 
 export interface ExpenseData {
   id?: number | string;
@@ -18,9 +18,8 @@ interface ExpenseTableProps {
   loading: boolean;
   error?: string;
   onMonthYearChange: (month: number, year: number) => void;
-  onSaveExpense: (date: string, data: ExpenseData) => void;
-  onDeleteExpense: (expenseId: number | string) => void;
-  onAddNewExpense: (date: string) => void;
+  onSaveExpense: (date: string, data: ExpenseRowData) => void;
+  onDeleteExpense: (date: string, data: ExpenseRowData) => void;
   lockedDates: Map<string, string[]>;
   lockedPeriods?: Array<{
     startDate: string;
@@ -97,6 +96,36 @@ function getLockReasons(
   return reasons;
 }
 
+/**
+ * Convert the flat ExpenseData[] per date into the new ExpenseRowData format
+ * by merging all expenses for a date into a single row with amounts per type.
+ */
+function buildRowData(
+  expenses: ExpenseData[],
+  expenseTypes: { id: number; name: string }[],
+): ExpenseRowData {
+  const amounts: Record<number, number> = {};
+  const existingIds: Record<number, number | string> = {};
+  let note = '';
+
+  for (const t of expenseTypes) {
+    amounts[t.id] = 0;
+  }
+
+  for (const exp of expenses) {
+    amounts[exp.typeId] = exp.amount;
+    if (exp.id) {
+      existingIds[exp.typeId] = exp.id;
+    }
+    // Use the last non-empty note
+    if (exp.note) {
+      note = exp.note;
+    }
+  }
+
+  return { amounts, note, existingIds };
+}
+
 const ExpenseTable: React.FC<ExpenseTableProps> = ({
   month,
   year,
@@ -107,7 +136,6 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
   onMonthYearChange,
   onSaveExpense,
   onDeleteExpense,
-  onAddNewExpense,
   lockedDates,
   lockedPeriods = [],
 }) => {
@@ -118,11 +146,13 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
   return (
     <div className="rounded-xl bg-card shadow-md w-full">
       <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border rounded-t-xl shadow-sm">
-        <div className="flex gap-x-15 font-semibold text-text-primary text-base w-full items-center">
-          <div className="w-8 shrink-0" />
-          <div className="w-21 shrink-0 ml-4">Date</div>
-          <div className="w-28 shrink-0">Expense Type</div>
-          <div className="w-22 shrink-0">Amount</div>
+        <div className="flex gap-x-4 font-semibold text-text-primary text-base w-full items-center">
+          <div className="w-36 shrink-0">Date</div>
+          {expenseTypes.map((type) => (
+            <div key={type.id} className="w-24 shrink-0 text-center">
+              {type.name}
+            </div>
+          ))}
           <div className="w-28 shrink-0">Notes</div>
         </div>
         <div className="relative">
@@ -201,41 +231,23 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
               const isLocked = lockedDates.has(date);
               const lockReasons = getLockReasons(date, lockedDates, lockedPeriods);
 
-              if (expensesForDate.length === 0) {
-                return (
-                  <ExpenseRow
-                    key={`${date}-empty`}
-                    date={date}
-                    expenseTypes={expenseTypes}
-                    onSave={(data) => onSaveExpense(date, data)}
-                    showAddButton={false}
-                    canDelete={false}
-                    isNew={false}
-                    isLocked={isLocked}
-                    lockReasons={lockReasons}
-                  />
-                );
-              }
+              const rowData =
+                expensesForDate.length > 0
+                  ? buildRowData(expensesForDate, expenseTypes)
+                  : undefined;
 
-              return expensesForDate.map((expense, index) => {
-                const isTemp = typeof expense.id === 'string' && expense.id.startsWith('temp-');
-                return (
-                  <ExpenseRow
-                    key={expense.id}
-                    date={date}
-                    expenseTypes={expenseTypes}
-                    initialData={expense}
-                    onSave={(data) => onSaveExpense(date, data)}
-                    onDelete={onDeleteExpense}
-                    showAddButton={index === expensesForDate.length - 1}
-                    onAddNew={() => onAddNewExpense(date)}
-                    canDelete={true}
-                    isNew={isTemp}
-                    isLocked={isLocked}
-                    lockReasons={lockReasons}
-                  />
-                );
-              });
+              return (
+                <ExpenseRow
+                  key={date}
+                  date={date}
+                  expenseTypes={expenseTypes}
+                  initialData={rowData}
+                  onSave={(data) => onSaveExpense(date, data)}
+                  onDelete={(data) => onDeleteExpense(date, data)}
+                  isLocked={isLocked}
+                  lockReasons={lockReasons}
+                />
+              );
             })}
             {dates.every((date) => !expenseMap[date] || expenseMap[date].length === 0) && (
               <div className="mt-6 text-text-secondary text-center text-sm">

@@ -428,33 +428,106 @@ function buildExpensesTable(data: SalaryReportData): any {
     ];
   }
 
-  const tableBody = [
-    [
-      { text: 'Date', style: 'tableHeader' },
-      { text: 'Type', style: 'tableHeader' },
-      { text: 'Amount', style: 'tableHeader', alignment: 'right' },
-      { text: 'Note', style: 'tableHeader' },
-    ],
-    ...records.map((record) => [
-      { text: formatDate(record.date), style: 'tableCell' },
-      { text: record.type.name, style: 'tableCell' },
-      {
-        text: formatCurrency(record.amount),
+  // Collect all unique expense type names from the records (preserving order)
+  const typeNamesSet = new Set<string>();
+  for (const record of records) {
+    typeNamesSet.add(record.type.name);
+  }
+  const typeNames = Array.from(typeNamesSet);
+
+  // Group records by date (using date string without time)
+  const dateGroups = new Map<string, typeof records>();
+  for (const record of records) {
+    const dateKey = record.date.split('T')[0];
+    if (!dateGroups.has(dateKey)) {
+      dateGroups.set(dateKey, []);
+    }
+    dateGroups.get(dateKey)!.push(record);
+  }
+
+  // Sort dates chronologically
+  const sortedDates = Array.from(dateGroups.keys()).sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime(),
+  );
+
+  // Build header row: Date | <each type> | Total | Notes
+  const headerRow = [
+    { text: 'Date', style: 'tableHeader' },
+    ...typeNames.map((name) => ({ text: name, style: 'tableHeader', alignment: 'right' as const })),
+    { text: 'Total', style: 'tableHeader', alignment: 'right' as const },
+    { text: 'Notes', style: 'tableHeader' },
+  ];
+
+  // Build data rows - one row per date
+  const dataRows = sortedDates.map((dateKey) => {
+    const dayRecords = dateGroups.get(dateKey)!;
+
+    // Calculate amount per type for this date
+    const amountByType: { [typeName: string]: number } = {};
+    const notesList: string[] = [];
+
+    for (const record of dayRecords) {
+      const typeName = record.type.name;
+      amountByType[typeName] = (amountByType[typeName] || 0) + record.amount;
+      if (record.note) {
+        notesList.push(record.note);
+      }
+    }
+
+    const dayTotal = dayRecords.reduce((sum, r) => sum + r.amount, 0);
+
+    return [
+      { text: formatDate(dateKey), style: 'tableCell' },
+      ...typeNames.map((name) => ({
+        text: amountByType[name] ? formatCurrency(amountByType[name]) : '-',
         style: 'tableCell',
-        alignment: 'right',
-      },
-      { text: record.note || '-', style: 'tableCell' },
-    ]),
-    [
-      { text: 'TOTAL EXPENSES', style: 'totalRow', colSpan: 2 },
-      {},
+        alignment: 'right' as const,
+        color: amountByType[name] ? '#18181b' : '#a1a1aa',
+      })),
       {
-        text: formatCurrency(summary.total),
-        style: 'totalRow',
-        alignment: 'right',
+        text: formatCurrency(dayTotal),
+        style: 'tableCell',
+        alignment: 'right' as const,
+        bold: true,
       },
-      {},
-    ],
+      { text: notesList.length > 0 ? notesList.join(', ') : '-', style: 'tableCell' },
+    ];
+  });
+
+  // Build totals row per type
+  const typeTotals = typeNames.map((name) => {
+    const typeTotal = summary.byType[name]?.total ?? 0;
+    return {
+      text: typeTotal > 0 ? formatCurrency(typeTotal) : '-',
+      style: 'totalRow',
+      alignment: 'right' as const,
+    };
+  });
+
+  const totalRow = [
+    { text: 'TOTAL', style: 'totalRow' },
+    ...typeTotals,
+    {
+      text: formatCurrency(summary.total),
+      style: 'totalRow',
+      alignment: 'right' as const,
+    },
+    { text: '', style: 'totalRow' },
+  ];
+
+  const tableBody = [headerRow, ...dataRows, totalRow];
+
+  // Calculate column widths dynamically
+  const numTypeCols = typeNames.length;
+  const dateWidth = 55;
+  const totalWidth = 50;
+  const notesWidth = '*';
+  const typeColWidth = Math.max(40, Math.floor((515 - dateWidth - totalWidth - 80) / numTypeCols));
+  const widths: any[] = [
+    dateWidth,
+    ...typeNames.map(() => typeColWidth),
+    totalWidth,
+    notesWidth,
   ];
 
   return [
@@ -465,7 +538,7 @@ function buildExpensesTable(data: SalaryReportData): any {
     {
       table: {
         headerRows: 1,
-        widths: ['20%', '25%', '20%', '35%'],
+        widths,
         body: tableBody,
       },
       layout: {
