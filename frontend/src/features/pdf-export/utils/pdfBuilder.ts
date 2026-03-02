@@ -414,12 +414,13 @@ function buildExpensesTable(data: SalaryReportData): any {
     ];
   }
 
-  // Collect all unique expense type names from the records (preserving order)
-  const typeNamesSet = new Set<string>();
-  for (const record of records) {
-    typeNamesSet.add(record.type.name);
-  }
-  const typeNames = Array.from(typeNamesSet);
+  // Fixed order for preferred types
+  const preferredOrder = ['Expenses', 'Food', 'Site', 'Other'];
+  const presentTypes = new Set(records.map((r) => r.type.name));
+  const typeNames = [
+    ...preferredOrder.filter((name) => presentTypes.has(name)),
+    ...Array.from(presentTypes).filter((name) => !preferredOrder.includes(name)),
+  ];
 
   // Group records by date (using date string without time)
   const dateGroups = new Map<string, typeof records>();
@@ -503,12 +504,11 @@ function buildExpensesTable(data: SalaryReportData): any {
 
   const tableBody = [headerRow, ...dataRows, totalRow];
 
-  // Calculate column widths dynamically
-  const numTypeCols = typeNames.length;
+  // Calculate column widths: fixed narrow widths for amounts, flexible for notes
   const dateWidth = 55;
   const totalWidth = 50;
   const notesWidth = '*';
-  const typeColWidth = Math.max(40, Math.floor((515 - dateWidth - totalWidth - 80) / numTypeCols));
+  const typeColWidth = 45; // Fixed narrow width for amounts
   const widths: any[] = [
     dateWidth,
     ...typeNames.map(() => typeColWidth),
