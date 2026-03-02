@@ -128,7 +128,7 @@ export default function WorkersDashboard() {
                 <th className="w-10 px-2 py-3 bg-surface" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
