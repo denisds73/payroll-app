@@ -1,32 +1,28 @@
-import { Lock, Plus } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { VALIDATION } from '../../utils/validation';
 import ConfirmModal from '../modals/ConfirmModal';
 import Button from './Button';
-import ExpenseTypeGroup from './ExpenseTypeGroup';
 import Input from './Input';
 import Textarea from './Textarea';
 import Tooltip from './Tooltip';
 
-interface ExpenseData {
-  id?: number | string;
-  typeId: number;
-  amount: number;
+export interface ExpenseRowData {
+  /** Map of typeId -> amount for each expense type */
+  amounts: Record<number, number>;
   note: string;
+  /** Map of typeId -> existing expense record ID (for updates/deletes) */
+  existingIds: Record<number, number | string>;
 }
 
 interface ExpenseRowProps {
   date: string;
   expenseTypes: { id: number; name: string }[];
-  initialData?: ExpenseData;
-  onSave?: (data: ExpenseData) => void;
-  onDelete?: (expenseId: number | string) => void;
-  showAddButton?: boolean;
-  onAddNew?: () => void;
-  canDelete?: boolean;
-  isNew?: boolean;
+  initialData?: ExpenseRowData;
+  onSave?: (data: ExpenseRowData) => void;
+  onDelete?: (data: ExpenseRowData) => void;
   isLocked?: boolean;
   lockReasons?: string[];
 }
@@ -46,39 +42,45 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   initialData,
   onSave,
   onDelete,
-  showAddButton = false,
-  onAddNew,
-  canDelete = true,
-  isNew = false,
   isLocked = false,
   lockReasons = [],
 }) => {
-  const [isHovered, setIsHovered] = useState<boolean>(false);
-  const [isEditing, setIsEditing] = useState<boolean>(isNew || !initialData);
+  const hasExistingData = initialData ? Object.keys(initialData.existingIds).length > 0 : false;
+  const [isEditing, setIsEditing] = useState<boolean>(!hasExistingData);
   const [isDirty, setIsDirty] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
 
-  const [formData, setFormData] = useState<ExpenseData>({
-    typeId: 0,
-    amount: 0,
-    note: '',
-  });
-
-  const [savedData, setSavedData] = useState<ExpenseData>({
-    typeId: 0,
-    amount: 0,
-    note: '',
-  });
-
-  const handleTypeChange = (value: number) => {
-    setFormData((prev) => ({ ...prev, typeId: value }));
+  const buildEmptyAmounts = (): Record<number, number> => {
+    const amounts: Record<number, number> = {};
+    for (const t of expenseTypes) {
+      amounts[t.id] = 0;
+    }
+    return amounts;
   };
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [formData, setFormData] = useState<ExpenseRowData>({
+    amounts: buildEmptyAmounts(),
+    note: '',
+    existingIds: {},
+  });
+
+  const [savedData, setSavedData] = useState<ExpenseRowData>({
+    amounts: buildEmptyAmounts(),
+    note: '',
+    existingIds: {},
+  });
+
+  const handleAmountChange = (typeId: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '' || !Number.isNaN(Number(value))) {
-      setFormData((prev) => ({ ...prev, amount: value === '' ? 0 : Number(value) }));
+      setFormData((prev) => ({
+        ...prev,
+        amounts: {
+          ...prev.amounts,
+          [typeId]: value === '' ? 0 : Number(value),
+        },
+      }));
     }
   };
 
@@ -87,17 +89,25 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   };
 
   const handleSave = () => {
-    if (formData.typeId === 0) {
-      toast.error('Please select an expense type');
+    // Check if at least one amount is filled
+    const hasAnyAmount = Object.values(formData.amounts).some((a) => a > 0);
+    if (!hasAnyAmount) {
+      toast.error('Please enter at least one expense amount');
       return;
     }
-    if (formData.amount <= 0) {
-      toast.error(VALIDATION.amount.messageMin);
-      return;
-    }
-    if (formData.amount > VALIDATION.amount.max) {
-      toast.error(VALIDATION.amount.messageMax);
-      return;
+
+    // Validate individual amounts
+    for (const [typeId, amount] of Object.entries(formData.amounts)) {
+      if (amount < 0) {
+        const type = expenseTypes.find((t) => t.id === Number(typeId));
+        toast.error(`${type?.name || 'Expense'} amount cannot be negative`);
+        return;
+      }
+      if (amount > VALIDATION.amount.max) {
+        const type = expenseTypes.find((t) => t.id === Number(typeId));
+        toast.error(`${type?.name || 'Expense'}: ${VALIDATION.amount.messageMax}`);
+        return;
+      }
     }
 
     setSavedData(formData);
@@ -110,18 +120,9 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   };
 
   const handleCancel = () => {
-    const isEmptyNew = isNew && savedData.typeId === 0 && savedData.amount === 0;
-    if (isEmptyNew && onDelete && initialData?.id) {
-      onDelete(initialData.id);
-      return;
-    }
-
     setFormData(savedData);
     setIsDirty(false);
-    const hasSavedData = savedData.typeId !== 0 || savedData.amount !== 0 || savedData.note !== '';
-    if (hasSavedData) {
-      setIsEditing(false);
-    }
+    setIsEditing(false);
   };
 
   const handleEdit = () => {
@@ -129,93 +130,67 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   };
 
   const handleDeleteClick = () => {
-    if (!canDelete) return;
     setShowDeleteModal(true);
   };
 
   const handleDelete = async () => {
-    if (!initialData?.id) return;
-
     setIsDeleting(true);
     try {
       if (onDelete) {
-        await onDelete(initialData.id);
+        await onDelete(formData);
       }
       setShowDeleteModal(false);
+
+      // Reset back to empty
+      const emptyData: ExpenseRowData = {
+        amounts: buildEmptyAmounts(),
+        note: '',
+        existingIds: {},
+      };
+      setFormData(emptyData);
+      setSavedData(emptyData);
     } catch (error) {
       console.error('Delete failed:', error);
-      toast.error('Failed to delete expense');
+      toast.error('Failed to delete expenses');
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
 
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-  };
-
+  // Sync initialData
   useEffect(() => {
     if (initialData) {
-      console.log(`📋 ExpenseRow ${date} received initialData:`, initialData);
-      setFormData(initialData);
-      setSavedData(initialData);
-
-      if (!isNew) {
-        setIsEditing(false);
-      }
+      const mergedAmounts = { ...buildEmptyAmounts(), ...initialData.amounts };
+      const merged = { ...initialData, amounts: mergedAmounts };
+      setFormData(merged);
+      setSavedData(merged);
+      const hasSaved = Object.keys(initialData.existingIds).length > 0;
+      setIsEditing(!hasSaved);
     }
-  }, [initialData, date, isNew]);
+  }, [initialData]);
 
+  // Track dirty state
   useEffect(() => {
     if (!isEditing) return;
 
-    const hasChanges =
-      formData.typeId !== savedData.typeId ||
-      formData.amount !== savedData.amount ||
-      formData.note !== savedData.note;
+    const amountsChanged = expenseTypes.some(
+      (t) => (formData.amounts[t.id] || 0) !== (savedData.amounts[t.id] || 0),
+    );
+    const noteChanged = formData.note !== savedData.note;
 
-    setIsDirty(hasChanges);
-  }, [formData, savedData, isEditing]);
+    setIsDirty(amountsChanged || noteChanged);
+  }, [formData, savedData, isEditing, expenseTypes]);
+
+  const hasAnyExistingIds = Object.keys(savedData.existingIds).length > 0;
 
   const renderActionButtons = () => {
-    const hasSavedData = savedData.typeId !== 0 || savedData.amount !== 0 || savedData.note !== '';
-
     if (isLocked) {
       return (
         <div className="flex items-center gap-2 text-text-secondary">
           <Lock className="w-4 h-4" />
           <span className="text-sm font-medium">Locked</span>
-        </div>
-      );
-    }
-
-    if (!isEditing) {
-      return (
-        <div className="flex gap-2">
-          <Button
-            className="border-2 font-semibold"
-            variant="outline"
-            size="md"
-            onClick={handleEdit}
-          >
-            Edit
-          </Button>
-          {initialData?.id && canDelete && (
-            <Button
-              variant="dangerLight"
-              size="md"
-              onClick={handleDeleteClick}
-              disabled={isDeleting}
-              className="border-2 font-semibold"
-            >
-              Delete
-            </Button>
-          )}
         </div>
       );
     }
@@ -233,7 +208,31 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       );
     }
 
-    if (isEditing && hasSavedData) {
+    if (!isEditing && hasAnyExistingIds) {
+      return (
+        <div className="flex gap-2">
+          <Button
+            className="border-2 font-semibold"
+            variant="outline"
+            size="md"
+            onClick={handleEdit}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="dangerLight"
+            size="md"
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
+            className="border-2 font-semibold"
+          >
+            Delete
+          </Button>
+        </div>
+      );
+    }
+
+    if (isEditing && hasAnyExistingIds) {
       return (
         <Button variant="secondary" size="md" onClick={handleCancel}>
           Cancel
@@ -258,54 +257,38 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
     </div>
   );
 
+  const totalAmount = Object.values(formData.amounts).reduce((sum, a) => sum + (a || 0), 0);
+
   const rowContent = (
     <div
-      className={`flex flex-nowrap items-center gap-x-6 px-3 py-1 bg-card transition-all duration-200 rounded-lg ${
-        isNew ? 'animate-fadeIn' : ''
-      } ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      className={`flex flex-nowrap items-center gap-x-4 px-3 py-1 bg-card transition-all duration-200 rounded-lg ${
+        isLocked ? 'opacity-60 cursor-not-allowed' : ''
+      }`}
       role="row"
     >
-      <div className="w-8 shrink-0 flex items-center justify-center">
-        {showAddButton && isHovered && !isEditing && !isLocked && (
-          <button
-            type="button"
-            onClick={onAddNew}
-            className="w-8 h-8 rounded-md bg-success/10 text-success hover:bg-success/20 border border-success/20 flex items-center justify-center transition-opacity duration-200"
-            style={{ opacity: isHovered ? 1 : 0 }}
-            title="Add another expense for this date"
-            aria-label="Add expense"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        )}
+      {/* Date */}
+      <div className="w-36 shrink-0 text-md font-medium text-text-primary">
+        {formatDate(date)}
       </div>
 
-      <div className="w-36 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
+      {/* Expense type input fields */}
+      {expenseTypes.map((type) => (
+        <div key={type.id} className="shrink-0 w-24">
+          <Input
+            type="number"
+            value={formData.amounts[type.id] || ''}
+            onChange={(e) => handleAmountChange(type.id, e)}
+            disabled={!isEditing || isLocked}
+            placeholder={type.name}
+            min="0"
+            max={VALIDATION.amount.max}
+            step="0.01"
+            onWheel={(e) => e.currentTarget.blur()}
+          />
+        </div>
+      ))}
 
-      <ExpenseTypeGroup
-        className="shrink-0"
-        expenseTypes={expenseTypes}
-        value={formData.typeId}
-        onChange={handleTypeChange}
-        disabled={!isEditing || isLocked}
-      />
-
-      <div className="shrink-0 w-32">
-        <Input
-          type="number"
-          value={formData.amount || ''}
-          onChange={handleAmountChange}
-          disabled={!isEditing || isLocked}
-          placeholder="₹ Amount"
-          min="0"
-          max={VALIDATION.amount.max}
-          step="0.01"
-          onWheel={(e) => e.currentTarget.blur()}
-        />
-      </div>
-
+      {/* Notes */}
       <div className="max-w-xs flex-1 min-w-0 relative">
         <Textarea
           value={formData.note}
@@ -316,13 +299,14 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
         />
       </div>
 
+      {/* Actions */}
       <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
 
       {showDeleteModal && (
         <ConfirmModal
           isOpen={showDeleteModal}
-          title="Delete Expense"
-          message={`Are you sure you want to delete this expense of ₹${formData.amount || savedData.amount} for ${formatDate(date)}? This action cannot be undone.`}
+          title="Delete Expenses"
+          message={`Are you sure you want to delete all expenses (₹${totalAmount}) for ${formatDate(date)}? This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
           variant="danger"
