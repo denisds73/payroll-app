@@ -7,6 +7,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { BackupModule } from './backup/backup.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ReportsModule } from './reports/reports.module';
 import { SalariesModule } from './salaries/salaries.module';
 import { SettingsModule } from './settings/settings.module';
 import { WorkersModule } from './workers/workers.module';
@@ -22,8 +23,10 @@ import { WorkersModule } from './workers/workers.module';
     SalariesModule,
     SettingsModule,
     BackupModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

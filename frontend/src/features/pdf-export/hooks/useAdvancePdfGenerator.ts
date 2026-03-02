@@ -20,7 +20,7 @@ export function useAdvancePdfGenerator(): UseAdvancePdfGenerator {
       const docDefinition = buildAdvanceReceiptPdf(reportData, finalSignature);
       const fileName = generateFileName(reportData.worker.name, reportData.advance.date, reportData.advance.id);
 
-      await generateAndDownloadPdf(docDefinition, fileName);
+      await generateAndDownloadPdf(docDefinition, fileName, reportData.worker.name, 'Advance');
 
       setSuccess(true);
       setIsGenerating(false);

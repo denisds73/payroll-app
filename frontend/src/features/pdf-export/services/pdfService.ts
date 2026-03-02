@@ -1,9 +1,15 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
+import { reportsAPI } from '../../../services/api';
 
 pdfMake.vfs = pdfFonts.vfs;
 
-export async function generateAndDownloadPdf(docDefinition: any, fileName: string): Promise<void> {
+export async function generateAndDownloadPdf(
+  docDefinition: any,
+  fileName: string,
+  workerName?: string,
+  reportType?: 'Advance' | 'Salary' | 'Closure',
+): Promise<void> {
   try {
     if (!docDefinition) {
       throw new Error('Document definition is required');
@@ -15,6 +21,14 @@ export async function generateAndDownloadPdf(docDefinition: any, fileName: strin
     const pdf = pdfMake.createPdf(docDefinition);
 
     pdf.download(`${fileName}.pdf`);
+
+    // Fire-and-forget: also save to the structured folder hierarchy
+    if (workerName && reportType) {
+      getPdfBlob(docDefinition)
+        .then((blob) => reportsAPI.save(blob, workerName, reportType, fileName))
+        .then(() => console.log(`📁 Report archived: ${reportType}/${fileName}`))
+        .catch((err) => console.warn('⚠️ Failed to archive report (non-blocking):', err));
+    }
 
     return Promise.resolve();
   } catch (error) {
