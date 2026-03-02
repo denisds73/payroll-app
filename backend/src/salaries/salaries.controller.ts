@@ -66,7 +66,7 @@ export class SalariesController {
     @Param('workerId', ParseIntPipe) workerId: number,
     @Body() data: CloseCycleDto,
   ) {
-    return this.salariesService.closeCycle(workerId, data.note, data.signature);
+    return this.salariesService.closeCycle(workerId, data.note, data.signature, data.closureDate);
   }
 
   @Post(':workerId')

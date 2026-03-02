@@ -215,6 +215,6 @@ export const salariesAPI = {
     return api.get(`/salaries/worker/${workerId}/partial`);
   },
 
-  closeCycle: (workerId: number, data?: { note?: string; signature?: string }) =>
+  closeCycle: (workerId: number, data?: { note?: string; signature?: string; closureDate?: string }) =>
     api.post(`/salaries/${workerId}/close-cycle`, data || {}),
 };

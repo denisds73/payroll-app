@@ -203,8 +203,11 @@ export default function WorkerDetail() {
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
   ];
 
-  const canPaySalary = cycleStats && cycleStats.totalNetPayable > 0;
-  const canCloseCycle = cycleStats && cycleStats.totalNetPayable <= 0;
+  const alreadyProcessedToday =
+    cycleStats && new Date(cycleStats.cycleStart) > new Date(cycleStats.cycleEnd);
+  const showCloseCycle = cycleStats && cycleStats.totalNetPayable <= 0;
+  const canPaySalary = cycleStats && cycleStats.totalNetPayable > 0 && !alreadyProcessedToday;
+  const canCloseCycle = cycleStats && cycleStats.totalNetPayable <= 0 && !alreadyProcessedToday;
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6 animate-fadeIn">
@@ -269,13 +272,13 @@ export default function WorkerDetail() {
               <DollarSign className="w-4 h-4" />
               Issue Advance
             </Button>
-            {canCloseCycle ? (
+            {showCloseCycle ? (
               <Button
                 variant="primary"
                 size="md"
                 className="flex items-center gap-2"
                 onClick={() => setIsCloseCycleModalOpen(true)}
-                disabled={!worker.isActive}
+                disabled={!canCloseCycle || !worker.isActive}
               >
                 <CheckCircle className="w-4 h-4" />
                 Close Balance
