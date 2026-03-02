@@ -97,6 +97,8 @@ export interface SalaryRecord {
   grossPay: number;
   totalAdvance: number;
   totalExpense: number;
+  unpaidBalance: number;
+  openingBalance: number;
   netPay: number;
   totalPaid: number;
   status: 'PENDING' | 'PARTIAL' | 'PAID';

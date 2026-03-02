@@ -268,6 +268,7 @@ export class SalariesService {
           totalPaid: 0,
           status: SalaryStatus.PENDING,
           unpaidBalance: breakdown.unpaidBalance || 0,
+          openingBalance: breakdown.openingBalance || 0,
         },
       });
 
@@ -322,6 +323,7 @@ export class SalariesService {
           totalPaid: 0,
           status: SalaryStatus.PAID, // No payment needed
           unpaidBalance: breakdown.unpaidBalance || 0,
+          openingBalance: breakdown.openingBalance || 0,
           paymentProof: note || null,
           signature: signature || null,
           issuedAt: new Date(),

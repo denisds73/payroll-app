@@ -28,37 +28,38 @@ export function buildAdvanceReceiptPdf(
 
     styles: {
       documentTitle: {
-        fontSize: 22,
+        fontSize: 24,
         bold: true,
-        alignment: 'center',
-        color: '#18181b',
-        margin: [0, 0, 0, 5],
+        alignment: 'left',
+        color: '#1a1a2e',
+        margin: [0, 0, 0, 2],
       },
       sectionHeader: {
-        fontSize: 14,
+        fontSize: 12,
         bold: true,
-        color: '#18181b',
-        margin: [0, 20, 0, 10],
+        color: '#ffffff',
+        fillColor: '#1a1a2e',
+        margin: [0, 15, 0, 0],
       },
       infoLabel: {
-        fontSize: 10,
-        color: '#52525b',
-        bold: true,
+        fontSize: 9,
+        color: '#666666',
+        bold: false,
       },
       infoValue: {
         fontSize: 10,
-        color: '#18181b',
+        color: '#1a1a2e',
+        bold: true,
       },
       amountBox: {
-        fontSize: 16,
+        fontSize: 24,
         bold: true,
-        color: '#18181b',
+        color: '#e17055',
         alignment: 'center',
       },
       footer: {
         fontSize: 8,
-        color: '#a1a1aa',
-        italics: true,
+        color: '#999999',
         alignment: 'center',
       },
       signatureLine: {
@@ -85,32 +86,50 @@ export function buildAdvanceReceiptPdf(
 function buildHeader(data: AdvanceReportData): Content {
   return [
     {
-      text: 'ADVANCE RECEIPT',
-      style: 'documentTitle',
+      columns: [
+        {
+          text: 'ADVANCE RECEIPT',
+          style: 'documentTitle',
+          width: '*',
+        },
+        {
+          text: `#AR-${data.advance.id}`,
+          fontSize: 14,
+          bold: true,
+          color: '#999999',
+          alignment: 'right',
+          width: 'auto',
+        },
+      ],
     },
     {
-      text: `Generated: ${data.generatedAtFormatted}`,
-      style: 'footer',
-      margin: [0, 0, 0, 30],
+      canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#e0e0e0' }],
+      margin: [0, 5, 0, 15],
     },
   ];
 }
 
 function buildWorkerInfo(data: AdvanceReportData): Content {
-  return [
-    {
-      text: 'WORKER INFORMATION',
-      style: 'sectionHeader',
-    },
-    {
-      columns: [
-        { text: 'Name:', style: 'infoLabel', width: 100 },
-        { text: data.worker.name, style: 'infoValue' },
-      ],
-      margin: [0, 0, 0, 8],
-    },
-
-  ];
+  return {
+    columns: [
+      {
+        width: '*',
+        stack: [
+          { text: 'Worker Name', style: 'infoLabel' },
+          { text: data.worker.name, style: 'infoValue', fontSize: 13 },
+        ],
+      },
+      {
+        width: 'auto',
+        stack: [
+          { text: 'Phone Number', style: 'infoLabel' },
+          { text: data.worker.phone || 'N/A', style: 'infoValue' },
+        ],
+        margin: [40, 0, 0, 0],
+      },
+    ],
+    margin: [0, 0, 0, 20],
+  };
 }
 
 function buildAdvanceDetails(data: AdvanceReportData): any {
@@ -122,19 +141,19 @@ function buildAdvanceDetails(data: AdvanceReportData): any {
 
     {
       columns: [
-        { text: 'Date Issued:', style: 'infoLabel', width: 100 },
+        { text: 'Date Issued:', style: 'infoLabel', width: 80 },
         { text: formatDate(data.advance.date), style: 'infoValue' },
       ],
-      margin: [0, 0, 0, 8],
+      margin: [0, 0, 0, 6],
     },
     ...(data.advance.reason
       ? [
           {
             columns: [
-              { text: 'Reason:', style: 'infoLabel', width: 100 },
+              { text: 'Reason:', style: 'infoLabel', width: 80 },
               { text: data.advance.reason, style: 'infoValue' },
             ],
-            margin: [0, 0, 0, 8],
+            margin: [0, 0, 0, 6],
           },
         ]
       : []),
@@ -146,27 +165,29 @@ function buildAdvanceDetails(data: AdvanceReportData): any {
           [
             {
               text: 'AMOUNT ISSUED',
-              style: 'infoLabel',
+              bold: true,
+              fontSize: 11,
+              color: '#ffffff',
+              fillColor: '#e17055',
+              margin: [0, 5, 0, 5],
               alignment: 'center',
-              margin: [0, 10, 0, 5],
             },
           ],
           [
             {
               text: formatCurrency(data.advance.amount),
               style: 'amountBox',
-              margin: [0, 5, 0, 10],
-              color: '#10B981',
+              margin: [0, 15, 0, 15],
+              fillColor: '#f8f9fa',
             },
           ],
         ],
       },
       layout: {
-        fillColor: '#F5F5F7',
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => '#e5e7eb',
-        vLineColor: () => '#e5e7eb',
+        hLineWidth: () => 0.5,
+        vLineWidth: () => 0.5,
+        hLineColor: () => '#e0e0e0',
+        vLineColor: () => '#e0e0e0',
       },
       margin: [0, 15, 0, 0],
     },
@@ -242,22 +263,19 @@ function buildSignatureSection(data: AdvanceReportData, signatureDataUrl?: strin
 function buildFooter(data: AdvanceReportData): Content {
   return [
     {
-      text: '\n\n',
+      text: '\n\n─────────────────────────────────────────────────',
+      alignment: 'center',
+      color: '#e5e7eb',
     },
     {
       text: 'This advance amount will be deducted from your next salary payment.',
-      style: 'disclaimer',
-      margin: [0, 20, 0, 10],
-    },
-    {
-      text: '─────────────────────────────────────────────────',
-      alignment: 'center',
-      color: '#e5e7eb',
-      margin: [0, 10, 0, 10],
+      style: 'footer',
+      margin: [0, 10, 0, 5],
     },
     {
       text: `This is a computer-generated document. Generated on ${data.generatedAtFormatted}`,
       style: 'footer',
+      alignment: 'center',
     },
   ];
 }

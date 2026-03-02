@@ -36,7 +36,7 @@ export function buildClosureReportPdf(
 
   return {
     pageSize: 'A4',
-    pageMargins: [40, 40, 40, 40],
+    pageMargins: [40, 60, 40, 60],
     content,
     defaultStyle: {
       font: 'Roboto',
@@ -44,34 +44,39 @@ export function buildClosureReportPdf(
       color: '#333333',
     },
     styles: {
-      header: { fontSize: 18, bold: true, color: '#1a1a2e', margin: [0, 0, 0, 5] },
+      header: { fontSize: 24, bold: true, color: '#1a1a2e', margin: [0, 0, 0, 2] },
       subheader: { fontSize: 12, color: '#666666', margin: [0, 0, 0, 15] },
       sectionTitle: { fontSize: 12, bold: true, color: '#1a1a2e', margin: [0, 15, 0, 8] },
-      label: { fontSize: 10, color: '#666666' },
-      value: { fontSize: 10, bold: true, color: '#333333' },
+      label: { fontSize: 9, color: '#666666', bold: false },
+      value: { fontSize: 10, bold: true, color: '#1a1a2e' },
     },
   };
 }
 
 function buildHeader(data: SalaryReportData): Content {
-  return {
-    columns: [
-      {
-        text: 'CYCLE CLOSURE REPORT',
-        style: 'header',
-        width: '*',
-      },
-      {
-        text: `#${data.salary.id}`,
-        fontSize: 14,
-        bold: true,
-        color: '#999999',
-        alignment: 'right' as const,
-        width: 'auto',
-      },
-    ],
-    margin: [0, 0, 0, 3] as [number, number, number, number],
-  };
+  return [
+    {
+      columns: [
+        {
+          text: 'CYCLE CLOSURE REPORT',
+          style: 'header',
+          width: '*',
+        },
+        {
+          text: `#CR-${data.salary.id}`,
+          fontSize: 14,
+          bold: true,
+          color: '#999999',
+          alignment: 'right',
+          width: 'auto',
+        },
+      ],
+    },
+    {
+      canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#e0e0e0' }],
+      margin: [0, 5, 0, 15],
+    },
+  ];
 }
 
 function buildWorkerInfo(data: SalaryReportData): Content {
@@ -80,34 +85,20 @@ function buildWorkerInfo(data: SalaryReportData): Content {
       {
         width: '*',
         stack: [
-          { text: 'Worker', style: 'label' },
+          { text: 'Worker Name', style: 'label' },
           { text: data.worker.name, style: 'value', fontSize: 13 },
         ],
       },
       {
-        width: '*',
+        width: 'auto',
         stack: [
-          { text: 'Phone', style: 'label' },
+          { text: 'Phone Number', style: 'label' },
           { text: data.worker.phone || 'N/A', style: 'value' },
         ],
-      },
-      {
-        width: '*',
-        stack: [
-          { text: 'Daily Wage', style: 'label' },
-          { text: formatCurrency(data.worker.wage), style: 'value' },
-        ],
-      },
-      {
-        width: '*',
-        stack: [
-          { text: 'OT Rate', style: 'label' },
-          { text: `${formatCurrency(data.worker.otRate)}/unit`, style: 'value' },
-        ],
+        margin: [40, 0, 0, 0],
       },
     ],
-    margin: [0, 10, 0, 0] as [number, number, number, number],
-    columnGap: 10,
+    margin: [0, 0, 0, 20],
   };
 }
 
@@ -455,29 +446,19 @@ function buildSignatureSection(data: SalaryReportData, signatureDataUrl?: string
   };
 }
 
-function buildFooter(data: SalaryReportData): Content {
-  return {
-    margin: [0, 20, 0, 0] as [number, number, number, number],
-    stack: [
-      {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#e0e0e0' }],
-        margin: [0, 0, 0, 8] as [number, number, number, number],
-      },
-      {
-        columns: [
-          {
-            text: `Generated: ${data.generatedAtFormatted}`,
-            fontSize: 8,
-            color: '#999999',
-          },
-          {
-            text: 'Cycle Closure Report',
-            fontSize: 8,
-            color: '#999999',
-            alignment: 'right' as const,
-          },
-        ],
-      },
-    ],
-  };
+function buildFooter(data: SalaryReportData): any {
+  return [
+    {
+      text: '\n\n─────────────────────────────────────────────────',
+      alignment: 'center',
+      color: '#e5e7eb',
+    },
+    {
+      text: `This is a computer-generated document. Generated on ${data.generatedAtFormatted}`,
+      fontSize: 8,
+      color: '#999999',
+      alignment: 'center',
+      margin: [0, 10, 0, 0],
+    },
+  ];
 }

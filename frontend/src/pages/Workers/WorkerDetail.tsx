@@ -135,8 +135,8 @@ export default function WorkerDetail() {
 
   const handleCloseCycleSuccess = () => {
     if (worker) {
-      console.log('Cycle closed - refreshing stats');
-      toast.success('Cycle closed successfully!');
+      console.log('Balance closed - refreshing stats');
+      toast.success('Balance closed successfully!');
       fetchCycleStats(worker.id, true);
       fetchWorkers();
     }
@@ -269,7 +269,7 @@ export default function WorkerDetail() {
               <DollarSign className="w-4 h-4" />
               Issue Advance
             </Button>
-            {canCloseCycle && (
+            {canCloseCycle ? (
               <Button
                 variant="secondary"
                 size="md"
@@ -278,19 +278,20 @@ export default function WorkerDetail() {
                 disabled={!worker.isActive}
               >
                 <CheckCircle className="w-4 h-4" />
-                Close Cycle
+                Close Balance
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="md"
+                className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setIsSalaryModalOpen(true)}
+                disabled={!canPaySalary || !worker.isActive}
+              >
+                <TrendingUp className="w-4 h-4" />
+                Pay Salary
               </Button>
             )}
-            <Button
-              variant="primary"
-              size="md"
-              className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => setIsSalaryModalOpen(true)}
-              disabled={!canPaySalary || !worker.isActive}
-            >
-              <TrendingUp className="w-4 h-4" />
-              Pay Salary
-            </Button>
           </div>
         </div>
 

@@ -73,6 +73,7 @@ model Salary {
   totalAdvance  Float           @default(0)
   totalExpense  Float           @default(0)
   unpaidBalance Float           @default(0)
+  openingBalance Float          @default(0)
   netPay        Float           @default(0)
   totalPaid     Float           @default(0)
   status        SalaryStatus    @default(PENDING)

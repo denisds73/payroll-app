@@ -1,13 +1,12 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <it should be like this> */
 /** biome-ignore-all lint/a11y/noLabelWithoutControl: <it should be like this> */
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <it should be like this> */
-import { X } from 'lucide-react';
+import { AlertTriangle, Info, X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useClosurePdfGenerator } from '../../features/pdf-export/hooks/useClosurePdfGenerator';
 import { salariesAPI } from '../../services/api';
-import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION } from '../../utils/validation';
 import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
@@ -113,8 +112,8 @@ export default function CloseCycleModal({
       const errorMessage =
         err instanceof Error && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          : 'Failed to close cycle';
-      toast.error(errorMessage || 'Failed to close cycle');
+          : 'Failed to close balance';
+      toast.error(errorMessage || 'Failed to close balance');
     } finally {
       setLoading(false);
     }
@@ -182,7 +181,7 @@ export default function CloseCycleModal({
         <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
           <div>
             <h2 id={modalTitleId} className="text-xl font-bold text-text-primary">
-              Close Cycle
+              Close Balance
             </h2>
             <p className="text-sm text-text-secondary mt-1">{workerName}</p>
           </div>
@@ -208,7 +207,7 @@ export default function CloseCycleModal({
               {/* Info Banner */}
               <div className="bg-info/10 border border-info/20 p-3 rounded-lg">
                 <p className="text-sm font-medium text-info flex items-center gap-2">
-                  ℹ️ Cycle Closure
+                  <Info className="w-4 h-4" /> Cycle Closure
                 </p>
                 <p className="text-xs text-text-secondary mt-1">
                   This action closes the current cycle without issuing any payment.
@@ -278,8 +277,9 @@ export default function CloseCycleModal({
                 </div>
 
                 {cycleData.totalNetPayable < 0 && (
-                  <p className="text-xs text-warning text-center font-medium">
-                    ⚠️ Worker owes company — balance will carry forward to next cycle
+                  <p className="text-xs text-warning flex items-center justify-center gap-1.5 font-medium">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Worker owes company — balance will carry forward to next cycle
                   </p>
                 )}
               </div>
@@ -373,7 +373,7 @@ export default function CloseCycleModal({
                   disabled={loading || calculating}
                   className="flex-1"
                 >
-                  {loading ? 'Closing Cycle...' : 'Close Cycle'}
+                  {loading ? 'Closing Balance...' : 'Close Balance'}
                 </Button>
               </div>
             </>

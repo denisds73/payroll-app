@@ -230,7 +230,7 @@ export default function ExpenseTab({
   /**
    * Delete handler: deletes all existing expense records for this date row.
    */
-  const handleDeleteExpense = async (date: string, data: ExpenseRowData): Promise<void> => {
+  const handleDeleteExpense = async (_date: string, data: ExpenseRowData): Promise<void> => {
     try {
       const promises: Promise<unknown>[] = [];
 
