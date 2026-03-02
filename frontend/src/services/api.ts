@@ -214,4 +214,7 @@ export const salariesAPI = {
     console.log('🔍 salariesAPI.getPendingPartials called:', { workerId });
     return api.get(`/salaries/worker/${workerId}/partial`);
   },
+
+  closeCycle: (workerId: number, data?: { note?: string; signature?: string }) =>
+    api.post(`/salaries/${workerId}/close-cycle`, data || {}),
 };

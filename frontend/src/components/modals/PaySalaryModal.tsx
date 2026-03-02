@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <it should be like this> */
 /** biome-ignore-all lint/a11y/noLabelWithoutControl: <it should be like this> */
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <it should be like this> */
-import { X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -364,7 +364,7 @@ export default function PaySalaryModal({
               {isRetroactive && (
                 <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg">
                   <p className="text-sm font-medium text-warning flex items-center gap-2">
-                    ⚠️ Retroactive Payment
+                    <AlertTriangle className="w-4 h-4" /> Retroactive Payment
                   </p>
                   <p className="text-xs text-text-secondary mt-1">
                     Salary calculated up to {formatDate(formData.paymentDate)}. Transactions after
@@ -444,8 +444,8 @@ export default function PaySalaryModal({
                   </div>
                 )}
                 {salaryData.totalNetPayable < 0 && (
-                  <p className="text-xs text-error text-center">
-                    ⚠️ Worker owes company - no payment required
+                  <p className="text-xs text-error flex items-center justify-center gap-1.5 opacity-90">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Worker owes company - no payment required
                   </p>
                 )}
               </div>

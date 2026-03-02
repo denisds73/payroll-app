@@ -33,55 +33,54 @@ export function buildSalaryReportPdf(
 
     styles: {
       documentTitle: {
-        fontSize: 22,
+        fontSize: 24,
         bold: true,
-        alignment: 'center',
-        color: '#18181b',
-        margin: [0, 0, 0, 5],
+        alignment: 'left',
+        color: '#1a1a2e',
+        margin: [0, 0, 0, 2],
       },
       sectionHeader: {
-        fontSize: 14,
+        fontSize: 12,
         bold: true,
-        color: '#18181b',
-        margin: [0, 15, 0, 8],
+        color: '#ffffff',
+        fillColor: '#1a1a2e',
+        margin: [0, 15, 0, 0],
       },
       tableHeader: {
         bold: true,
         fontSize: 10,
         color: '#FFFFFF',
-        fillColor: '#18181b',
+        fillColor: '#1a1a2e',
       },
       tableCell: {
         fontSize: 9,
-        color: '#18181b',
+        color: '#333333',
       },
       infoLabel: {
-        fontSize: 10,
-        color: '#52525b',
-        bold: true,
+        fontSize: 9,
+        color: '#666666',
+        bold: false,
       },
       infoValue: {
         fontSize: 10,
-        color: '#18181b',
-      },
-      summaryLabel: {
-        fontSize: 11,
-        color: '#18181b',
-      },
-      summaryValue: {
-        fontSize: 11,
-        color: '#18181b',
+        color: '#1a1a2e',
         bold: true,
+      },
+      subHeader: {
+        fontSize: 11,
+        bold: true,
+        color: '#1a1a2e',
+        margin: [0, 10, 0, 5],
       },
       totalRow: {
         fontSize: 10,
         bold: true,
-        color: '#18181b',
+        color: '#1a1a2e',
       },
       footer: {
         fontSize: 8,
-        color: '#a1a1aa',
-        italics: true,
+        color: '#999999',
+        italics: false,
         alignment: 'center',
       },
     },
@@ -97,120 +96,98 @@ export function buildSalaryReportPdf(
 function buildHeader(data: SalaryReportData): any {
   return [
     {
-      text: 'SALARY REPORT',
-      style: 'documentTitle',
+      columns: [
+        {
+          text: 'SALARY REPORT',
+          style: 'documentTitle',
+          width: '*',
+        },
+        {
+          text: `#SR-${data.salary.id}`,
+          fontSize: 14,
+          bold: true,
+          color: '#999999',
+          alignment: 'right',
+          width: 'auto',
+        },
+      ],
     },
     {
-      text: `Generated: ${data.generatedAtFormatted}`,
-      style: 'footer',
-      margin: [0, 0, 0, 20],
+      canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#e0e0e0' }],
+      margin: [0, 5, 0, 15],
     },
   ];
 }
 
 function buildWorkerInfo(data: SalaryReportData): any {
-  return [
-    {
-      text: 'WORKER INFORMATION',
-      style: 'sectionHeader',
-    },
-    {
-      columns: [
-        {
-          width: '50%',
-          stack: [
-            {
-              columns: [
-                { text: 'Name:', style: 'infoLabel', width: 80 },
-                { text: data.worker.name, style: 'infoValue' },
-              ],
-              margin: [0, 0, 0, 4],
-            },
-            ...(data.worker.phone
-              ? [
-                  {
-                    columns: [
-                      { text: 'Phone:', style: 'infoLabel', width: 80 },
-                      { text: data.worker.phone, style: 'infoValue' },
-                    ],
-                    margin: [0, 0, 0, 4],
-                  },
-                ]
-              : []),
-          ],
-        },
-        {
-          width: '50%',
-          stack: [],
-        },
-      ],
-    },
-  ];
+  return {
+    columns: [
+      {
+        width: '*',
+        stack: [
+          { text: 'Worker Name', style: 'infoLabel' },
+          { text: data.worker.name, style: 'infoValue', fontSize: 13 },
+        ],
+      },
+      {
+        width: 'auto',
+        stack: [
+          { text: 'Phone Number', style: 'infoLabel' },
+          { text: data.worker.phone || 'N/A', style: 'infoValue' },
+        ],
+        margin: [40, 0, 0, 0],
+      },
+    ],
+    margin: [0, 0, 0, 20],
+  };
 }
 
 function buildSalaryPeriod(data: SalaryReportData): any {
-  return [
-    {
-      text: 'SALARY PERIOD',
-      style: 'sectionHeader',
-    },
-    {
-      columns: [
-        {
-          width: '50%',
-          stack: [
-            {
-              columns: [
-                { text: 'Period:', style: 'infoLabel', width: 80 },
-                {
-                  text: formatDateRange(data.salary.cycleStart, data.salary.cycleEnd),
-                  style: 'infoValue',
-                },
-              ],
-              margin: [0, 0, 0, 4],
-            },
-            ...(data.salary.issuedAt
-              ? [
-                  {
-                    columns: [
-                      { text: 'Paid On:', style: 'infoLabel', width: 80 },
-                      {
-                        text: formatDate(data.salary.issuedAt),
-                        style: 'infoValue',
-                      },
-                    ],
-                    margin: [0, 0, 0, 4],
-                  },
-                ]
-              : []),
-          ],
-        },
-        {
-          width: '50%',
-          stack: [
-            {
-              columns: [
-                { text: 'Status:', style: 'infoLabel', width: 80 },
-                { text: capitalize(data.salary.status), style: 'infoValue' },
-              ],
-              margin: [0, 0, 0, 4],
-            },
-            ...(data.salary.paymentProof
-              ? [
-                  {
-                    columns: [
-                      { text: 'Reference:', style: 'infoLabel', width: 80 },
-                      { text: data.salary.paymentProof, style: 'infoValue' },
-                    ],
-                    margin: [0, 0, 0, 4],
-                  },
-                ]
-              : []),
-          ],
-        },
+  return {
+    table: {
+      widths: ['*', '*'],
+      body: [
+        [
+          {
+            text: 'SALARY PERIOD',
+            colSpan: 2,
+            bold: true,
+            fontSize: 11,
+            color: '#ffffff',
+            fillColor: '#6c5ce7',
+            margin: [8, 6, 8, 6],
+          },
+          {},
+        ],
+        [
+          {
+            text: [
+              { text: 'Period Range: ', style: 'infoLabel' },
+              {
+                text: formatDateRange(data.salary.cycleStart, data.salary.cycleEnd),
+                style: 'infoValue',
+              },
+            ],
+            margin: [8, 6, 8, 6],
+          },
+          {
+            text: [
+              { text: 'Status: ', style: 'infoLabel' },
+              { text: capitalize(data.salary.status), style: 'infoValue' },
+            ],
+            margin: [8, 6, 8, 6],
+          },
+        ],
       ],
     },
-  ];
+    layout: {
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
+      hLineColor: () => '#e0e0e0',
+      vLineColor: () => '#e0e0e0',
+    },
+    margin: [0, 0, 0, 15],
+  };
 }
 
 function buildAttendanceSummary(data: SalaryReportData): Content {
@@ -302,7 +279,7 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                         style: 'tableCell',
                         alignment: 'right',
                         bold: true,
-                        color: '#10B981', // Success color
+                        color: '#00b894',
                       },
                     ],
                     [
@@ -312,7 +289,7 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                         style: 'tableCell',
                         alignment: 'right',
                         bold: true,
-                        color: '#10B981', // Success color
+                        color: '#00b894',
                       },
                     ],
                     [
@@ -401,7 +378,13 @@ function buildAttendanceTable(data: SalaryReportData): any {
   return [
     {
       text: 'ATTENDANCE DETAILS',
-      style: 'sectionHeader',
+      colSpan: 1,
+      bold: true,
+      fontSize: 11,
+      color: '#ffffff',
+      fillColor: '#6c5ce7',
+      margin: [0, 15, 0, 0],
+      alignment: 'center' as const,
     },
     {
       table: {
@@ -411,8 +394,11 @@ function buildAttendanceTable(data: SalaryReportData): any {
       },
       layout: {
         fillColor: (rowIndex: number) => {
-          return rowIndex === 0 ? '#18181b' : rowIndex % 2 === 0 ? '#F5F5F7' : null;
+          if (rowIndex === 0) return '#6c5ce7';
+          return rowIndex % 2 === 0 ? '#f8f9fa' : null;
         },
+        hLineColor: () => '#e0e0e0',
+        vLineColor: () => '#e0e0e0',
       },
     },
   ];
@@ -428,12 +414,13 @@ function buildExpensesTable(data: SalaryReportData): any {
     ];
   }
 
-  // Collect all unique expense type names from the records (preserving order)
-  const typeNamesSet = new Set<string>();
-  for (const record of records) {
-    typeNamesSet.add(record.type.name);
-  }
-  const typeNames = Array.from(typeNamesSet);
+  // Fixed order for preferred types
+  const preferredOrder = ['Expenses', 'Food', 'Site', 'Other'];
+  const presentTypes = new Set(records.map((r) => r.type.name));
+  const typeNames = [
+    ...preferredOrder.filter((name) => presentTypes.has(name)),
+    ...Array.from(presentTypes).filter((name) => !preferredOrder.includes(name)),
+  ];
 
   // Group records by date (using date string without time)
   const dateGroups = new Map<string, typeof records>();
@@ -517,12 +504,11 @@ function buildExpensesTable(data: SalaryReportData): any {
 
   const tableBody = [headerRow, ...dataRows, totalRow];
 
-  // Calculate column widths dynamically
-  const numTypeCols = typeNames.length;
+  // Calculate column widths: fixed narrow widths for amounts, flexible for notes
   const dateWidth = 55;
   const totalWidth = 50;
   const notesWidth = '*';
-  const typeColWidth = Math.max(40, Math.floor((515 - dateWidth - totalWidth - 80) / numTypeCols));
+  const typeColWidth = 45; // Fixed narrow width for amounts
   const widths: any[] = [
     dateWidth,
     ...typeNames.map(() => typeColWidth),
@@ -533,7 +519,12 @@ function buildExpensesTable(data: SalaryReportData): any {
   return [
     {
       text: 'EXPENSES',
-      style: 'sectionHeader',
+      bold: true,
+      fontSize: 11,
+      color: '#ffffff',
+      fillColor: '#0984e3',
+      margin: [0, 15, 0, 0],
+      alignment: 'center' as const,
     },
     {
       table: {
@@ -543,10 +534,12 @@ function buildExpensesTable(data: SalaryReportData): any {
       },
       layout: {
         fillColor: (rowIndex: number, node: any) => {
-          if (rowIndex === 0) return '#18181b';
-          if (rowIndex === node.table.body.length - 1) return '#F5F5F7';
-          return rowIndex % 2 === 0 ? '#F5F5F7' : null;
+          if (rowIndex === 0) return '#0984e3';
+          if (rowIndex === node.table.body.length - 1) return '#f8f9fa';
+          return rowIndex % 2 === 0 ? '#f8f9fa' : null;
         },
+        hLineColor: () => '#e0e0e0',
+        vLineColor: () => '#e0e0e0',
       },
     },
   ];
@@ -591,7 +584,12 @@ function buildAdvancesTable(data: SalaryReportData): any {
   return [
     {
       text: 'ADVANCES',
-      style: 'sectionHeader',
+      bold: true,
+      fontSize: 11,
+      color: '#ffffff',
+      fillColor: '#e17055',
+      margin: [0, 15, 0, 0],
+      alignment: 'center' as const,
     },
     {
       table: {
@@ -601,121 +599,190 @@ function buildAdvancesTable(data: SalaryReportData): any {
       },
       layout: {
         fillColor: (rowIndex: number, node: any) => {
-          if (rowIndex === 0) return '#18181b';
-          if (rowIndex === node.table.body.length - 1) return '#F5F5F7';
-          return rowIndex % 2 === 0 ? '#F5F5F7' : null;
+          if (rowIndex === 0) return '#e17055';
+          if (rowIndex === node.table.body.length - 1) return '#f8f9fa';
+          return rowIndex % 2 === 0 ? '#f8f9fa' : null;
         },
+        hLineColor: () => '#e0e0e0',
+        vLineColor: () => '#e0e0e0',
       },
     },
   ];
 }
 
 function buildSalaryBreakdown(data: SalaryReportData): any {
-  const { salary, attendance } = data;
+  const { salary, attendance, advances, expenses } = data;
+
+  const rows: any[][] = [
+    [
+      {
+        text: `Base Pay (${attendance.summary.totalDays.toFixed(1)} days)`,
+        style: 'tableCell',
+      },
+      {
+        text: formatCurrency(salary.basePay),
+        style: 'tableCell',
+        alignment: 'right',
+      },
+    ],
+    [
+      {
+        text: `OT Pay (${attendance.summary.totalOtUnits.toFixed(1)} units)`,
+        style: 'tableCell',
+      },
+      {
+        text: formatCurrency(salary.otPay),
+        style: 'tableCell',
+        alignment: 'right',
+      },
+    ],
+    [
+      {
+        text: 'Gross Pay',
+        style: 'totalRow',
+        border: [false, true, false, false],
+      },
+      {
+        text: formatCurrency(salary.grossPay),
+        style: 'totalRow',
+        alignment: 'right',
+        border: [false, true, false, false],
+      },
+    ],
+  ];
+
+  // Add all advances
+  if (advances.records.length > 0) {
+    advances.records.forEach((adv) => {
+      rows.push([
+        {
+          text: 'Less: Advance',
+          style: 'tableCell',
+          color: '#d63031',
+        },
+        {
+          text: `-${formatCurrency(adv.amount)}`,
+          style: 'tableCell',
+          alignment: 'right',
+          color: '#d63031',
+        },
+      ]);
+    });
+  }
+
+  // Add total expenses as a single line
+  if (expenses.summary.total > 0) {
+    rows.push([
+      {
+        text: 'Less: Total expenses',
+        style: 'tableCell',
+        color: '#d63031',
+      },
+      {
+        text: `-${formatCurrency(expenses.summary.total)}`,
+        style: 'tableCell',
+        alignment: 'right',
+        color: '#d63031',
+      },
+    ]);
+  }
+
+  // Current Cycle Subtotal (Gross - Advances - Expenses)
+  const currentCycleTotal =
+    Number(salary.grossPay || 0) - Number(salary.totalAdvance || 0) - Number(salary.totalExpense || 0);
+
+  rows.push([
+    {
+      text: 'Current Cycle Total',
+      style: 'totalRow',
+      margin: [0, 5, 0, 0],
+    },
+    {
+      text: formatCurrency(currentCycleTotal),
+      style: 'totalRow',
+      alignment: 'right',
+      margin: [0, 5, 0, 0],
+    },
+  ]);
+
+  // Robust Math: Calculate anything not in the current cycle as "Previous Balance"
+  const totalUnpaid = Number(salary.unpaidBalance || 0);
+  const finalNetPayable = Number(salary.netPay || 0) + totalUnpaid;
+  const previousBalance = finalNetPayable - currentCycleTotal;
+
+  if (Math.abs(previousBalance) > 0.01) {
+    rows.push([
+      {
+        text: previousBalance < 0 ? 'Less: Previous Balance' : 'Add: Previous Balance',
+        style: 'tableCell',
+        color: previousBalance < 0 ? '#d63031' : '#00b894',
+      },
+      {
+        text: `${previousBalance < 0 ? '-' : '+'}${formatCurrency(Math.abs(previousBalance))}`,
+        style: 'tableCell',
+        alignment: 'right',
+        color: previousBalance < 0 ? '#d63031' : '#00b894',
+      },
+    ]);
+  }
+
+  rows.push(
+    [
+      {
+        text: 'TOTAL NET PAYABLE',
+        style: 'totalRow',
+        fontSize: 12,
+        border: [false, true, false, true],
+        fillColor: '#f8f9fa',
+      },
+      {
+        text: formatCurrency(finalNetPayable),
+        style: 'totalRow',
+        fontSize: 12,
+        alignment: 'right',
+        border: [false, true, false, true],
+        fillColor: '#f8f9fa',
+        color: finalNetPayable >= 0 ? '#00b894' : '#d63031',
+      },
+    ],
+    [
+      { text: 'Total Paid', style: 'tableCell' },
+      {
+        text: formatCurrency(salary.totalPaid),
+        style: 'tableCell',
+        alignment: 'right',
+      },
+    ],
+    [
+      {
+        text: 'Balance',
+        style: 'totalRow',
+        border: [false, true, false, false],
+      },
+      {
+        text: formatCurrency(salary.netPay - salary.totalPaid),
+        style: 'totalRow',
+        alignment: 'right',
+        border: [false, true, false, false],
+        color: salary.netPay - salary.totalPaid === 0 ? '#00b894' : '#e17055',
+      },
+    ],
+  );
 
   return [
     {
       text: 'SALARY BREAKDOWN',
-      style: 'sectionHeader',
+      bold: true,
+      fontSize: 11,
+      color: '#ffffff',
+      fillColor: '#636e72',
+      margin: [0, 15, 0, 0],
+      alignment: 'center' as const,
     },
     {
       table: {
         widths: ['*', 'auto'],
-        body: [
-          [
-            {
-              text: `Base Pay (${attendance.summary.totalDays.toFixed(1)} days)`,
-              style: 'tableCell',
-            },
-            {
-              text: formatCurrency(salary.basePay),
-              style: 'tableCell',
-              alignment: 'right',
-            },
-          ],
-          [
-            {
-              text: `OT Pay (${attendance.summary.totalOtUnits.toFixed(1)} units)`,
-              style: 'tableCell',
-            },
-            {
-              text: formatCurrency(salary.otPay),
-              style: 'tableCell',
-              alignment: 'right',
-            },
-          ],
-          [
-            {
-              text: 'Gross Pay',
-              style: 'totalRow',
-              border: [false, true, false, false],
-            },
-            {
-              text: formatCurrency(salary.grossPay),
-              style: 'totalRow',
-              alignment: 'right',
-              border: [false, true, false, false],
-            },
-          ],
-          [
-            { text: 'Less: Advances', style: 'tableCell', color: '#EF4444' },
-            {
-              text: `-${formatCurrency(salary.totalAdvance)}`,
-              style: 'tableCell',
-              alignment: 'right',
-              color: '#EF4444',
-            },
-          ],
-          [
-            { text: 'Less: Expenses', style: 'tableCell', color: '#EF4444' },
-            {
-              text: `-${formatCurrency(salary.totalExpense)}`,
-              style: 'tableCell',
-              alignment: 'right',
-              color: '#EF4444',
-            },
-          ],
-          [
-            {
-              text: 'NET PAYABLE',
-              style: 'totalRow',
-              fontSize: 12,
-              border: [false, true, false, true],
-              fillColor: '#F5F5F7',
-            },
-            {
-              text: formatCurrency(salary.netPay),
-              style: 'totalRow',
-              fontSize: 12,
-              alignment: 'right',
-              border: [false, true, false, true],
-              fillColor: '#F5F5F7',
-              color: salary.netPay >= 0 ? '#10B981' : '#EF4444',
-            },
-          ],
-          [
-            { text: 'Total Paid', style: 'tableCell' },
-            {
-              text: formatCurrency(salary.totalPaid),
-              style: 'tableCell',
-              alignment: 'right',
-            },
-          ],
-          [
-            {
-              text: 'Balance',
-              style: 'totalRow',
-              border: [false, true, false, false],
-            },
-            {
-              text: formatCurrency(salary.netPay - salary.totalPaid),
-              style: 'totalRow',
-              alignment: 'right',
-              border: [false, true, false, false],
-              color: salary.netPay - salary.totalPaid === 0 ? '#10B981' : '#F59E0B',
-            },
-          ],
-        ],
+        body: rows,
       },
       layout: 'noBorders',
     },

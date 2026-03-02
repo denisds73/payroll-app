@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { CloseCycleDto } from './dto/close-cycle.dto';
 import { FilterSalariesDto } from './dto/filter-salaries.dto';
 import { IssueSalaryDto } from './dto/issue-salary.dto';
 import { SalariesService } from './salaries.service';
@@ -58,6 +59,14 @@ export class SalariesController {
   @Get(':id')
   async getSalary(@Param('id', ParseIntPipe) id: number) {
     return this.salariesService.findOne(id);
+  }
+
+  @Post(':workerId/close-cycle')
+  async closeCycle(
+    @Param('workerId', ParseIntPipe) workerId: number,
+    @Body() data: CloseCycleDto,
+  ) {
+    return this.salariesService.closeCycle(workerId, data.note, data.signature);
   }
 
   @Post(':workerId')

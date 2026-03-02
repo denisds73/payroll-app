@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   Calendar,
+  CheckCircle,
   Clock,
   DollarSign,
   FileText,
@@ -13,6 +14,7 @@ import {
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import CloseCycleModal from '../../components/modals/CloseCycleModal';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import PaySalaryModal from '../../components/modals/PaySalaryModal';
 import Button from '../../components/ui/Button';
@@ -53,6 +55,7 @@ export default function WorkerDetail() {
 
   const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
+  const [isCloseCycleModalOpen, setIsCloseCycleModalOpen] = useState(false);
 
   const worker = workers.find((w) => w.id === Number(id));
 
@@ -130,6 +133,15 @@ export default function WorkerDetail() {
     }
   };
 
+  const handleCloseCycleSuccess = () => {
+    if (worker) {
+      console.log('Balance closed - refreshing stats');
+      toast.success('Balance closed successfully!');
+      fetchCycleStats(worker.id, true);
+      fetchWorkers();
+    }
+  };
+
   const handleAttendanceChange = () => {
     if (worker) {
       console.log('Attendance changed - refreshing stats');
@@ -192,6 +204,7 @@ export default function WorkerDetail() {
   ];
 
   const canPaySalary = cycleStats && cycleStats.totalNetPayable > 0;
+  const canCloseCycle = cycleStats && cycleStats.totalNetPayable <= 0;
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6 animate-fadeIn">
@@ -256,16 +269,29 @@ export default function WorkerDetail() {
               <DollarSign className="w-4 h-4" />
               Issue Advance
             </Button>
-            <Button
-              variant="primary"
-              size="md"
-              className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => setIsSalaryModalOpen(true)}
-              disabled={!canPaySalary || !worker.isActive}
-            >
-              <TrendingUp className="w-4 h-4" />
-              Pay Salary
-            </Button>
+            {canCloseCycle ? (
+              <Button
+                variant="primary"
+                size="md"
+                className="flex items-center gap-2"
+                onClick={() => setIsCloseCycleModalOpen(true)}
+                disabled={!worker.isActive}
+              >
+                <CheckCircle className="w-4 h-4" />
+                Close Balance
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="md"
+                className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setIsSalaryModalOpen(true)}
+                disabled={!canPaySalary || !worker.isActive}
+              >
+                <TrendingUp className="w-4 h-4" />
+                Pay Salary
+              </Button>
+            )}
           </div>
         </div>
 
@@ -461,6 +487,14 @@ export default function WorkerDetail() {
         isOpen={isSalaryModalOpen}
         onClose={() => setIsSalaryModalOpen(false)}
         onSuccess={handleSalarySuccess}
+      />
+
+      <CloseCycleModal
+        workerId={worker.id}
+        workerName={worker.name}
+        isOpen={isCloseCycleModalOpen}
+        onClose={() => setIsCloseCycleModalOpen(false)}
+        onSuccess={handleCloseCycleSuccess}
       />
     </div>
   );
