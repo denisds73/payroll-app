@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { generateAndDownloadPdf } from '../services/pdfService';
+import { generateAndDownloadPdf, getPdfUrl, openPdfInNewTab } from '../services/pdfService';
 import type { UseSalaryPdfGenerator } from '../types/pdf.types';
 import { buildSalaryReportPdf } from '../utils/pdfBuilder';
 import { fetchSalaryReportData } from '../utils/pdfData';
@@ -43,6 +43,64 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
     }
   }, []);
 
+  const generateAndView = useCallback(async (salaryId: number, signatureDataUrl?: string): Promise<void> => {
+    setIsGenerating(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const reportData = await fetchSalaryReportData(salaryId);
+      const finalSignature = signatureDataUrl || reportData.salary.signature;
+      const docDefinition = buildSalaryReportPdf(reportData, finalSignature);
+
+      const fileName = generateFileName(
+        reportData.worker.name,
+        reportData.salary.cycleStart,
+        reportData.salary.cycleEnd,
+      );
+
+      await openPdfInNewTab(docDefinition, fileName);
+
+      setSuccess(true);
+      setIsGenerating(false);
+    } catch (err) {
+      console.error('❌ PDF view failed:', err);
+
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to view PDF. Please try again.';
+
+      setError(errorMessage);
+      setSuccess(false);
+      setIsGenerating(false);
+
+      throw err;
+    }
+  }, []);
+
+  const generatePdfUrl = useCallback(async (salaryId: number, signatureDataUrl?: string): Promise<string> => {
+    setIsGenerating(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const reportData = await fetchSalaryReportData(salaryId);
+      const finalSignature = signatureDataUrl || reportData.salary.signature;
+      const docDefinition = buildSalaryReportPdf(reportData, finalSignature);
+
+      const url = await getPdfUrl(docDefinition);
+
+      setSuccess(true);
+      setIsGenerating(false);
+      return url;
+    } catch (err) {
+      console.error('❌ PDF URL generation failed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate PDF URL.';
+      setError(errorMessage);
+      setIsGenerating(false);
+      throw err;
+    }
+  }, []);
+
   const clear = useCallback(() => {
     setError(null);
     setSuccess(false);
@@ -51,6 +109,8 @@ export function useSalaryPdfGenerator(): UseSalaryPdfGenerator {
 
   return {
     generateAndDownload,
+    generateAndView,
+    generatePdfUrl,
     clear,
     isGenerating,
     error,

@@ -13,6 +13,8 @@ export interface AdvancePdfGeneratorState {
 
 export interface AdvancePdfGeneratorActions {
   generateAndDownload: (advanceId: number, signatureDataUrl?: string) => Promise<void>;
+  generateAndView: (advanceId: number, signatureDataUrl?: string) => Promise<void>;
+  generatePdfUrl: (advanceId: number, signatureDataUrl?: string) => Promise<string>;
   clear: () => void;
 }
 
@@ -154,6 +156,8 @@ export interface PdfGeneratorState {
 
 export interface PdfGeneratorActions {
   generateAndDownload: (salaryId: number, signatureDataUrl?: string) => Promise<void>;
+  generateAndView: (salaryId: number, signatureDataUrl?: string) => Promise<void>;
+  generatePdfUrl: (salaryId: number, signatureDataUrl?: string) => Promise<string>;
   clear: () => void;
 }
 

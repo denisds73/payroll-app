@@ -379,7 +379,6 @@ function buildAttendanceTable(data: SalaryReportData): Content {
   return [
     {
       text: 'ATTENDANCE DETAILS',
-      colSpan: 1,
       bold: true,
       fontSize: 11,
       color: '#ffffff',
@@ -561,7 +560,7 @@ function buildAdvancesTable(data: SalaryReportData): Content {
   const tableBody = [
     [
       { text: 'Date', style: 'tableHeader' },
-      { text: 'Amount', style: 'tableHeader', alignment: 'right' },
+      { text: 'Amount', style: 'tableHeader', alignment: 'right' as const },
       { text: 'Reason', style: 'tableHeader' },
     ],
     ...records.map((record) => [
@@ -569,7 +568,7 @@ function buildAdvancesTable(data: SalaryReportData): Content {
       {
         text: formatCurrency(record.amount),
         style: 'tableCell',
-        alignment: 'right',
+        alignment: 'right' as const,
       },
       { text: record.reason || '-', style: 'tableCell' },
     ]),
@@ -578,9 +577,9 @@ function buildAdvancesTable(data: SalaryReportData): Content {
       {
         text: formatCurrency(summary.total),
         style: 'totalRow',
-        alignment: 'right',
+        alignment: 'right' as const,
       },
-      {},
+      { text: '', style: 'totalRow' },
     ],
   ];
 

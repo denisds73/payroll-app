@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Download, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Download, Eye, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
 
@@ -9,6 +9,7 @@ interface SalaryPdfExportButtonProps {
   signatureDataUrl?: string;
   onSuccess?: () => void;
   onError?: (error: string) => void;
+  onViewClick?: () => void;
 }
 
 export default function SalaryPdfExportButton({
@@ -17,8 +18,9 @@ export default function SalaryPdfExportButton({
   signatureDataUrl,
   onSuccess,
   onError,
+  onViewClick,
 }: SalaryPdfExportButtonProps) {
-  const { generateAndDownload, isGenerating, error, success, clear } = useSalaryPdfGenerator();
+  const { generateAndDownload, generateAndView, isGenerating, error, success, clear } = useSalaryPdfGenerator();
 
   useEffect(() => {
     if (variant === 'auto') {
@@ -54,6 +56,18 @@ export default function SalaryPdfExportButton({
     }
   };
 
+  const handleView = async () => {
+    if (onViewClick) {
+      onViewClick();
+      return;
+    }
+    try {
+      await generateAndView(salaryId, signatureDataUrl);
+    } catch (err) {
+      console.error('PDF view failed:', err);
+    }
+  };
+
   if (variant === 'auto') {
     return null;
   }
@@ -84,17 +98,30 @@ export default function SalaryPdfExportButton({
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleDownload}
-      disabled={isGenerating}
-      className="p-2 text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      title={getTooltip()}
-      aria-label="Download PDF"
-    >
-      <div className={`transition-all duration-300 ease-in-out transform ${getIconScale()}`}>
-        {getIcon()}
-      </div>
-    </button>
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={handleView}
+        disabled={isGenerating}
+        className="p-2 text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        title="View PDF"
+        aria-label="View PDF"
+      >
+        <Eye className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={isGenerating}
+        className="p-2 text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        title={getTooltip()}
+        aria-label="Download PDF"
+      >
+        <div className={`transition-all duration-300 ease-in-out transform ${getIconScale()}`}>
+          {getIcon()}
+        </div>
+      </button>
+    </div>
   );
 }

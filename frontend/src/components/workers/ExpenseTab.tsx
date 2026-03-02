@@ -4,8 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 import { expensesAPI, expenseTypesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import { useWorkerStatusStore } from '../../store/useWorkerStatusStore';
-import ExpenseTable, { type ExpenseData } from '../ui/ExpenseTable';
 import type { ExpenseRowData } from '../ui/ExpenseRow';
+import ExpenseTable from '../ui/ExpenseTable';
 
 interface ExpenseTabProps {
   workerId: number;
