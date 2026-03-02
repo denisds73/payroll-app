@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Download, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Download, Eye, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useAdvancePdfGenerator } from '../../features/pdf-export/hooks/useAdvancePdfGenerator';
 
@@ -8,6 +8,7 @@ interface AdvancePdfExportButtonProps {
   variant?: 'default' | 'ghost' | 'auto';
   onSuccess?: () => void;
   onError?: (error: string) => void;
+  onViewClick?: () => void;
 }
 
 export default function AdvancePdfExportButton({
@@ -15,8 +16,9 @@ export default function AdvancePdfExportButton({
   variant = 'default',
   onSuccess,
   onError,
+  onViewClick,
 }: AdvancePdfExportButtonProps) {
-  const { generateAndDownload, isGenerating, error, success, clear } = useAdvancePdfGenerator();
+  const { generateAndDownload, generateAndView, isGenerating, error, success, clear } = useAdvancePdfGenerator();
 
   useEffect(() => {
     if (variant === 'auto' && advanceId) {
@@ -52,6 +54,18 @@ export default function AdvancePdfExportButton({
     }
   };
 
+  const handleView = async () => {
+    if (onViewClick) {
+      onViewClick();
+      return;
+    }
+    try {
+      await generateAndView(advanceId);
+    } catch (err) {
+      console.error('Failed to view advance receipt:', err);
+    }
+  };
+
   if (variant === 'auto') {
     return null;
   }
@@ -82,17 +96,30 @@ export default function AdvancePdfExportButton({
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleDownload}
-      disabled={isGenerating}
-      className="p-2 text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      title={getTooltip()}
-      aria-label="Download Advance Receipt"
-    >
-      <div className={`transition-all duration-300 ease-in-out transform ${getIconScale()}`}>
-        {getIcon()}
-      </div>
-    </button>
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={handleView}
+        disabled={isGenerating}
+        className="p-2 text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        title="View Receipt"
+        aria-label="View Advance Receipt"
+      >
+        <Eye className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={isGenerating}
+        className="p-2 text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        title={getTooltip()}
+        aria-label="Download Advance Receipt"
+      >
+        <div className={`transition-all duration-300 ease-in-out transform ${getIconScale()}`}>
+          {getIcon()}
+        </div>
+      </button>
+    </div>
   );
 }

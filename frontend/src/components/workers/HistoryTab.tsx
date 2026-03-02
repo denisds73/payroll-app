@@ -2,6 +2,9 @@
 import { CheckCircle, DollarSign, Edit2, Filter, Lock, Receipt, Trash2, TrendingUp, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useAdvancePdfGenerator } from '../../features/pdf-export/hooks/useAdvancePdfGenerator';
+import { useClosurePdfGenerator } from '../../features/pdf-export/hooks/useClosurePdfGenerator';
+import { useSalaryPdfGenerator } from '../../features/pdf-export/hooks/useSalaryPdfGenerator';
 import { advancesAPI, expensesAPI, salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 import AdvancePdfExportButton from '../export/AdvancePdfExportButton';
@@ -10,6 +13,7 @@ import SalaryPdfExportButton from '../export/SalaryPdfExportButton';
 import ConfirmModal from '../modals/ConfirmModal';
 import EditAdvanceModal from '../modals/EditAdvanceModal';
 import EditExpenseModal from '../modals/EditExpenseModal';
+import PdfPreviewModal from '../modals/PdfPreviewModal';
 import { DateRangePicker } from '../ui/DatePicker';
 import Tooltip from '../ui/Tooltip';
 
@@ -60,6 +64,14 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [previewPdfTitle, setPreviewPdfTitle] = useState('');
+
+  const advancePdf = useAdvancePdfGenerator();
+  const salaryPdf = useSalaryPdfGenerator();
+  const closurePdf = useClosurePdfGenerator();
 
   const [filters, setFilters] = useState<FilterState>({
     types: {
@@ -319,6 +331,37 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
       onDataChange();
     }
   };
+
+  const handleOpenPreview = async (item: HistoryItem) => {
+    setPreviewPdfTitle(`${item.type === 'closure' ? 'Closure Report' : item.type === 'salary' ? 'Salary Slip' : 'Advance Receipt'} - ${workerName}`);
+    setPreviewPdfUrl(null);
+    setPreviewModalOpen(true);
+
+    try {
+      let url = '';
+      if (item.type === 'advance') {
+        url = await advancePdf.generatePdfUrl(item.id);
+      } else if (item.type === 'salary') {
+        url = await salaryPdf.generatePdfUrl(item.id);
+      } else if (item.type === 'closure') {
+        url = await closurePdf.generatePdfUrl(item.id);
+      }
+      setPreviewPdfUrl(url);
+    } catch (err) {
+      console.error('Failed to generate preview URL:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to load PDF preview');
+      setPreviewModalOpen(false);
+    }
+  };
+
+  // Cleanup PDF URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewPdfUrl && previewPdfUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewPdfUrl);
+      }
+    };
+  }, [previewPdfUrl]);
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -637,6 +680,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           salaryId={item.id}
                           workerName={workerName}
                           variant="ghost"
+                          onViewClick={() => handleOpenPreview(item)}
                         />
                       )}
 
@@ -645,6 +689,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           closureId={item.id}
                           workerName={workerName}
                           variant="ghost"
+                          onViewClick={() => handleOpenPreview(item)}
                         />
                       )}
 
@@ -653,6 +698,7 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
                           advanceId={item.id}
                           workerName={workerName}
                           variant="ghost"
+                          onViewClick={() => handleOpenPreview(item)}
                         />
                       )}
 
@@ -717,6 +763,13 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
           )}
         </div>
       </div>
+
+      <PdfPreviewModal
+        isOpen={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        pdfUrl={previewPdfUrl}
+        title={previewPdfTitle}
+      />
 
       <EditAdvanceModal
         advance={
