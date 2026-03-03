@@ -452,15 +452,17 @@ function buildExpensesTable(data: SalaryReportData): Content {
 
     // Calculate amount per type for this date
     const amountByType: { [typeName: string]: number } = {};
-    const notesList: string[] = [];
+    const notesSet = new Set<string>();
 
     for (const record of dayRecords) {
       const typeName = record.type.name;
       amountByType[typeName] = (amountByType[typeName] || 0) + record.amount;
       if (record.note) {
-        notesList.push(record.note);
+        notesSet.add(record.note);
       }
     }
+
+    const notesList = Array.from(notesSet);
 
     const dayTotal = dayRecords.reduce((sum, r) => sum + r.amount, 0);
 
