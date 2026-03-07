@@ -7,8 +7,11 @@ import AdvancePdfExportButton from '../../components/export/AdvancePdfExportButt
 import ConfirmModal from '../../components/modals/ConfirmModal';
 import EditAdvanceModal from '../../components/modals/EditAdvanceModal';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
+import PdfPreviewModal from '../../components/modals/PdfPreviewModal';
 import Button from '../../components/ui/Button';
+import { DateRangePicker } from '../../components/ui/DatePicker';
 import Tooltip from '../../components/ui/Tooltip';
+import { useAdvancePdfGenerator } from '../../features/pdf-export/hooks/useAdvancePdfGenerator';
 import { advancesAPI, salariesAPI } from '../../services/api';
 import { useSalaryLockStore } from '../../store/useSalaryLockStore';
 
@@ -38,15 +41,11 @@ export default function WorkerAdvancesPage() {
   const { workerId } = useParams<{ workerId: string }>();
   const navigate = useNavigate();
 
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
-
   const [advances, setAdvances] = useState<Advance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [month, setMonth] = useState(currentMonth);
-  const [year, setYear] = useState(currentYear);
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   const [workerName, setWorkerName] = useState<string>('');
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -54,12 +53,12 @@ export default function WorkerAdvancesPage() {
   const [selectedAdvance, setSelectedAdvance] = useState<Advance | null>(null);
   const [lockedPeriods, setLockedPeriods] = useState<LockedPeriod[]>([]);
 
-  const { fetchPaidPeriods } = useSalaryLockStore();
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [previewPdfTitle, setPreviewPdfTitle] = useState('');
 
-  const handleMonthYearChange = (newMonth: number, newYear: number) => {
-    setMonth(newMonth);
-    setYear(newYear);
-  };
+  const advancePdf = useAdvancePdfGenerator();
+  const { fetchPaidPeriods } = useSalaryLockStore();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
@@ -128,6 +127,30 @@ export default function WorkerAdvancesPage() {
     }
   };
 
+  const handleOpenPreview = async (advanceId: number) => {
+    setPreviewPdfTitle(`Advance Receipt - ${workerName}`);
+    setPreviewPdfUrl(null);
+    setPreviewModalOpen(true);
+
+    try {
+      const url = await advancePdf.generatePdfUrl(advanceId);
+      setPreviewPdfUrl(url);
+    } catch (err) {
+      console.error('Failed to generate preview URL:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to load PDF preview');
+      setPreviewModalOpen(false);
+    }
+  };
+
+  // Cleanup PDF URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewPdfUrl && previewPdfUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewPdfUrl);
+      }
+    };
+  }, [previewPdfUrl]);
+
   useEffect(() => {
     const fetchLockData = async () => {
       if (!workerId) return;
@@ -156,12 +179,7 @@ export default function WorkerAdvancesPage() {
 
   useEffect(() => {
     fetchAdvances();
-  }, [workerId, month, year]);
-
-  useEffect(() => {
-    setMonth(currentMonth);
-    setYear(currentYear);
-  }, [workerId, currentMonth, currentYear]);
+  }, [workerId, dateFrom, dateTo]);
 
   const fetchAdvances = async () => {
     if (!workerId) return;
@@ -170,8 +188,11 @@ export default function WorkerAdvancesPage() {
     setError(null);
 
     try {
-      const monthStr = `${year}-${String(month).padStart(2, '0')}`;
-      const response = await advancesAPI.getByWorker(Number(workerId), { month: monthStr });
+      const params: { startDate?: string; endDate?: string } = {};
+      if (dateFrom) params.startDate = dateFrom;
+      if (dateTo) params.endDate = dateTo;
+
+      const response = await advancesAPI.getByWorker(Number(workerId), params);
       setAdvances(response.data);
       if (response.data.length > 0) {
         setWorkerName(response.data[0].worker.name);
@@ -214,60 +235,16 @@ export default function WorkerAdvancesPage() {
 
       <div className="bg-card rounded-lg border border-border flex flex-col min-h-0 flex-1">
         <div className="p-4 border-b border-border shrink-0">
-          <div className="flex items-center justify-end gap-8">
-            <div className="relative">
-              <div className="flex items-center gap-2">
-                <select
-                  className="px-3 py-1 rounded-md border border-border text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
-                  value={month}
-                  onChange={(e) => handleMonthYearChange(Number(e.target.value), year)}
-                  aria-label="Select month"
-                >
-                  {Array.from({ length: 12 }, (_, idx) => {
-                    const monthValue = idx + 1;
-                    return (
-                      <option key={monthValue} value={monthValue}>
-                        {new Date(0, idx).toLocaleString('default', { month: 'short' })}
-                      </option>
-                    );
-                  })}
-                </select>
-                <select
-                  className="px-3 py-1 rounded-md border border-border text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
-                  value={year}
-                  onChange={(e) => handleMonthYearChange(month, Number(e.target.value))}
-                  aria-label="Select year"
-                >
-                  {Array.from({ length: 30 }, (_, idx) => {
-                    const currentYear = new Date().getFullYear();
-                    const yearValue = currentYear - 5 + idx;
-                    return (
-                      <option key={yearValue} value={yearValue}>
-                        {yearValue}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              {(month !== currentMonth || year !== currentYear) && (
-                <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-warning/10 border border-warning/20 rounded-md shadow-md text-warning text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Not viewing current month
-                </div>
-              )}
-            </div>
+          <div className="flex items-center justify-end gap-4">
+            <DateRangePicker
+              value={{ start: dateFrom || null, end: dateTo || null }}
+              onChange={(range) => {
+                setDateFrom(range.start || '');
+                setDateTo(range.end || '');
+              }}
+              showPresets
+              className="w-64"
+            />
             <Button
               onClick={() => setIsIssueModalOpen(true)}
               icon={<Plus className="w-4 h-4" />}
@@ -302,7 +279,7 @@ export default function WorkerAdvancesPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`}>
@@ -315,11 +292,9 @@ export default function WorkerAdvancesPage() {
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center">
                     <p className="text-text-secondary">
-                      No advances found for{' '}
-                      {new Date(year, month - 1).toLocaleString('default', {
-                        month: 'long',
-                        year: 'numeric',
-                      })}
+                      {dateFrom || dateTo
+                        ? 'No advances found for the selected date range'
+                        : 'No advances found'}
                     </p>
                   </td>
                 </tr>
@@ -359,7 +334,11 @@ export default function WorkerAdvancesPage() {
 
                         const actionContent = (
                           <div className="flex items-center justify-center gap-1">
-                            <AdvancePdfExportButton advanceId={advance.id} />
+                            <AdvancePdfExportButton
+                              advanceId={advance.id}
+                              workerName={workerName}
+                              onViewClick={() => handleOpenPreview(advance.id)}
+                            />
                             {locked ? (
                               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-not-allowed">
                                 <Lock className="w-4 h-4 text-text-disabled" />
@@ -457,6 +436,13 @@ export default function WorkerAdvancesPage() {
           setIsDeleteModalOpen(false);
           setSelectedAdvance(null);
         }}
+      />
+
+      <PdfPreviewModal
+        isOpen={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        pdfUrl={previewPdfUrl}
+        title={previewPdfTitle}
       />
     </div>
   );
