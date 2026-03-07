@@ -11,6 +11,7 @@ import { VALIDATION, sanitizePhone, validateNumericRange, validatePhone } from '
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 import Input from '../ui/Input';
+import TamilInput from '../ui/TamilInput';
 
 interface AddWorkerModalProps {
   isOpen: boolean;
@@ -244,10 +245,10 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
               >
                 Name <span className="text-error">*</span>
               </label>
-              <Input
+              <TamilInput
                 id={nameId}
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onValueChange={(val) => setFormData({ ...formData, name: val })}
                 placeholder="Enter worker name"
                 maxLength={VALIDATION.name.maxLength}
                 autoFocus

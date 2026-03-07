@@ -14,6 +14,7 @@ import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
+import TamilTextarea from '../ui/TamilTextarea';
 
 interface PaySalaryModalProps {
   workerId: number;
@@ -62,7 +63,6 @@ export default function PaySalaryModal({
   const today = getLocalToday();
   const paymentAmountId = useId();
   const paymentDateId = useId();
-  const paymentProofId = useId();
   const modalTitleId = useId();
 
   const { markSalaryAsPaid } = useSalaryLockStore();
@@ -552,20 +552,13 @@ export default function PaySalaryModal({
                   </div>
 
                   <div>
-                    <label
-                      htmlFor={paymentProofId}
-                      className="block text-sm font-medium text-text-primary mb-2"
-                    >
-                      Payment Reference / Note
-                    </label>
-                    <textarea
-                      id={paymentProofId}
+                    <TamilTextarea
+                      label="Payment Reference / Note"
                       value={formData.paymentProof}
-                      onChange={(e) => setFormData({ ...formData, paymentProof: e.target.value })}
+                      onValueChange={(val) => setFormData({ ...formData, paymentProof: val })}
                       placeholder="e.g., UPI Ref: 123456789, Cash, Cheque #1234..."
                       rows={3}
                       maxLength={VALIDATION.textField.maxLength}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
                       disabled={loading}
                     />
                     {formData.paymentProof.length > 0 && (

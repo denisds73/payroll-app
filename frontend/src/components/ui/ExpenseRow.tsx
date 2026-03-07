@@ -6,7 +6,7 @@ import { VALIDATION } from '../../utils/validation';
 import ConfirmModal from '../modals/ConfirmModal';
 import Button from './Button';
 import Input from './Input';
-import Textarea from './Textarea';
+import TamilTextarea from './TamilTextarea';
 import Tooltip from './Tooltip';
 
 export interface ExpenseRowData {
@@ -82,10 +82,6 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
         },
       }));
     }
-  };
-
-  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData((prev) => ({ ...prev, note: e.target.value }));
   };
 
   const handleSave = () => {
@@ -290,9 +286,9 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
 
       {/* Notes */}
       <div className="max-w-xs flex-1 min-w-0 relative">
-        <Textarea
+        <TamilTextarea
           value={formData.note}
-          onChange={handleNoteChange}
+          onValueChange={(val) => setFormData((prev) => ({ ...prev, note: val }))}
           disabled={!isEditing || isLocked}
           placeholder="Add notes..."
           maxLength={VALIDATION.textField.maxLength}

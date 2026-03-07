@@ -13,6 +13,7 @@ import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
+import TamilTextarea from '../ui/TamilTextarea';
 
 interface CloseCycleModalProps {
   workerId: number;
@@ -46,7 +47,6 @@ export default function CloseCycleModal({
 }: CloseCycleModalProps) {
   const today = getLocalToday();
   const modalTitleId = useId();
-  const noteFieldId = useId();
   const closureDateId = useId();
 
   const { generateAndDownload } = useClosurePdfGenerator();
@@ -345,20 +345,13 @@ export default function CloseCycleModal({
 
               {/* Note / Reason */}
               <div>
-                <label
-                  htmlFor={noteFieldId}
-                  className="block text-sm font-medium text-text-primary mb-2"
-                >
-                  Note / Reason (Optional)
-                </label>
-                <textarea
-                  id={noteFieldId}
+                <TamilTextarea
+                  label="Note / Reason (Optional)"
                   value={note}
-                  onChange={(e) => setNote(e.target.value)}
+                  onValueChange={(val) => setNote(val)}
                   placeholder="e.g., Worker on leave, cycle settlement, balance carry-forward..."
                   rows={3}
                   maxLength={VALIDATION.textField.maxLength}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
                   disabled={loading}
                 />
                 {note.length > 0 && (

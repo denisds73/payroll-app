@@ -7,6 +7,7 @@ import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION } from '../../utils/validation';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
+import TamilTextarea from '../ui/TamilTextarea';
 
 interface EditExpenseModalProps {
   expense: {
@@ -45,7 +46,6 @@ export default function EditExpenseModal({
   const dateId = useId();
   const amountId = useId();
   const typeId = useId();
-  const noteId = useId();
   const modalTitleId = useId();
 
   const [formData, setFormData] = useState<ExpenseFormData>({
@@ -260,17 +260,13 @@ export default function EditExpenseModal({
           </div>
 
           <div>
-            <label htmlFor={noteId} className="block text-sm font-medium text-text-primary mb-2">
-              Note (Optional)
-            </label>
-            <textarea
-              id={noteId}
+            <TamilTextarea
+              label="Note (Optional)"
               value={formData.note}
-              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+              onValueChange={(val) => setFormData({ ...formData, note: val })}
               placeholder="Add a note about this expense..."
               rows={3}
               maxLength={VALIDATION.textField.maxLength}
-              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
               disabled={loading}
             />
             {formData.note.length > 0 && (

@@ -7,6 +7,7 @@ import { getLocalToday } from '../../utils/dateUtils';
 import { VALIDATION } from '../../utils/validation';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
+import TamilTextarea from '../ui/TamilTextarea';
 
 interface EditAdvanceModalProps {
   advance: {
@@ -37,7 +38,6 @@ export default function EditAdvanceModal({
   const today = getLocalToday();
   const dateId = useId();
   const amountId = useId();
-  const reasonId = useId();
   const modalTitleId = useId();
 
   const [formData, setFormData] = useState<AdvanceFormData>({
@@ -202,17 +202,13 @@ export default function EditAdvanceModal({
           </div>
 
           <div>
-            <label htmlFor={reasonId} className="block text-sm font-medium text-text-primary mb-2">
-              Reason (Optional)
-            </label>
-            <textarea
-              id={reasonId}
+            <TamilTextarea
+              label="Reason (Optional)"
               value={formData.reason}
-              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              onValueChange={(val) => setFormData({ ...formData, reason: val })}
               placeholder="Add a note about this advance..."
               rows={3}
               maxLength={VALIDATION.textField.maxLength}
-              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
               disabled={loading}
             />
             {formData.reason.length > 0 && (

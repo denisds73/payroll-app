@@ -17,6 +17,7 @@ import { SignatureModal } from '../signature/SignatureModal';
 import type { SignatureData } from '../signature/signature.types';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
+import TamilTextarea from '../ui/TamilTextarea';
 
 interface IssueAdvanceModalProps {
   workerId?: number;
@@ -44,7 +45,6 @@ export default function IssueAdvanceModal({
   const today = getLocalToday();
   const dateId = useId();
   const amountId = useId();
-  const reasonId = useId();
   const workerSearchId = useId();
   const modalTitleId = useId();
 
@@ -397,17 +397,13 @@ export default function IssueAdvanceModal({
           </div>
 
           <div>
-            <label htmlFor={reasonId} className="block text-sm font-medium text-text-primary mb-2">
-              Reason (Optional)
-            </label>
-            <textarea
-              id={reasonId}
+            <TamilTextarea
+              label="Reason (Optional)"
               value={formData.reason}
-              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              onValueChange={(val) => setFormData({ ...formData, reason: val })}
               placeholder="Add a note about this advance..."
               rows={3}
               maxLength={VALIDATION.textField.maxLength}
-              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary resize-none"
               disabled={loading}
             />
             {formData.reason.length > 0 && (
