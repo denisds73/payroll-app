@@ -46,7 +46,7 @@ interface TransliterationResult {
  *
  * Falls back to English if the API call fails (e.g., offline).
  */
-export function useTamilTransliteration(): TransliterationResult {
+export function useTamilTransliteration(enabled: boolean = true): TransliterationResult {
   const pendingWordRef = useRef('');
   const isTransliteratingRef = useRef(false);
 
@@ -98,6 +98,8 @@ export function useTamilTransliteration(): TransliterationResult {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (!enabled) return;
+      
       if (e.key === ' ' || e.key === 'Enter') {
         const word = pendingWordRef.current.trim();
         if (word) {
@@ -127,7 +129,7 @@ export function useTamilTransliteration(): TransliterationResult {
         }
       }
     },
-    [transliterateWord],
+    [transliterateWord, enabled],
   );
 
   const handleChange = useCallback(

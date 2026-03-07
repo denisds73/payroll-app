@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes } from 'react';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { useTamilTransliteration } from '../../hooks/useTamilTransliteration';
 
 interface TamilInputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -15,14 +15,21 @@ interface TamilInputProps extends InputHTMLAttributes<HTMLInputElement> {
  */
 export default function TamilInput({ label, error, onValueChange, ...props }: TamilInputProps) {
   const id = useId();
-  const { handleKeyDown, handleChange } = useTamilTransliteration();
+  const [isTamil, setIsTamil] = useState(true);
+  const { handleKeyDown, handleChange } = useTamilTransliteration(isTamil);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5 relative">
       <label htmlFor={id} className="text-sm font-medium text-secondary flex items-center gap-1.5">
         {label}
-        <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-semibold">
-          த
+        <span
+          className={`text-[10px] px-1.5 py-0.5 rounded font-semibold cursor-pointer transition-colors ${
+            isTamil ? 'bg-primary/15 text-primary hover:bg-primary/20' : 'bg-surface text-text-secondary border border-border hover:bg-surface-hover'
+          }`}
+          onClick={() => setIsTamil(!isTamil)}
+          title={isTamil ? "Tamil mode active. Click to switch to English." : "English mode active. Click to switch to Tamil."}
+        >
+          {isTamil ? 'த' : 'En'}
         </span>
       </label>
       <input

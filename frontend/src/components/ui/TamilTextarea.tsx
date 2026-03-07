@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import type { TextareaHTMLAttributes } from 'react';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { useTamilTransliteration } from '../../hooks/useTamilTransliteration';
 
 interface TamilTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -21,21 +21,33 @@ export default function TamilTextarea({
   ...props
 }: TamilTextareaProps) {
   const id = useId();
-  const { handleKeyDown, handleChange } = useTamilTransliteration();
+  const [isTamil, setIsTamil] = useState(true);
+  const { handleKeyDown, handleChange } = useTamilTransliteration(isTamil);
+
+  const toggleBadge = (
+    <span
+      className={`text-[10px] px-1.5 py-0.5 rounded font-semibold cursor-pointer transition-colors z-10 ${
+        isTamil ? 'bg-primary/15 text-primary hover:bg-primary/20' : 'bg-surface text-text-secondary border border-border hover:bg-surface-hover'
+      } ${!label ? 'absolute right-2 top-2' : ''}`}
+      onClick={() => setIsTamil(!isTamil)}
+      title={isTamil ? "Tamil mode active. Click to switch to English." : "English mode active. Click to switch to Tamil."}
+    >
+      {isTamil ? 'த' : 'En'}
+    </span>
+  );
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5 relative">
       {label && (
         <label
           htmlFor={id}
           className="text-sm font-medium text-text-primary flex items-center gap-1.5"
         >
           {label}
-          <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-semibold">
-            த
-          </span>
+          {toggleBadge}
         </label>
       )}
+      {!label && toggleBadge}
       <textarea
         id={id}
         className={clsx(

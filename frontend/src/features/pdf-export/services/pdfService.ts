@@ -1,8 +1,27 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
+import { notoSansTamilBase64 } from '../../../assets/fonts/notoSansTamilBase64';
 import { reportsAPI } from '../../../services/api';
 
-pdfMake.vfs = pdfFonts.vfs;
+pdfMake.vfs = {
+  ...pdfFonts.vfs,
+  'NotoSansTamil-Regular.ttf': notoSansTamilBase64,
+};
+
+pdfMake.fonts = {
+  Roboto: {
+    normal: 'Roboto-Regular.ttf',
+    bold: 'Roboto-Medium.ttf',
+    italics: 'Roboto-Italic.ttf',
+    bolditalics: 'Roboto-MediumItalic.ttf',
+  },
+  NotoSansTamil: {
+    normal: 'NotoSansTamil-Regular.ttf',
+    bold: 'NotoSansTamil-Regular.ttf',
+    italics: 'NotoSansTamil-Regular.ttf',
+    bolditalics: 'NotoSansTamil-Regular.ttf',
+  },
+};
 
 export async function generateAndDownloadPdf(
   docDefinition: any,
