@@ -11,6 +11,7 @@ import ConfirmModal from '../modals/ConfirmModal';
 import WorkerStatusModal from '../modals/WorkerStatusModal';
 import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
+import TamilInput from '../ui/TamilInput';
 
 interface ProfileTabProps {
   worker: {
@@ -309,14 +310,13 @@ export default function ProfileTab({ worker, onUpdate }: ProfileTabProps) {
                   >
                     Name <span className="text-error">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <TamilInput
                     id={nameId}
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onValueChange={(val) => setFormData({ ...formData, name: val })}
                     maxLength={VALIDATION.name.maxLength}
-                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-primary"
-                    required
+                    placeholder="Enter worker name"
+                    autoFocus
                     disabled={loading}
                   />
                 </div>

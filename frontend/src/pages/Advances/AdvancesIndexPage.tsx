@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import Button from '../../components/ui/Button';
+import TamilInput from '../../components/ui/TamilInput';
 import { advancesAPI } from '../../services/api';
 
 interface WorkerWithLatestAdvance {
@@ -77,13 +78,13 @@ export default function AdvancesIndexPage() {
       <div className="bg-card rounded-lg border border-border overflow-hidden flex flex-col min-h-0 flex-1">
         <div className="flex items-center justify-end border-b border-border px-4 py-3 shrink-0">
           <div className="relative w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-            <input
-              type="text"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary z-10" />
+            <TamilInput
               placeholder="Search by worker name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:border-primary"
+              onValueChange={(val) => setSearchQuery(val)}
+              className="w-full"
+              inputClassName="pl-9"
             />
           </div>
         </div>

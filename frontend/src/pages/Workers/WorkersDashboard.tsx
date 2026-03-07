@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AddWorkerModal from '../../components/modals/AddWorkerModal';
 import Button from '../../components/ui/Button';
+import TamilInput from '../../components/ui/TamilInput';
 import { useWorkerStore } from '../../store/workerStore';
 
 type FilterTab = 'all' | 'active' | 'inactive';
@@ -94,14 +95,14 @@ export default function WorkersDashboard() {
             ))}
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-            <input
-              type="text"
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary z-10" />
+            <TamilInput
               placeholder="Search by name or phone..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:border-primary w-64"
+              onValueChange={(val) => setSearchQuery(val)}
+              className="w-full"
+              inputClassName="pl-9"
             />
           </div>
         </div>
