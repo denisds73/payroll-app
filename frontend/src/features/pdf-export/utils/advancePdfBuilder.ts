@@ -76,7 +76,7 @@ export function buildAdvanceReceiptPdf(
     },
 
     defaultStyle: {
-      font: 'NotoSansTamil',
+      font: 'Tamil',
       fontSize: 10,
       color: '#18181b',
     },

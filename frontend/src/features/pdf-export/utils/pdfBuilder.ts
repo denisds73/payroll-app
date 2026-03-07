@@ -86,7 +86,7 @@ export function buildSalaryReportPdf(
     },
 
     defaultStyle: {
-      font: 'NotoSansTamil',
+      font: 'Tamil',
       fontSize: 10,
       color: '#18181b',
     },

@@ -3,25 +3,36 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { notoSansTamilBase64 } from '../../../assets/fonts/notoSansTamilBase64';
 import { reportsAPI } from '../../../services/api';
 
-pdfMake.vfs = {
-  ...pdfFonts.vfs,
-  'NotoSansTamil-Regular.ttf': notoSansTamilBase64,
+// Initialize VFS with both default fonts and NotoSansTamil
+const defaultVfs = (pdfFonts as any).pdfMake?.vfs || (pdfFonts as any).vfs || pdfFonts;
+
+export const vfs = {
+  ...defaultVfs,
+  'tamil.ttf': notoSansTamilBase64,
 };
 
-pdfMake.fonts = {
+export const fonts = {
   Roboto: {
     normal: 'Roboto-Regular.ttf',
     bold: 'Roboto-Medium.ttf',
     italics: 'Roboto-Italic.ttf',
     bolditalics: 'Roboto-MediumItalic.ttf',
   },
-  NotoSansTamil: {
-    normal: 'NotoSansTamil-Regular.ttf',
-    bold: 'NotoSansTamil-Regular.ttf',
-    italics: 'NotoSansTamil-Regular.ttf',
-    bolditalics: 'NotoSansTamil-Regular.ttf',
+  Tamil: {
+    normal: 'tamil.ttf',
+    bold: 'tamil.ttf',
+    italics: 'tamil.ttf',
+    bolditalics: 'tamil.ttf',
   },
 };
+
+// Set globally
+if (typeof (pdfMake as any).addVirtualFileSystem !== 'undefined') {
+  (pdfMake as any).addVirtualFileSystem(vfs);
+} else {
+  (pdfMake as any).vfs = vfs;
+}
+(pdfMake as any).fonts = fonts;
 
 export async function generateAndDownloadPdf(
   docDefinition: any,
@@ -115,10 +126,6 @@ export async function openPdfInNewTab(docDefinition: any, fileName: string): Pro
   }
 }
 
-/**
- * Generate a Blob Object URL for the PDF, suitable for embedding in an iframe.
- * pdfmake 0.3.x uses a Promise-based API (not callbacks).
- */
 export async function getPdfUrl(docDefinition: any): Promise<string> {
   console.log('[PdfService] Generating PDF URL...');
 
