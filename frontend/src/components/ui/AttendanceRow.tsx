@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import AttendanceStatusGroup from './AttendanceStatusGroup';
 import Button from './Button';
 import OTInputStepper from './OTInputStepper';
-import Textarea from './Textarea';
+import TamilTextarea from './TamilTextarea';
 import Tooltip from './Tooltip';
 
 interface AttendanceData {
@@ -60,9 +60,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
     setFormData((prev) => ({ ...prev, otHours: value }));
   };
 
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData((prev) => ({ ...prev, notes: e.target.value }));
-  };
+
 
   const handleSave = () => {
     setSavedData(formData);
@@ -194,9 +192,9 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
       />
 
       <div className="max-w-xs flex-1 min-w-0 relative" style={{ top: '-3px' }}>
-        <Textarea
+        <TamilTextarea
           value={formData.notes}
-          onChange={handleNotesChange}
+          onValueChange={(val) => setFormData((prev) => ({ ...prev, notes: val }))}
           disabled={!isEditing || isLocked}
           placeholder="Add notes..."
         />
