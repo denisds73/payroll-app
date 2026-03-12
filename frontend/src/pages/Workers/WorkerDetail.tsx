@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  BarChart,
   Calendar,
   CheckCircle,
   Clock,
@@ -23,6 +24,7 @@ import AttendanceTab from '../../components/workers/AttendanceTab';
 import ExpenseTab from '../../components/workers/ExpenseTab';
 import HistoryTab from '../../components/workers/HistoryTab';
 import ProfileTab from '../../components/workers/ProfileTab';
+import WeeklyReportTab from '../../components/workers/WeeklyReportTab';
 import { salariesAPI } from '../../services/api';
 import { useWorkerStore } from '../../store/workerStore';
 
@@ -74,7 +76,7 @@ export default function WorkerDetail() {
   }, [worker?.id]);
 
   useEffect(() => {
-    const validTabs = ['attendance', 'expenses', 'history', 'profile'];
+    const validTabs = ['attendance', 'expenses', 'history', 'profile', 'weekly-report'];
     const currentTab = searchParams.get('tab');
 
     if (currentTab && !validTabs.includes(currentTab)) {
@@ -199,6 +201,7 @@ export default function WorkerDetail() {
   const tabs = [
     { id: 'attendance', label: 'Attendance', icon: <Calendar className="w-4 h-4" /> },
     { id: 'expenses', label: 'Expenses', icon: <Receipt className="w-4 h-4" /> },
+    { id: 'weekly-report', label: 'Weekly Report', icon: <BarChart className="w-4 h-4" /> },
     { id: 'history', label: 'History', icon: <FileText className="w-4 h-4" /> },
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
   ];
@@ -472,6 +475,10 @@ export default function WorkerDetail() {
                 }
               }}
             />
+          )}
+
+          {activeTab === 'weekly-report' && (
+            <WeeklyReportTab workerId={worker.id} />
           )}
         </div>
       </div>

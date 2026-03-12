@@ -24,6 +24,11 @@ export class WorkersController {
     return this.workersService.getBlockedDates(id);
   }
 
+  @Get(':id/weekly-report')
+  getWeeklyReport(@Param('id', ParseIntPipe) id: number) {
+    return this.workersService.getWeeklyReport(id);
+  }
+
   @Post(':id/disable')
   disableWorker(@Param('id', ParseIntPipe) id: number, @Body() dto: DisableWorkerDto) {
     return this.workersService.disableWorker(id, dto);

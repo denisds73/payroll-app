@@ -170,6 +170,8 @@ export const workersAPI = {
     api.post(`/workers/${workerId}/activate`, { effectiveFrom }),
 
   getBlockedDates: (workerId: number) => api.get(`/workers/${workerId}/blocked-dates`),
+
+  getWeeklyReport: (workerId: number) => api.get(`/workers/${workerId}/weekly-report`),
 };
 
 export const salariesAPI = {
