@@ -478,7 +478,7 @@ export default function WorkerDetail() {
           )}
 
           {activeTab === 'weekly-report' && (
-            <WeeklyReportTab workerId={worker.id} />
+            <WeeklyReportTab worker={worker} />
           )}
         </div>
       </div>
