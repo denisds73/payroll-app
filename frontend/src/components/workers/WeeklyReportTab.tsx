@@ -1,9 +1,10 @@
-import { Calendar, Download, MessageCircle, Share2, BarChart } from 'lucide-react';
+import { Calendar, Download } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { workersAPI } from '../../services/api';
 import PdfService from '../../features/pdf-export/services/pdfService';
 import { buildWeeklyReportPdf } from '../../features/pdf-export/utils/weeklyReportPdfBuilder';
+import Button from '../ui/Button';
 
 interface AttendanceDetail {
   date: string;
@@ -176,32 +177,6 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
     }
   };
 
-  const handleShareWhatsApp = () => {
-    if (!worker.phone) {
-      toast.error('Worker phone number not available');
-      return;
-    }
-
-    const summaryHeader = `*வாரம் அறிக்கை (Weekly Report) - ${worker.name}*`;
-    const period = reports.length > 0 
-      ? `Period: ${shortDate(reports[reports.length-1].startDate)} - ${shortDate(reports[0].endDate)}`
-      : '';
-    
-    const statsRow = `\nவேலை நாட்கள்: ${totals.attendanceCount}\nOT: ${totals.otUnits}\nசம்பளம்: ₹${totals.earning.toLocaleString('en-IN')}\nசெலவு: ₹${totals.expensesTotal.toLocaleString('en-IN')}\n*மொத்தம் (Net): ₹${totals.netEarning.toLocaleString('en-IN')}*`;
-    
-    const message = `${summaryHeader}\n${period}\n${statsRow}\n\nPlease check the exported PDF for full day-by-day details.`;
-    
-    const encodedMsg = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${worker.phone.replace(/[^0-9]/g, '')}?text=${encodedMsg}`;
-    
-    if (typeof (window as any).require !== 'undefined') {
-      const { shell } = (window as any).require('electron');
-      shell.openExternal(whatsappUrl);
-    } else {
-      window.open(whatsappUrl, '_blank');
-    }
-    toast.success('Opening WhatsApp...');
-  };
 
   if (loading) {
     return (
@@ -237,36 +212,28 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
   const tdBase = 'px-2 py-2 text-center text-xs';
 
   return (
-    <div className="space-y-4">
-      {/* Actions Toolbar */}
-      <div className="flex items-center justify-between bg-surface/30 p-3 rounded-lg border border-border/50">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <Share2 className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-text-primary">பகிர் (Share Report)</span>
+          <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
+          <h3 className="text-sm font-bold text-text-primary tracking-tight">
+            Weekly Breakdown
+          </h3>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownloadPdf}
-            disabled={isGeneratingPdf}
-            className="flex items-center gap-2 px-3 py-1.5 bg-card hover:bg-surface border border-border rounded-md text-xs font-medium text-text-primary transition-all disabled:opacity-50"
-            title="Download PDF"
-          >
-            <Download className={`w-3.5 h-3.5 ${isGeneratingPdf ? 'animate-bounce' : ''}`} />
-            PDF பதிவிறக்கம்
-          </button>
-          <button
-            onClick={handleShareWhatsApp}
-            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-medium transition-all shadow-sm"
-            title="Share on WhatsApp"
-          >
-            <MessageCircle className="w-3.5 h-3.5" />
-            வாட்ஸ்அப் பகிர்
-          </button>
-        </div>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={handleDownloadPdf}
+          loading={isGeneratingPdf}
+          title="Download PDF Report"
+        >
+          <Download className="w-4 h-4" />
+          Download PDF
+        </Button>
       </div>
 
-      <div className="bg-card border border-border rounded-xl shadow-lg">
-        <div className="overflow-y-auto max-h-[calc(100vh-27rem)]">
+      <div className="bg-card border border-border rounded-xl shadow-xl overflow-hidden">
+        <div className="overflow-y-auto max-h-[calc(100vh-24rem)]">
           <table className="w-full text-xs table-fixed">
             <colgroup>
               <col className="w-[13%]" />
@@ -392,9 +359,6 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
           </table>
         </div>
       </div>
-      <p className="text-[10px] text-text-secondary px-2 italic">
-        * Note: இதர செலவுகள் (Other Expenses) are excluded from Net Earning calculations in this report.
-      </p>
     </div>
   );
 }
