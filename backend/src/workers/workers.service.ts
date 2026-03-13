@@ -596,6 +596,151 @@ export class WorkersService {
     return { blockedDates };
   }
 
+  async getWeeklyReport(workerId: number) {
+    const worker = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+    });
+
+    if (!worker) {
+      throw new NotFoundException(`Worker with ID ${workerId} not found`);
+    }
+
+    const lastSalary = await this.prisma.salary.findFirst({
+      where: { workerId },
+      orderBy: { cycleEnd: 'desc' },
+    });
+
+    const cycleStart = lastSalary ? new Date(lastSalary.cycleEnd.getTime() + 86400000) : worker.joinedAt;
+    const cycleEnd = this.dateService.startOfToday();
+
+    if (cycleStart > cycleEnd) {
+      return [];
+    }
+
+    // Generate weeks
+    let currentStart = new Date(cycleStart);
+    // ensure time is 00:00:00 for consistency
+    currentStart.setUTCHours(0, 0, 0, 0);
+
+    const cycleEndUTCDay = new Date(cycleEnd);
+    cycleEndUTCDay.setUTCHours(23, 59, 59, 999);
+
+    const weeks: any[] = [];
+
+    while (currentStart <= cycleEndUTCDay) {
+      const dayOfWeek = currentStart.getUTCDay(); // 0 is Sunday, 6 is Saturday
+      const daysUntilSaturday = 6 - dayOfWeek;
+      
+      const currentEnd = new Date(currentStart);
+      currentEnd.setUTCDate(currentEnd.getUTCDate() + daysUntilSaturday);
+      currentEnd.setUTCHours(23, 59, 59, 999);
+
+      const effectiveEnd = currentEnd > cycleEndUTCDay ? new Date(cycleEndUTCDay) : currentEnd;
+
+      weeks.push({
+        startDate: new Date(currentStart),
+        endDate: new Date(effectiveEnd),
+        attendanceCount: 0,
+        otUnits: 0,
+        earning: 0,
+        expenseFood: 0,
+        expenseGeneral: 0,
+        expenseOther: 0,
+        expensesTotal: 0,
+        netEarning: 0,
+        attendances: [],
+        expenses: []
+      });
+
+      currentStart = new Date(currentEnd);
+      currentStart.setUTCDate(currentStart.getUTCDate() + 1);
+      currentStart.setUTCHours(0, 0, 0, 0);
+    }
+
+    const attendances = await this.prisma.attendance.findMany({
+      where: {
+        workerId,
+        date: { gte: cycleStart, lte: cycleEndUTCDay }
+      },
+      orderBy: { date: 'asc' }
+    });
+
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        workerId,
+        date: { gte: cycleStart, lte: cycleEndUTCDay }
+      },
+      include: { type: true },
+      orderBy: { date: 'asc' }
+    });
+
+    for (const week of weeks) {
+      const weekAttendances = attendances.filter(a => a.date >= week.startDate && a.date <= week.endDate);
+      const weekExpenses = expenses.filter(e => e.date >= week.startDate && e.date <= week.endDate);
+      
+      let earning = 0;
+      let otUnitsSum = 0;
+      
+      for (const a of weekAttendances) {
+        let base = 0;
+        if (a.status === 'PRESENT') base = a.wageAtTime;
+        else if (a.status === 'HALF') base = a.wageAtTime * 0.5;
+        
+        const otPay = (a.otUnits || 0) * a.otRateAtTime;
+        earning += base + otPay;
+        otUnitsSum += (a.otUnits || 0);
+      }
+      
+      let expenseFood = 0;
+      let expenseGeneral = 0;
+      let expenseOther = 0;
+      
+      for (const e of weekExpenses) {
+        if (e.type.name === 'Food') {
+          expenseFood += e.amount;
+        } else if (e.type.name === 'Expenses') {
+          expenseGeneral += e.amount;
+        } else {
+          expenseOther += e.amount;
+        }
+      }
+
+      week.attendanceCount = weekAttendances.reduce((acc, a) => acc + (a.status === 'PRESENT' ? 1 : a.status === 'HALF' ? 0.5 : 0), 0);
+      week.otUnits = otUnitsSum;
+      week.earning = earning;
+      week.expensesTotal = expenseGeneral + expenseFood;
+      week.expenseFood = expenseFood;
+      week.expenseGeneral = expenseGeneral;
+      week.netEarning = earning - week.expensesTotal;
+
+      week.attendances = weekAttendances.map(a => ({
+        date: a.date.toISOString().split('T')[0],
+        status: a.status,
+        otUnits: a.otUnits
+      }));
+      week.expenses = weekExpenses.map(e => ({
+        date: e.date.toISOString().split('T')[0],
+        amount: e.amount,
+        note: e.note,
+        type: e.type.name
+      }));
+    }
+
+    return weeks.map(w => ({
+      startDate: w.startDate.toISOString().split('T')[0],
+      endDate: w.endDate.toISOString().split('T')[0],
+      attendanceCount: w.attendanceCount,
+      otUnits: w.otUnits,
+      earning: w.earning,
+      expenseFood: w.expenseFood,
+      expenseGeneral: w.expenseGeneral,
+      expensesTotal: w.expensesTotal,
+      netEarning: w.netEarning,
+      attendances: w.attendances,
+      expenses: w.expenses
+    }));
+  }
+
   async getInactivePeriods(workerId: number) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: workerId },

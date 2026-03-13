@@ -168,3 +168,37 @@ export interface FormattingOptions {
   currency?: string;
   dateFormat?: 'short' | 'long' | 'full';
 }
+
+export interface WeeklyReportPdfData {
+  worker: {
+    id: number;
+    name: string;
+    phone?: string;
+  };
+  reports: {
+    startDate: string;
+    endDate: string;
+    attendanceCount: number;
+    otUnits: number;
+    earning: number;
+    expenseFood: number;
+    expenseGeneral: number;
+    expensesTotal: number;
+    netEarning: number;
+    attendances: {
+      date: string;
+      status: string;
+      otUnits: number;
+    }[];
+  }[];
+  totals: {
+    attendanceCount: number;
+    otUnits: number;
+    earning: number;
+    expenseFood: number;
+    expenseGeneral: number;
+    expensesTotal: number;
+    netEarning: number;
+  };
+  generatedAt: string;
+}
