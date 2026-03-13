@@ -47,7 +47,7 @@ export const Button: React.FC<ButtonProps> = ({
     baseStyles,
     variantStyles[variant],
     sizeStyles[size],
-    (loading || disabled) && 'opacity-60 cursor-not-allowed',
+    (loading || disabled) && 'opacity-50 cursor-not-allowed contrast-75',
     className,
   );
 

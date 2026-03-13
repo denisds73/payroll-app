@@ -204,6 +204,44 @@ export default function AttendanceTab({
     }
   };
 
+  const handleDeleteAttendance = async (date: string): Promise<void> => {
+    try {
+      const existingRecord = attendanceMap[date];
+      if (!existingRecord?.id) return;
+
+      await attendanceAPI.delete(existingRecord.id);
+
+      setAttendanceMap((prev) => {
+        const newMap = { ...prev };
+        delete newMap[date];
+        return newMap;
+      });
+
+      if (onAttendanceChange) {
+        onAttendanceChange();
+      }
+
+      toast.success('Attendance deleted successfully');
+    } catch (err: unknown) {
+      console.error('Delete failed:', err);
+      const error = err as { response?: { data?: { message?: string } } };
+      const errorMessage = error.response?.data?.message || 'Failed to delete attendance';
+
+      if (
+        errorMessage.toLowerCase().includes('locked') ||
+        errorMessage.toLowerCase().includes('salary') ||
+        errorMessage.toLowerCase().includes('paid')
+      ) {
+        toast.error('Cannot delete - salary has been paid for this period');
+        fetchPaidPeriods(workerId, true);
+      } else {
+        toast.error(errorMessage);
+      }
+
+      fetchAttendance();
+    }
+  };
+
   const handleMonthYearChange = (newMonth: number, newYear: number) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('attMonth', String(newMonth));
@@ -312,6 +350,7 @@ export default function AttendanceTab({
       error={combinedError}
       onMonthYearChange={handleMonthYearChange}
       onSaveAttendance={handleSaveAttendance}
+      onDeleteAttendance={handleDeleteAttendance}
       lockedDates={lockedDates}
       lockedPeriods={lockedPeriods}
     />

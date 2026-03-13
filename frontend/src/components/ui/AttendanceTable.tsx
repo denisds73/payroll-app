@@ -15,6 +15,7 @@ interface AttendanceTableProps {
   error?: string;
   onMonthYearChange: (month: number, year: number) => void;
   onSaveAttendance: (date: string, data: AttendanceData) => void;
+  onDeleteAttendance: (date: string) => void;
   lockedDates: Map<string, string[]>;
   lockedPeriods?: Array<{
     startDate: string;
@@ -99,6 +100,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   error,
   onMonthYearChange,
   onSaveAttendance,
+  onDeleteAttendance,
   lockedDates,
   lockedPeriods = [],
 }) => {
@@ -196,6 +198,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                   date={date}
                   initialData={attendanceMap[date]}
                   onSave={(data) => onSaveAttendance(date, data)}
+                  onDelete={() => onDeleteAttendance(date)}
                   isLocked={isLocked}
                   lockReasons={lockReasons}
                 />

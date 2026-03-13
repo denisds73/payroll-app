@@ -107,7 +107,10 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
     }
 
     setSavedData(formData);
-    setIsEditing(false);
+    const hasSaved = Object.keys(formData.existingIds).length > 0;
+    if (hasSaved) {
+      setIsEditing(false);
+    }
     setIsDirty(false);
 
     if (onSave) {
@@ -118,7 +121,10 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   const handleCancel = () => {
     setFormData(savedData);
     setIsDirty(false);
-    setIsEditing(false);
+    const hasSaved = Object.keys(savedData.existingIds).length > 0;
+    if (hasSaved) {
+      setIsEditing(false);
+    }
   };
 
   const handleEdit = () => {
@@ -191,19 +197,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       );
     }
 
-    if (isDirty) {
-      return (
-        <div className="flex gap-2">
-          <Button variant="primary" size="md" onClick={handleSave}>
-            Save
-          </Button>
-          <Button variant="secondary" size="md" onClick={handleCancel}>
-            Cancel
-          </Button>
-        </div>
-      );
-    }
-
+    // View mode: show Edit and Delete buttons if there's data
     if (!isEditing && hasAnyExistingIds) {
       return (
         <div className="flex gap-2">
@@ -228,15 +222,25 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       );
     }
 
-    if (isEditing && hasAnyExistingIds) {
-      return (
-        <Button variant="secondary" size="md" onClick={handleCancel}>
+    // Edit mode (or new row mode)
+    const hasAnyAmount = Object.values(formData.amounts).some((a) => a > 0);
+    const canSave = isDirty && hasAnyAmount;
+
+    return (
+      <div className="flex gap-2">
+        <Button variant="primary" size="md" onClick={handleSave} disabled={!canSave}>
+          Save
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={handleCancel}
+          disabled={!isDirty && !hasAnyExistingIds}
+        >
           Cancel
         </Button>
-      );
-    }
-
-    return null;
+      </div>
+    );
   };
 
   const tooltipContent = lockReasons.length > 0 && (

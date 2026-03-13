@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import ConfirmModal from '../modals/ConfirmModal';
 import AttendanceStatusGroup from './AttendanceStatusGroup';
 import Button from './Button';
 import OTInputStepper from './OTInputStepper';
@@ -17,6 +18,7 @@ interface AttendanceRowProps {
   date: string;
   initialData?: AttendanceData;
   onSave?: (data: AttendanceData) => void;
+  onDelete?: () => void;
   isLocked?: boolean;
   lockReasons?: string[];
 }
@@ -34,11 +36,14 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
   date,
   initialData,
   onSave,
+  onDelete,
   isLocked = false,
   lockReasons = [],
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isDirty, setIsDirty] = useState<boolean>(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const [formData, setFormData] = useState<AttendanceData>({
     attendanceStatus: '',
@@ -59,8 +64,6 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
   const handleOtChange = (value: number) => {
     setFormData((prev) => ({ ...prev, otHours: value }));
   };
-
-
 
   const handleSave = () => {
     setSavedData(formData);
@@ -86,14 +89,33 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
     setIsEditing(true);
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      if (onDelete) {
+        await onDelete();
+      }
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Delete failed:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   useEffect(() => {
     if (initialData) {
-      console.log(`📋 AttendanceRow ${date} received initialData:`, initialData);
       setFormData(initialData);
       setSavedData(initialData);
       setIsEditing(false);
+    } else {
+      // For new rows, we reset form if initialData becomes undefined
+      const empty = { attendanceStatus: '', otHours: 0, notes: '' };
+      setFormData(empty);
+      setSavedData(empty);
+      setIsEditing(true);
     }
-  }, [initialData, date]);
+  }, [initialData]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -119,37 +141,47 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
       );
     }
 
+    // View mode: show Edit and Delete buttons
     if (!isEditing) {
       return (
-        <Button className="border-2 font-semibold" variant="outline" size="md" onClick={handleEdit}>
-          Edit
-        </Button>
-      );
-    }
-
-    if (isDirty) {
-      return (
         <div className="flex gap-2">
-          <Button variant="primary" size="md" onClick={handleSave}>
-            Save
+          <Button
+            className="border-2 font-semibold"
+            variant="outline"
+            size="md"
+            onClick={handleEdit}
+          >
+            Edit
           </Button>
-          <Button variant="secondary" size="md" onClick={handleCancel}>
-            Cancel
+          <Button
+            variant="dangerLight"
+            size="md"
+            onClick={() => setShowDeleteModal(true)}
+            disabled={isDeleting}
+            className="border-2 font-semibold"
+          >
+            Delete
           </Button>
         </div>
       );
     }
 
-    if (isEditing) {
-      if (hasSavedData)
-        return (
-          <Button variant="secondary" size="md" onClick={handleCancel}>
-            Cancel
-          </Button>
-        );
-    }
-
-    return null;
+    // Edit mode: Always show Save and Cancel buttons
+    return (
+      <div className="flex gap-2">
+        <Button variant="primary" size="md" onClick={handleSave} disabled={!isDirty}>
+          Save
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={handleCancel}
+          disabled={!isDirty && !hasSavedData}
+        >
+          Cancel
+        </Button>
+      </div>
+    );
   };
 
   const tooltipContent = lockReasons.length > 0 && (
@@ -201,6 +233,19 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
       </div>
 
       <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
+
+      {showDeleteModal && (
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          title="Delete Attendance"
+          message={`Are you sure you want to delete attendance for ${formatDate(date)}?`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
     </div>
   );
 
