@@ -118,9 +118,9 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   };
 
   return (
-    <div className="rounded-xl bg-card shadow-md w-full">
+    <div className="w-full">
       {/* 1. Title & Filters Bar (Sticky top-0) */}
-      <div className="sticky top-0 z-30 flex items-center justify-between px-6 py-3 bg-card border-b border-border shadow-sm">
+      <div className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-card border-b border-border">
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
           <h3 className="text-sm font-bold text-text-primary tracking-tight">
@@ -163,8 +163,8 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         </div>
       </div>
 
-      {/* 2. Column Headers (Sticky top-[53px]) matching the gap and widths exactly */}
-      <div className="sticky top-[53px] z-20 flex items-center gap-x-8 px-4 py-3 bg-surface/95 backdrop-blur-md border-b border-border shadow-sm">
+      {/* 2. Column Headers (Sticky top-[61px]) */}
+      <div className="sticky top-[61px] z-20 flex items-center gap-x-8 px-6 py-3 bg-surface/95 backdrop-blur-md border-b border-border">
         <div className="w-36 shrink-0 font-bold text-text-secondary uppercase tracking-widest text-xs">
           Date
         </div>
@@ -180,7 +180,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         <div className="w-32 shrink-0" />
       </div>
 
-      <div className="px-4 py-4 space-y-2">
+      <div className="px-6 py-4 space-y-2">
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20 text-error text-xs font-bold uppercase tracking-wide">
             {error}

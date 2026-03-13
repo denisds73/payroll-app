@@ -261,7 +261,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
 
   const rowContent = (
     <div
-      className={`flex flex-nowrap items-center gap-x-4 px-4 py-2 bg-card transition-all duration-200 rounded-lg ${
+      className={`flex flex-nowrap items-center gap-x-4 px-6 py-2 bg-card transition-all duration-200 rounded-lg ${
         isLocked ? 'opacity-60 cursor-not-allowed' : ''
       }`}
       role="row"

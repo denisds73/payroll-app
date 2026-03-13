@@ -253,9 +253,9 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
 
   return (
     <>
-      <div className="bg-card border border-border rounded-xl shadow-md overflow-hidden">
+      <div className="w-full">
         {/* Card Header matching other tables */}
-        <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-surface/95 backdrop-blur-sm border-b border-border shadow-sm">
+        <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-card border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
             <h3 className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">

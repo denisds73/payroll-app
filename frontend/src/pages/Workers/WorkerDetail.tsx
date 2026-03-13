@@ -440,7 +440,7 @@ export default function WorkerDetail() {
         </div>
 
         <div className="overflow-auto flex-1 h-full custom-scrollbar">
-          <div className="px-4 pt-2 pb-6 space-y-6">
+          <div className="pb-6 space-y-6">
           <div className={activeTab === 'attendance' ? 'block' : 'hidden'}>
             <AttendanceTab
               workerId={worker.id}
@@ -458,29 +458,29 @@ export default function WorkerDetail() {
             />
           </div>
 
-          <div className={activeTab === 'history' ? 'block' : 'hidden'}>
-            <HistoryTab
-              workerId={worker.id}
-              workerName={worker.name}
-              onDataChange={() => fetchCycleStats(worker.id, true)}
-            />
-          </div>
+            <div className={activeTab === 'history' ? 'block px-6 pt-2' : 'hidden'}>
+              <HistoryTab
+                workerId={worker.id}
+                workerName={worker.name}
+                onDataChange={() => fetchCycleStats(worker.id, true)}
+              />
+            </div>
 
-          <div className={activeTab === 'profile' ? 'block' : 'hidden'}>
-            <ProfileTab
-              worker={worker}
-              onUpdate={() => {
-                fetchWorkers();
-                if (worker) {
-                  fetchCycleStats(worker.id, true);
-                }
-              }}
-            />
-          </div>
+            <div className={activeTab === 'profile' ? 'block px-6 pt-6' : 'hidden'}>
+              <ProfileTab
+                worker={worker}
+                onUpdate={() => {
+                  fetchWorkers();
+                  if (worker) {
+                    fetchCycleStats(worker.id, true);
+                  }
+                }}
+              />
+            </div>
 
-          <div className={activeTab === 'weekly-report' ? 'block' : 'hidden'}>
-            <WeeklyReportTab worker={worker} />
-          </div>
+            <div className={activeTab === 'weekly-report' ? 'block' : 'hidden'}>
+              <WeeklyReportTab worker={worker} />
+            </div>
           </div>
         </div>
       </div>
