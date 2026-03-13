@@ -1,11 +1,11 @@
 import { Calendar, Download, Eye } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { workersAPI } from '../../services/api';
 import PdfService from '../../features/pdf-export/services/pdfService';
 import { buildWeeklyReportPdf } from '../../features/pdf-export/utils/weeklyReportPdfBuilder';
-import Button from '../ui/Button';
+import { workersAPI } from '../../services/api';
 import PdfPreviewModal from '../modals/PdfPreviewModal';
+import Button from '../ui/Button';
 
 interface AttendanceDetail {
   date: string;
@@ -73,7 +73,7 @@ function getAttendanceMarking(status: string, otUnits: number): string {
     case 'PRESENT': marking = 'x'; break;
     case 'ABSENT': marking = 'a'; break;
     case 'HALF': marking = '/'; break;
-    default: marking = '-'; break;
+    default: return '';
   }
   const ot = otUnits ?? 0;
   if (ot > 0) {
@@ -144,12 +144,6 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
     return `₹${amount.toLocaleString('en-IN')}`;
   };
 
-  const netColor = (amount: number) => {
-    if (amount > 0) return 'text-emerald-400';
-    if (amount < 0) return 'text-red-400';
-    return '';
-  };
-
   const handleDownloadPdf = async () => {
     try {
       setIsGeneratingPdf(true);
@@ -158,14 +152,10 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
         reports: reports,
         totals: totals,
         generatedAt: new Date().toLocaleString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
         })
       };
-      
       const docDef = buildWeeklyReportPdf(data);
       await PdfService.generateAndDownloadPdf(
         docDef, 
@@ -184,23 +174,17 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
     try {
       setIsGeneratingPdf(true);
       setError(null);
-      
       const data = {
         worker: { id: worker.id, name: worker.name, phone: worker.phone },
         reports: reports,
         totals: totals,
         generatedAt: new Date().toLocaleString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
         })
       };
-      
       const docDef = buildWeeklyReportPdf(data);
       const url = await PdfService.getPdfUrl(docDef);
-      
       setPdfUrl(url);
       setIsPreviewOpen(true);
     } catch (err) {
@@ -212,16 +196,14 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
   };
 
   const closePreview = useCallback(() => {
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-    }
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
     setIsPreviewOpen(false);
   }, [pdfUrl]);
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="px-6 space-y-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="animate-pulse bg-surface rounded-lg h-10" />
         ))}
@@ -231,7 +213,7 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
 
   if (error) {
     return (
-      <div className="p-4 bg-error/10 border border-error/20 rounded-lg text-error text-xs">
+      <div className="mx-6 p-4 bg-error/10 border border-error/20 rounded-lg text-error text-xs font-bold uppercase tracking-wide">
         {error}
       </div>
     );
@@ -249,18 +231,28 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
     );
   }
 
-  const tdBase = 'px-2 py-2 text-center text-xs';
+  // Define column widths for consistent grid
+  const COL_WEEK = 'w-24 shrink-0';
+  const COL_DAY = 'flex-1 text-center';
+  const COL_ATT_COUNT = 'w-16 shrink-0';
+  const COL_OT = 'w-10 shrink-0';
+  const COL_EARN = 'w-24 shrink-0';
+  const COL_EXP_GEN = 'w-24 shrink-0';
+  const COL_EXP_FOOD = 'w-20 shrink-0';
+  const COL_EXP_TOTAL = 'w-24 shrink-0';
+  const COL_NET = 'w-28 shrink-0';
+
+  // Divider Style — visible separator between major column groups
+  const DIVIDER = 'border-l-2 border-border/60';
 
   return (
     <>
       <div className="w-full">
-        {/* Card Header matching other tables */}
-        <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-card border-b border-border">
+        {/* 1. Title Bar (Sticky top-0) */}
+        <div className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-card border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
-            <h3 className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
-              Weekly Breakdown
-            </h3>
+            <h3 className="text-sm font-bold text-text-primary tracking-tight">Weekly Breakdown</h3>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -268,158 +260,121 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
               size="md"
               onClick={handlePreviewPdf}
               loading={isGeneratingPdf && isPreviewOpen}
-              title="Preview Weekly Report"
-              className="w-8 h-8 p-0 flex items-center justify-center border border-border bg-background hover:bg-surface-hover transition-colors"
+              className="flex items-center gap-2 px-4 border border-border bg-background hover:bg-surface-hover transition-colors text-xs font-bold uppercase"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5" /> Preview
             </Button>
             <Button
-              variant="secondary"
+              variant="primary"
               size="md"
               onClick={handleDownloadPdf}
               loading={isGeneratingPdf && !isPreviewOpen}
-              title="Download PDF Report"
-              className="w-8 h-8 p-0 flex items-center justify-center border border-border bg-background hover:bg-surface-hover transition-colors"
+              className="flex items-center gap-2 px-4 shadow-sm text-xs font-bold uppercase"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" /> Download Report
             </Button>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs table-fixed">
-            <colgroup>
-              <col className="w-[13%]" />
-              {DAY_NAMES.map((_, i) => (
-                <col key={i} className="w-[5%]" />
-              ))}
-              <col className="w-[7%]" />
-              <col className="w-[5%]" />
-              <col className="w-[8%]" />
-              <col className="w-[8%]" />
-              <col className="w-[8%]" />
-              <col className="w-[8%]" />
-              <col className="w-[8%]" />
-            </colgroup>
+        {/* 2. Column Headers (Sticky top-[61px]) */}
+        <div className="w-full">
+          <div className="sticky top-[61px] z-20 flex items-center px-6 bg-surface/95 backdrop-blur-md border-b-2 border-border shadow-sm">
+            <div className={`${COL_WEEK} font-bold text-xs text-text-secondary uppercase tracking-widest text-center py-3`}>
+              வாரம்
+            </div>
+            {DAY_NAMES.map((day) => (
+              <div key={day} className={`${COL_DAY} font-bold text-xs text-text-secondary uppercase tracking-widest py-3`}>
+                {day}
+              </div>
+            ))}
+            
+            {/* Divider Group 1: Stats */}
+            <div className={`${COL_ATT_COUNT} ${DIVIDER} font-bold text-xs text-blue-400 uppercase tracking-widest text-center leading-tight py-3`}>
+              வேலை<br />நாட்கள்
+            </div>
+            <div className={`${COL_OT} font-bold text-xs text-blue-400 uppercase tracking-widest text-center py-3`}>
+              OT
+            </div>
+            <div className={`${COL_EARN} font-bold text-xs text-blue-400 uppercase tracking-widest text-center py-3`}>
+              சம்பளம்
+            </div>
+            
+            {/* Divider Group 2: Expenses */}
+            <div className={`${COL_EXP_GEN} ${DIVIDER} font-bold text-xs text-amber-500 uppercase tracking-widest text-center py-3`}>
+              செலவு
+            </div>
+            <div className={`${COL_EXP_FOOD} font-bold text-xs text-amber-500 uppercase tracking-widest text-center py-3`}>
+              சாப்பாடு
+            </div>
+            <div className={`${COL_EXP_TOTAL} font-bold text-xs text-amber-500 uppercase tracking-widest text-center leading-tight py-3`}>
+              மொத்த<br />செலவு
+            </div>
+            
+            {/* Divider Group 3: Net */}
+            <div className={`${COL_NET} ${DIVIDER} font-bold text-xs text-emerald-500 uppercase tracking-widest text-center py-3`}>
+              வரவு
+            </div>
+          </div>
 
-            <thead className="sticky top-14 z-10">
-              <tr className="bg-surface border-b-2 border-border">
-                <th className="px-2 py-3 text-center font-bold text-[10px] text-text-secondary uppercase tracking-wider">
-                  வாரம்
-                </th>
-                {DAY_NAMES.map((day, i) => (
-                  <th key={day} className={`px-2 py-3 text-center font-bold text-[10px] text-text-secondary uppercase tracking-wider ${i > 0 ? 'border-l border-border/30' : ''}`}>
-                    {day}
-                  </th>
-                ))}
-                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-blue-300 border-l border-border`}>
-                  வேலை நாட்கள்
-                </th>
-                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-blue-300`}>OT</th>
-                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-blue-300`}>சம்பளம்</th>
-                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-amber-300 border-l border-border`}>
-                  செலவு
-                </th>
-                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-amber-300`}>சாப்பாடு</th>
-                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-amber-300`}>மொத்த செலவு</th>
-                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-emerald-400 border-l border-border`}>
-                  வரவு
-                </th>
-              </tr>
-            </thead>
+          {/* 3. Report Rows */}
+          <div className="px-0">
+            {reports.map((week, index) => {
+              const weekDays = getWeekDays(week.startDate, week.endDate);
+              return (
+                <div key={index} className={`flex items-center px-6 transition-colors border-b border-border/30 ${index % 2 === 0 ? 'bg-background/40' : 'bg-surface/20'} hover:bg-surface-hover/50`}>
+                  <div className={`${COL_WEEK} text-xs font-semibold text-text-primary text-center py-2.5`}>
+                    {shortDate(week.startDate)} – {shortDate(week.endDate)}
+                  </div>
+                  {weekDays.map((day, di) => {
+                    const att = week.attendances.find((a) => a.date === day.date);
+                    return (
+                      <div key={di} className={`${COL_DAY} text-xs py-2.5 ${!day.isInRange ? 'opacity-20' : 'text-text-primary font-medium'}`}>
+                        {day.isInRange && att ? getAttendanceMarking(att.status, att.otUnits) : ''}
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Row Stats Divider */}
+                  <div className={`${COL_ATT_COUNT} ${DIVIDER} text-center text-xs font-bold text-text-primary py-2.5`}>{week.attendanceCount}</div>
+                  <div className={`${COL_OT} text-center text-xs text-text-secondary py-2.5`}>{week.otUnits}</div>
+                  <div className={`${COL_EARN} text-center text-xs font-bold text-blue-400 py-2.5`}>{formatCurrency(week.earning)}</div>
+                  
+                  {/* Row Expenses Divider */}
+                  <div className={`${COL_EXP_GEN} ${DIVIDER} text-center text-xs text-text-secondary py-2.5`}>{formatCurrency(week.expenseGeneral)}</div>
+                  <div className={`${COL_EXP_FOOD} text-center text-xs text-text-secondary py-2.5`}>{formatCurrency(week.expenseFood)}</div>
+                  <div className={`${COL_EXP_TOTAL} text-center text-xs font-bold text-amber-500 py-2.5`}>{formatCurrency(week.expensesTotal)}</div>
+                  
+                  {/* Row Net Divider */}
+                  <div className={`${COL_NET} ${DIVIDER} text-center text-sm font-black text-emerald-500 py-2.5`}>{formatCurrency(week.netEarning)}</div>
+                </div>
+              );
+            })}
+          </div>
 
-            <tbody>
-              {reports.map((week, index) => {
-                const weekDays = getWeekDays(week.startDate, week.endDate);
-
-                return (
-                  <tr
-                    key={index}
-                    className={`border-b border-border/40 hover:bg-surface-hover/50 transition-colors ${
-                      index % 2 === 0 ? '' : 'bg-surface/20'
-                    }`}
-                  >
-                    <td className="px-2 py-2 text-xs font-medium text-text-primary whitespace-nowrap text-center">
-                      {shortDate(week.startDate)} – {shortDate(week.endDate)}
-                    </td>
-
-                    {weekDays.map((day, di) => {
-                      if (!day.isInRange) return <td key={di} className={`${tdBase} ${di > 0 ? 'border-l border-border/30' : ''}`} />;
-                      const att = week.attendances.find((a) => a.date === day.date);
-                      return (
-                        <td key={di} className={`${tdBase} text-text-primary font-medium ${di > 0 ? 'border-l border-border/30' : ''}`}>
-                          {att ? getAttendanceMarking(att.status, att.otUnits) : ''}
-                        </td>
-                      );
-                    })}
-
-                    <td className={`${tdBase} text-text-primary border-l border-border`}>
-                      {week.attendanceCount > 0 ? week.attendanceCount : '0'}
-                    </td>
-                    <td className={`${tdBase} text-text-primary`}>
-                      {week.otUnits > 0 ? week.otUnits : '0'}
-                    </td>
-                    <td className={`${tdBase} text-blue-300 font-medium`}>
-                      {formatCurrency(week.earning)}
-                    </td>
-                    <td className={`${tdBase} text-text-primary border-l border-border`}>
-                      {formatCurrency(week.expenseGeneral)}
-                    </td>
-                    <td className={`${tdBase} text-text-primary`}>
-                      {formatCurrency(week.expenseFood)}
-                    </td>
-                    <td className={`${tdBase} text-amber-300 font-medium`}>
-                      {formatCurrency(week.expensesTotal)}
-                    </td>
-                    <td className={`${tdBase} font-semibold border-l border-border ${netColor(week.netEarning)}`}>
-                      {formatCurrency(week.netEarning)}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {/* Totals */}
-              <tr className="bg-surface border-t-2 border-border sticky bottom-0 z-10">
-                <td className="px-2 py-3 text-xs font-bold text-text-primary">
-                  மொத்தம்
-                </td>
-                {DAY_NAMES.map((_, i) => (
-                  <td key={i} className={tdBase} />
-                ))}
-                <td className={`${tdBase} font-bold text-blue-300 border-l border-border`}>
-                  {totals.attendanceCount}
-                </td>
-                <td className={`${tdBase} font-bold text-blue-300`}>
-                  {totals.otUnits}
-                </td>
-                <td className={`${tdBase} font-bold text-blue-300`}>
-                  {formatCurrency(totals.earning)}
-                </td>
-                <td className={`${tdBase} font-bold text-amber-300 border-l border-border`}>
-                  {formatCurrency(totals.expenseGeneral)}
-                </td>
-                <td className={`${tdBase} font-bold text-amber-300`}>
-                  {formatCurrency(totals.expenseFood)}
-                </td>
-                <td className={`${tdBase} font-bold text-amber-300`}>
-                  {formatCurrency(totals.expensesTotal)}
-                </td>
-                <td className={`${tdBase} font-bold border-l border-border ${netColor(totals.netEarning)}`}>
-                  {formatCurrency(totals.netEarning)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* 4. Totals Bar (Sticky Bottom) */}
+          <div className="sticky bottom-0 z-20 flex items-center px-6 bg-surface border-t-2 border-border shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
+            <div className={`${COL_WEEK} font-black text-xs text-text-primary uppercase tracking-widest text-center py-4`}>மொத்தம்</div>
+            {DAY_NAMES.map((_, i) => (
+              <div key={i} className={`${COL_DAY}`} />
+            ))}
+            
+            {/* Totals Stats Divider */}
+            <div className={`${COL_ATT_COUNT} ${DIVIDER} text-center text-sm font-black text-text-primary py-4`}>{totals.attendanceCount}</div>
+            <div className={`${COL_OT} text-center text-xs font-bold text-text-secondary py-4`}>{totals.otUnits}</div>
+            <div className={`${COL_EARN} text-center text-sm font-black text-blue-500 py-4`}>{formatCurrency(totals.earning)}</div>
+            
+            {/* Totals Expenses Divider */}
+            <div className={`${COL_EXP_GEN} ${DIVIDER} text-center text-xs font-bold text-text-secondary py-4`}>{formatCurrency(totals.expenseGeneral)}</div>
+            <div className={`${COL_EXP_FOOD} text-center text-xs font-bold text-text-secondary py-4`}>{formatCurrency(totals.expenseFood)}</div>
+            <div className={`${COL_EXP_TOTAL} text-center text-sm font-black text-amber-500 py-4`}>{formatCurrency(totals.expensesTotal)}</div>
+            
+            {/* Totals Net Divider */}
+            <div className={`${COL_NET} ${DIVIDER} text-center text-base font-black text-emerald-500 py-4`}>{formatCurrency(totals.netEarning)}</div>
+          </div>
         </div>
       </div>
 
-      <PdfPreviewModal
-        isOpen={isPreviewOpen}
-        onClose={closePreview}
-        title={`Weekly Report - ${worker.name}`}
-        pdfUrl={pdfUrl}
-        onDownload={handleDownloadPdf}
-      />
+      <PdfPreviewModal isOpen={isPreviewOpen} onClose={closePreview} title={`Weekly Report - ${worker.name}`} pdfUrl={pdfUrl} onDownload={handleDownloadPdf} />
     </>
   );
 }
