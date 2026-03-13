@@ -253,41 +253,41 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
   const tdBase = 'px-2 py-2 text-center text-xs';
 
   return (
-    <div className="space-y-3">
-      {/* UI Header */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
-          <h3 className="text-sm font-bold text-text-primary tracking-tight">
-            Weekly Breakdown
-          </h3>
+    <>
+      <div className="bg-card border border-border rounded-xl shadow-md overflow-hidden">
+        {/* Card Header matching other tables */}
+        <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border rounded-t-xl shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
+            <h3 className="text-sm font-bold text-text-primary tracking-tight">
+              Weekly Breakdown
+            </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handlePreviewPdf}
+              loading={isGeneratingPdf && isPreviewOpen}
+              title="Preview Weekly Report"
+              className="w-9 h-9 p-0 flex items-center justify-center border border-border bg-surface hover:bg-surface-hover transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleDownloadPdf}
+              loading={isGeneratingPdf && !isPreviewOpen}
+              title="Download PDF Report"
+              className="w-9 h-9 p-0 flex items-center justify-center border border-border bg-surface hover:bg-surface-hover transition-colors"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handlePreviewPdf}
-            loading={isGeneratingPdf && isPreviewOpen}
-            title="Preview Weekly Report"
-            className="w-10 h-10 p-0 flex items-center justify-center"
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handleDownloadPdf}
-            loading={isGeneratingPdf && !isPreviewOpen}
-            title="Download PDF Report"
-            className="w-10 h-10 p-0 flex items-center justify-center"
-          >
-            <Download className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
 
-      <div className="bg-card border border-border rounded-xl shadow-xl overflow-hidden">
-        <div className="overflow-y-auto max-h-[calc(100vh-24rem)]">
+        <div className="overflow-x-auto">
           <table className="w-full text-xs table-fixed">
             <colgroup>
               <col className="w-[13%]" />
@@ -421,6 +421,6 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
         pdfUrl={pdfUrl}
         onDownload={handleDownloadPdf}
       />
-    </div>
+    </>
   );
 }

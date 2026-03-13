@@ -439,33 +439,33 @@ export default function WorkerDetail() {
           <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
         </div>
 
-        <div className="p-6 overflow-auto flex-1">
-          {activeTab === 'attendance' && (
+        <div className="p-6 overflow-auto flex-1 h-full">
+          <div className={activeTab === 'attendance' ? 'block' : 'hidden'}>
             <AttendanceTab
               workerId={worker.id}
               joinedAt={worker.joinedAt}
               onAttendanceChange={handleAttendanceChange}
             />
-          )}
+          </div>
 
-          {activeTab === 'expenses' && (
+          <div className={activeTab === 'expenses' ? 'block' : 'hidden'}>
             <ExpenseTab
               workerId={worker.id}
               workerName={worker.name}
               joinedAt={worker.joinedAt}
               onExpenseChange={handleExpenseChange}
             />
-          )}
+          </div>
 
-          {activeTab === 'history' && (
+          <div className={activeTab === 'history' ? 'block' : 'hidden'}>
             <HistoryTab
               workerId={worker.id}
               workerName={worker.name}
               onDataChange={() => fetchCycleStats(worker.id, true)}
             />
-          )}
+          </div>
 
-          {activeTab === 'profile' && (
+          <div className={activeTab === 'profile' ? 'block' : 'hidden'}>
             <ProfileTab
               worker={worker}
               onUpdate={() => {
@@ -475,11 +475,11 @@ export default function WorkerDetail() {
                 }
               }}
             />
-          )}
+          </div>
 
-          {activeTab === 'weekly-report' && (
+          <div className={activeTab === 'weekly-report' ? 'block' : 'hidden'}>
             <WeeklyReportTab worker={worker} />
-          )}
+          </div>
         </div>
       </div>
 

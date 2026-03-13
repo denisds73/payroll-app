@@ -216,7 +216,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
         </div>
       )}
 
-      <div className="overflow-y-auto max-h-125 rounded-b-xl px-6 py-3 space-y-1">
+      <div className="px-6 py-3 space-y-1">
         {loading ? (
           Array.from({ length: 5 }, (_, i) => (
             <div

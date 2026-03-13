@@ -178,7 +178,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         </div>
       )}
 
-      <div className="overflow-y-auto max-h-125 rounded-b-xl px-6 py-3 space-y-2">
+      <div className="px-6 py-3 space-y-2">
         {loading ? (
           Array.from({ length: 5 }, (_, i) => (
             <div
