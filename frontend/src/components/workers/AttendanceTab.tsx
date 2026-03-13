@@ -31,14 +31,27 @@ export default function AttendanceTab({
   onAttendanceChange,
 }: AttendanceTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
 
-  const month = Number(searchParams.get('attMonth')) || today.getMonth() + 1;
-  const year = Number(searchParams.get('attYear')) || today.getFullYear();
+  const month = useMemo(() => Number(searchParams.get('attMonth')) || today.getMonth() + 1, [searchParams, today]);
+  const year = useMemo(() => Number(searchParams.get('attYear')) || today.getFullYear(), [searchParams, today]);
 
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceDataWithId>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
+
+  const dates = useMemo(() => {
+    const d: string[] = [];
+    const date = new Date(year, month - 1, 1);
+    while (date.getMonth() === month - 1) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      d.push(`${y}-${m}-${day}`);
+      date.setDate(date.getDate() + 1);
+    }
+    return d;
+  }, [month, year]);
 
   const isInitialMount = useRef(true);
   const prevMonthRef = useRef(month);
@@ -83,7 +96,8 @@ export default function AttendanceTab({
       newParams.set('attYear', String(today.getFullYear()));
       setSearchParams(newParams);
     }
-  }, [searchParams, setSearchParams, today]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -102,8 +116,8 @@ export default function AttendanceTab({
     }
   }, [month, year]);
 
-  const fetchAttendance = async () => {
-    setLoading(true);
+  const fetchAttendance = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(undefined);
 
     try {
@@ -128,7 +142,7 @@ export default function AttendanceTab({
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Failed to fetch attendance');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -200,7 +214,7 @@ export default function AttendanceTab({
         toast.error(errorMessage);
       }
 
-      fetchAttendance();
+      fetchAttendance(true);
     }
   };
 
@@ -238,7 +252,7 @@ export default function AttendanceTab({
         toast.error(errorMessage);
       }
 
-      fetchAttendance();
+      fetchAttendance(true);
     }
   };
 
@@ -252,22 +266,8 @@ export default function AttendanceTab({
     setSearchParams(newParams);
   };
 
-  const getAllDaysInMonth = (month: number, year: number): string[] => {
-    const days: string[] = [];
-    const date = new Date(year, month - 1, 1);
-    while (date.getMonth() === month - 1) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      days.push(`${y}-${m}-${d}`);
-      date.setDate(date.getDate() + 1);
-    }
-    return days;
-  };
-
   const lockedDates = useMemo(() => {
     const locked = new Map<string, string[]>();
-    const dates = getAllDaysInMonth(month, year);
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
@@ -304,6 +304,7 @@ export default function AttendanceTab({
     isDateLocked,
     isDateInactive,
     joinedAt,
+    dates,
   ]);
 
   const lockedPeriods = useMemo(() => {

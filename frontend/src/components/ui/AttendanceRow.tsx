@@ -100,6 +100,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
       console.error('Delete failed:', error);
     } finally {
       setIsDeleting(false);
+      setIsEditing(true);
     }
   };
 

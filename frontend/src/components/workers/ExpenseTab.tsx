@@ -34,10 +34,10 @@ export default function ExpenseTab({
   onExpenseChange,
 }: ExpenseTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
 
-  const selectedMonth = Number(searchParams.get('expMonth')) || today.getMonth() + 1;
-  const selectedYear = Number(searchParams.get('expYear')) || today.getFullYear();
+  const selectedMonth = useMemo(() => Number(searchParams.get('expMonth')) || today.getMonth() + 1, [searchParams, today]);
+  const selectedYear = useMemo(() => Number(searchParams.get('expYear')) || today.getFullYear(), [searchParams, today]);
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
@@ -135,8 +135,8 @@ export default function ExpenseTab({
     }
   };
 
-  const fetchExpenses = async () => {
-    setLoading(true);
+  const fetchExpenses = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError('');
     try {
       const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
@@ -150,7 +150,7 @@ export default function ExpenseTab({
           : undefined;
       setError(errorMessage || 'Failed to load expenses');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -203,8 +203,8 @@ export default function ExpenseTab({
       onExpenseChange();
       toast.success('Expenses saved successfully');
 
-      // Refresh to get updated IDs
-      fetchExpenses();
+      // Refresh to get updated IDs in background
+      fetchExpenses(true);
     } catch (err: unknown) {
       console.error('Save failed:', err);
       const errorMessage =
@@ -223,7 +223,7 @@ export default function ExpenseTab({
         toast.error(errorMessage || 'Failed to save expenses');
       }
 
-      fetchExpenses();
+      fetchExpenses(true);
     }
   };
 
@@ -245,7 +245,7 @@ export default function ExpenseTab({
       onExpenseChange();
       toast.success('Expenses deleted successfully');
 
-      fetchExpenses();
+      fetchExpenses(true);
     } catch (err: unknown) {
       console.error('Delete failed:', err);
       const errorMessage =
@@ -264,7 +264,7 @@ export default function ExpenseTab({
         toast.error(errorMessage || 'Failed to delete expenses');
       }
 
-      fetchExpenses();
+      fetchExpenses(true);
     }
   };
 

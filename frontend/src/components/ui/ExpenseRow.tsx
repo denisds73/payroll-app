@@ -157,6 +157,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);
+      setIsEditing(true);
     }
   };
 
@@ -170,6 +171,11 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       setSavedData(merged);
       const hasSaved = Object.keys(initialData.existingIds).length > 0;
       setIsEditing(!hasSaved);
+    } else {
+      const empty = { amounts: buildEmptyAmounts(), note: '', existingIds: {} };
+      setFormData(empty);
+      setSavedData(empty);
+      setIsEditing(true);
     }
   }, [initialData]);
 
