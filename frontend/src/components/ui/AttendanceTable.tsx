@@ -174,7 +174,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         <div className="w-[120px] shrink-0 font-bold text-text-secondary uppercase tracking-widest text-xs text-center">
           OT Hours
         </div>
-        <div className="flex-1 font-bold text-text-secondary uppercase tracking-widest text-xs">
+        <div className="flex-1 pl-32 font-bold text-text-secondary uppercase tracking-widest text-xs">
           Notes
         </div>
         <div className="w-32 shrink-0" />

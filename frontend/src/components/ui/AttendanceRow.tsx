@@ -208,7 +208,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
         {formatDate(date)}
       </div>
 
-      <div className="w-48 shrink-0 flex justify-center">
+      <div className="w-36 shrink-0 flex justify-center">
         <AttendanceStatusGroup
           value={formData.attendanceStatus}
           onChange={handleAttendanceChange}
@@ -216,7 +216,7 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
         />
       </div>
 
-      <div className="w-[120px] shrink-0 flex justify-center">
+      <div className="w-42 shrink-0 flex justify-center">
         <OTInputStepper
           value={formData.otHours}
           onChange={handleOtChange}

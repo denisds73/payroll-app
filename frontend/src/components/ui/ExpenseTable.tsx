@@ -193,7 +193,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
       </div>
 
       {/* 2. Column Headers (Sticky top-[61px]) */}
-      <div className="sticky top-[61px] z-20 flex items-center gap-x-4 px-6 py-3 bg-surface/95 backdrop-blur-md border-b border-border">
+      <div className="sticky top-[61px] z-20 flex items-center gap-x-4 px-12 py-3 bg-surface/95 backdrop-blur-md border-b border-border">
         <div className="w-36 shrink-0 font-bold text-text-secondary uppercase tracking-widest text-xs">
           Date
         </div>
