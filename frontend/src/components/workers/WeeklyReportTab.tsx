@@ -249,17 +249,16 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
     );
   }
 
-  const thBase = 'px-2 py-2.5 text-center font-semibold text-xs';
   const tdBase = 'px-2 py-2 text-center text-xs';
 
   return (
     <>
       <div className="bg-card border border-border rounded-xl shadow-md overflow-hidden">
         {/* Card Header matching other tables */}
-        <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border rounded-t-xl shadow-sm">
+        <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-surface/95 backdrop-blur-sm border-b border-border shadow-sm">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
-            <h3 className="text-sm font-bold text-text-primary tracking-tight">
+            <h3 className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
               Weekly Breakdown
             </h3>
           </div>
@@ -270,7 +269,7 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
               onClick={handlePreviewPdf}
               loading={isGeneratingPdf && isPreviewOpen}
               title="Preview Weekly Report"
-              className="w-9 h-9 p-0 flex items-center justify-center border border-border bg-surface hover:bg-surface-hover transition-colors"
+              className="w-8 h-8 p-0 flex items-center justify-center border border-border bg-background hover:bg-surface-hover transition-colors"
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -280,7 +279,7 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
               onClick={handleDownloadPdf}
               loading={isGeneratingPdf && !isPreviewOpen}
               title="Download PDF Report"
-              className="w-9 h-9 p-0 flex items-center justify-center border border-border bg-surface hover:bg-surface-hover transition-colors"
+              className="w-8 h-8 p-0 flex items-center justify-center border border-border bg-background hover:bg-surface-hover transition-colors"
             >
               <Download className="w-4 h-4" />
             </Button>
@@ -303,27 +302,27 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
               <col className="w-[8%]" />
             </colgroup>
 
-            <thead className="sticky top-0 z-10">
+            <thead className="sticky top-14 z-10">
               <tr className="bg-surface border-b-2 border-border">
-                <th className="px-2 py-2.5 text-center font-semibold text-xs text-text-secondary">
+                <th className="px-2 py-3 text-center font-bold text-[10px] text-text-secondary uppercase tracking-wider">
                   வாரம்
                 </th>
                 {DAY_NAMES.map((day, i) => (
-                  <th key={day} className={`${thBase} text-text-secondary ${i > 0 ? 'border-l border-border/30' : ''}`}>
+                  <th key={day} className={`px-2 py-3 text-center font-bold text-[10px] text-text-secondary uppercase tracking-wider ${i > 0 ? 'border-l border-border/30' : ''}`}>
                     {day}
                   </th>
                 ))}
-                <th className={`${thBase} text-blue-300 border-l border-border`}>
+                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-blue-300 border-l border-border`}>
                   வேலை நாட்கள்
                 </th>
-                <th className={`${thBase} text-blue-300`}>OT</th>
-                <th className={`${thBase} text-blue-300`}>சம்பளம்</th>
-                <th className={`${thBase} text-amber-300 border-l border-border`}>
+                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-blue-300`}>OT</th>
+                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-blue-300`}>சம்பளம்</th>
+                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-amber-300 border-l border-border`}>
                   செலவு
                 </th>
-                <th className={`${thBase} text-amber-300`}>சாப்பாடு</th>
-                <th className={`${thBase} text-amber-300`}>மொத்த செலவு</th>
-                <th className={`${thBase} text-emerald-400 border-l border-border`}>
+                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-amber-300`}>சாப்பாடு</th>
+                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-amber-300`}>மொத்த செலவு</th>
+                <th className={`px-2 py-3 text-center font-bold text-[10px] uppercase tracking-wider text-emerald-400 border-l border-border`}>
                   வரவு
                 </th>
               </tr>

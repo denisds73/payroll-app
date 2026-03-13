@@ -200,30 +200,34 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
 
   const rowContent = (
     <div
-      className={`flex flex-nowrap items-center gap-x-8 px-3 py-1 bg-card transition-all duration-200 rounded-lg ${
+      className={`flex flex-nowrap items-center gap-x-8 px-4 py-2 bg-card transition-all duration-200 rounded-lg ${
         isLocked ? 'opacity-60 cursor-not-allowed' : ''
       }`}
     >
-      <div className="w-36 shrink-0 text-md font-medium text-text-primary">{formatDate(date)}</div>
+      <div className="w-36 shrink-0 text-md font-medium text-text-primary">
+        {formatDate(date)}
+      </div>
 
-      <AttendanceStatusGroup
-        className="shrink-0"
-        value={formData.attendanceStatus}
-        onChange={handleAttendanceChange}
-        disabled={!isEditing || isLocked}
-      />
+      <div className="w-48 shrink-0 flex justify-center">
+        <AttendanceStatusGroup
+          value={formData.attendanceStatus}
+          onChange={handleAttendanceChange}
+          disabled={!isEditing || isLocked}
+        />
+      </div>
 
-      <OTInputStepper
-        className="shrink-0"
-        value={formData.otHours}
-        onChange={handleOtChange}
-        disabled={!isEditing || isLocked}
-        min={0}
-        max={2}
-        step={0.5}
-      />
+      <div className="w-[120px] shrink-0 flex justify-center">
+        <OTInputStepper
+          value={formData.otHours}
+          onChange={handleOtChange}
+          disabled={!isEditing || isLocked}
+          min={0}
+          max={2}
+          step={0.5}
+        />
+      </div>
 
-      <div className="max-w-xs flex-1 min-w-0 relative" style={{ top: '-3px' }}>
+      <div className="flex-1 min-w-0">
         <TamilTextarea
           value={formData.notes}
           onValueChange={(val) => setFormData((prev) => ({ ...prev, notes: val }))}
@@ -232,7 +236,9 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
         />
       </div>
 
-      <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
+      <div className="w-32 shrink-0 flex justify-end">
+        {renderActionButtons()}
+      </div>
 
       {showDeleteModal && (
         <ConfirmModal

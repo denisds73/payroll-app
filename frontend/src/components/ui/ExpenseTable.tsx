@@ -96,10 +96,6 @@ function getLockReasons(
   return reasons;
 }
 
-/**
- * Convert the flat ExpenseData[] per date into the new ExpenseRowData format
- * by merging all expenses for a date into a single row with amounts per type.
- */
 function buildRowData(
   expenses: ExpenseData[],
   expenseTypes: { id: number; name: string }[],
@@ -117,7 +113,6 @@ function buildRowData(
     if (exp.id) {
       existingIds[exp.typeId] = exp.id;
     }
-    // Use the last non-empty note
     if (exp.note) {
       note = exp.note;
     }
@@ -143,80 +138,86 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
   const today = new Date();
   const isNotCurrentPeriod = month !== today.getMonth() + 1 || year !== today.getFullYear();
 
+  const onMonthChange = (newMonth: number) => {
+    onMonthYearChange(newMonth + 1, year);
+  };
+
+  const onYearChange = (newYear: number) => {
+    onMonthYearChange(month, newYear);
+  };
+
   return (
     <div className="rounded-xl bg-card shadow-md w-full">
-      <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border rounded-t-xl shadow-sm">
-        <div className="flex gap-x-4 font-semibold text-text-primary text-base w-full items-center">
-          <div className="w-36 shrink-0">Date</div>
-          {expenseTypes.map((type) => (
-            <div key={type.id} className="w-24 shrink-0 text-center">
-              {type.name}
-            </div>
-          ))}
-          <div className="w-28 shrink-0">Notes</div>
-        </div>
-        <div className="relative">
-          <div className="flex items-center gap-2 ml-6 shrink-0">
-            <select
-              className="px-3 py-1 rounded-md border border-border bg-background text-primary font-medium w-28 focus:ring-2 focus:ring-primary transition-all outline-none"
-              value={month}
-              onChange={(e) => onMonthYearChange(Number(e.target.value), year)}
-              aria-label="Select month"
-            >
-              {Array.from({ length: 12 }, (_, idx) => {
-                const monthValue = idx + 1;
-                return (
-                  <option key={monthValue} value={monthValue}>
-                    {new Date(0, idx).toLocaleString('default', { month: 'short' })}
-                  </option>
-                );
-              })}
-            </select>
-            <select
-              className="px-3 py-1 rounded-md border border-border bg-background text-primary font-medium w-24 focus:ring-2 focus:ring-primary transition-all outline-none"
-              value={year}
-              onChange={(e) => onMonthYearChange(month, Number(e.target.value))}
-              aria-label="Select year"
-            >
-              {Array.from({ length: 30 }, (_, idx) => {
-                const currentYear = new Date().getFullYear();
-                const yearValue = currentYear - 5 + idx;
-                return (
-                  <option key={yearValue} value={yearValue}>
-                    {yearValue}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+      {/* 1. Title & Filters Bar (Sticky top-0) */}
+      <div className="sticky top-0 z-30 flex items-center justify-between px-6 py-3 bg-card border-b border-border shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
+          <h3 className="text-sm font-bold text-text-primary tracking-tight">
+            Expense Records
+          </h3>
           {isNotCurrentPeriod && (
-            <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-warning/10 border border-warning/20 rounded-md shadow-md text-warning text-xs font-medium flex items-center gap-1 whitespace-nowrap z-10 animate-pulse">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-3.5 w-3.5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
+            <div className="ml-4 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded text-[10px] font-bold text-amber-500 uppercase flex items-center gap-1.5 animate-pulse">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               Not viewing current month
             </div>
           )}
         </div>
+
+        <div className="flex items-center gap-2">
+          <select
+            value={month - 1}
+            onChange={(e) => onMonthChange(Number(e.target.value))}
+            className="bg-background border border-border rounded-lg px-3 py-1.5 text-xs font-semibold text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer shadow-sm hover:border-primary/50"
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i} value={i}>
+                {new Date(0, i).toLocaleString('default', { month: 'short' })}
+              </option>
+            ))}
+          </select>
+          <select
+            value={year}
+            onChange={(e) => onYearChange(Number(e.target.value))}
+            className="bg-background border border-border rounded-lg px-3 py-1.5 text-xs font-semibold text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer shadow-sm hover:border-primary/50"
+          >
+            {Array.from({ length: 5 }, (_, i) => {
+              const y = new Date().getFullYear() - 2 + i;
+              return (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              );
+            })}
+          </select>
+        </div>
       </div>
 
-      {error && (
-        <div className="mx-6 mt-4 mb-2 p-2 rounded bg-error/10 text-error text-sm font-medium">
-          {error}
+      {/* 2. Column Headers (Sticky top-[53px]) */}
+      <div className="sticky top-[53px] z-20 flex items-center gap-x-4 px-4 py-3 bg-surface/95 backdrop-blur-md border-b border-border shadow-sm">
+        <div className="w-36 shrink-0 font-bold text-text-secondary uppercase tracking-widest text-xs">
+          Date
         </div>
-      )}
+        {expenseTypes.map((type) => (
+          <div
+            key={type.id}
+            className="w-24 shrink-0 font-bold text-text-secondary uppercase tracking-widest text-xs text-center"
+          >
+            {type.name}
+          </div>
+        ))}
+        <div className="flex-1 font-bold text-text-secondary uppercase tracking-widest text-xs text-center">
+          Notes
+        </div>
+        <div className="w-32 shrink-0" />
+      </div>
 
-      <div className="px-6 py-3 space-y-1">
+      <div className="px-4 py-4 space-y-2">
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20 text-error text-xs font-bold uppercase tracking-wide">
+            {error}
+          </div>
+        )}
+
         {loading ? (
           Array.from({ length: 5 }, (_, i) => (
             <div
@@ -250,7 +251,7 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
               );
             })}
             {dates.every((date) => !expenseMap[date] || expenseMap[date].length === 0) && (
-              <div className="mt-6 text-text-secondary text-center text-sm">
+              <div className="mt-8 text-text-secondary text-center text-sm font-medium italic">
                 No expense records for this month yet.
               </div>
             )}

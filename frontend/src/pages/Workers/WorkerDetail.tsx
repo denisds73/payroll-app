@@ -439,7 +439,8 @@ export default function WorkerDetail() {
           <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
         </div>
 
-        <div className="p-6 overflow-auto flex-1 h-full">
+        <div className="overflow-auto flex-1 h-full custom-scrollbar">
+          <div className="px-4 pt-2 pb-6 space-y-6">
           <div className={activeTab === 'attendance' ? 'block' : 'hidden'}>
             <AttendanceTab
               workerId={worker.id}
@@ -479,6 +480,7 @@ export default function WorkerDetail() {
 
           <div className={activeTab === 'weekly-report' ? 'block' : 'hidden'}>
             <WeeklyReportTab worker={worker} />
+          </div>
           </div>
         </div>
       </div>

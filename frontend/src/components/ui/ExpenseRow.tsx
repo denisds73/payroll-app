@@ -261,7 +261,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
 
   const rowContent = (
     <div
-      className={`flex flex-nowrap items-center gap-x-4 px-3 py-1 bg-card transition-all duration-200 rounded-lg ${
+      className={`flex flex-nowrap items-center gap-x-4 px-4 py-2 bg-card transition-all duration-200 rounded-lg ${
         isLocked ? 'opacity-60 cursor-not-allowed' : ''
       }`}
       role="row"
@@ -289,7 +289,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       ))}
 
       {/* Notes */}
-      <div className="max-w-xs flex-1 min-w-0 relative">
+      <div className="flex-1 min-w-0">
         <TamilTextarea
           value={formData.note}
           onValueChange={(val) => setFormData((prev) => ({ ...prev, note: val }))}
@@ -300,7 +300,9 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="ml-auto shrink-0 flex gap-2">{renderActionButtons()}</div>
+      <div className="w-32 shrink-0 flex justify-end">
+        {renderActionButtons()}
+      </div>
 
       {showDeleteModal && (
         <ConfirmModal
