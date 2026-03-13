@@ -420,10 +420,16 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
   };
 
   const getLockReason = (date: string): string | undefined => {
+    const dateOnly = date.split('T')[0];
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (dateOnly > todayStr) {
+      return 'Future dates are locked.';
+    }
+
     const workerData = lockDataByWorker[workerId];
     if (!workerData) return undefined;
-
-    const dateOnly = date.split('T')[0];
 
     for (const period of workerData.periods) {
       if (!period.isPaid) continue;
@@ -441,8 +447,14 @@ export default function HistoryTab({ workerId, workerName, onDataChange }: Histo
 
   const isItemLocked = (item: HistoryItem): boolean => {
     if (item.type === 'salary' || item.type === 'closure') return true;
-    if (item.type === 'advance') return !!item.salaryId;
+    if (item.type === 'advance' && item.salaryId) return true;
+
     const dateOnly = item.date.split('T')[0];
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (dateOnly > todayStr) return true;
+
     return isDateLocked(workerId, dateOnly);
   };
 

@@ -294,6 +294,8 @@ export default function ExpenseTab({
   const lockedDates = useMemo(() => {
     const locked = new Map<string, string[]>();
     const dates = getAllDaysInMonth(selectedMonth, selectedYear);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     dates.forEach((date) => {
       const reasons: string[] = [];
@@ -308,6 +310,10 @@ export default function ExpenseTab({
 
       if (date < joinedAt.split('T')[0]) {
         reasons.push('Worker not yet joined');
+      }
+
+      if (date > todayStr) {
+        reasons.push('Cannot add expenses for future dates');
       }
 
       if (reasons.length > 0) {

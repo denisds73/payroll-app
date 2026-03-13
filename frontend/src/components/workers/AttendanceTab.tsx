@@ -230,6 +230,8 @@ export default function AttendanceTab({
   const lockedDates = useMemo(() => {
     const locked = new Map<string, string[]>();
     const dates = getAllDaysInMonth(month, year);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     dates.forEach((date) => {
       const reasons: string[] = [];
@@ -244,6 +246,10 @@ export default function AttendanceTab({
 
       if (date < joinedAt.split('T')[0]) {
         reasons.push('Worker not yet joined');
+      }
+
+      if (date > todayStr) {
+        reasons.push('Cannot mark attendance for future dates');
       }
 
       if (reasons.length > 0) {
