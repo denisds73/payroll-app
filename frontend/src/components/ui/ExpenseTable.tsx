@@ -1,5 +1,6 @@
 import React from 'react';
 import ExpenseRow, { type ExpenseRowData } from './ExpenseRow';
+import Select from './Select';
 
 export interface ExpenseData {
   id?: number | string;
@@ -163,32 +164,27 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <select
+        <div className="flex gap-2">
+          <Select
+            variant="compact"
             value={month - 1}
             onChange={(e) => onMonthChange(Number(e.target.value))}
-            className="bg-background border border-border rounded-lg px-3 py-1.5 text-xs font-semibold text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer shadow-sm hover:border-primary/50"
-          >
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i} value={i}>
-                {new Date(0, i).toLocaleString('default', { month: 'short' })}
-              </option>
-            ))}
-          </select>
-          <select
+            options={Array.from({ length: 12 }, (_, i) => ({
+              value: i,
+              label: new Date(0, i).toLocaleString('default', { month: 'short' }),
+            }))}
+            className="w-28"
+          />
+          <Select
+            variant="compact"
             value={year}
             onChange={(e) => onYearChange(Number(e.target.value))}
-            className="bg-background border border-border rounded-lg px-3 py-1.5 text-xs font-semibold text-text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer shadow-sm hover:border-primary/50"
-          >
-            {Array.from({ length: 5 }, (_, i) => {
-              const y = new Date().getFullYear() - 2 + i;
-              return (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              );
+            options={Array.from({ length: new Date().getFullYear() - 2025 + 2 }, (_, i) => {
+              const y = 2025 + i;
+              return { value: y, label: String(y) };
             })}
-          </select>
+            className="w-24"
+          />
         </div>
       </div>
 
