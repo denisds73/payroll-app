@@ -128,7 +128,7 @@ export function buildWeeklyReportPdf(data: WeeklyReportPdfData): TDocumentDefini
       {
         columns: [
           {
-            text: 'வாராந்திர அறிக்கை (WEEKLY REPORT)',
+            text: 'வாராந்திர அறிக்கை',
             style: 'header',
             width: '*'
           },
@@ -152,13 +152,13 @@ export function buildWeeklyReportPdf(data: WeeklyReportPdfData): TDocumentDefini
                 columns: [
                   {
                     stack: [
-                      { text: 'தொழிலாளர் பெயர் (Worker Name)', style: 'label' },
+                      { text: 'பெயர்', style: 'label' },
                       { text: data.worker.name, style: 'value' }
                     ]
                   },
                   {
                     stack: [
-                      { text: 'தொலைபேசி எண் (Phone Number)', style: 'label' },
+                      { text: 'தொலைபேசி எண்', style: 'label' },
                       { text: data.worker.phone || 'N/A', style: 'value' }
                     ]
                   }
@@ -186,10 +186,6 @@ export function buildWeeklyReportPdf(data: WeeklyReportPdfData): TDocumentDefini
             return rowIndex % 2 === 0 ? '#ffffff' : '#fcfcfc';
           }
         }
-      },
-      {
-        text: '\nNote: இதர செலவுகள் (Other Expenses) are excluded from Net Earning calculations in this report.',
-        style: 'footer'
       }
     ],
     styles: {

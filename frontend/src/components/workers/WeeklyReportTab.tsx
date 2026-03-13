@@ -1,10 +1,11 @@
-import { Calendar, Download } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Calendar, Download, Eye } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { workersAPI } from '../../services/api';
 import PdfService from '../../features/pdf-export/services/pdfService';
 import { buildWeeklyReportPdf } from '../../features/pdf-export/utils/weeklyReportPdfBuilder';
 import Button from '../ui/Button';
+import PdfPreviewModal from '../modals/PdfPreviewModal';
 
 interface AttendanceDetail {
   date: string;
@@ -91,6 +92,8 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWeeklyReport();
@@ -177,6 +180,44 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
     }
   };
 
+  const handlePreviewPdf = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      setError(null);
+      
+      const data = {
+        worker: { id: worker.id, name: worker.name, phone: worker.phone },
+        reports: reports,
+        totals: totals,
+        generatedAt: new Date().toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+      
+      const docDef = buildWeeklyReportPdf(data);
+      const url = await PdfService.getPdfUrl(docDef);
+      
+      setPdfUrl(url);
+      setIsPreviewOpen(true);
+    } catch (err) {
+      console.error('Preview error:', err);
+      toast.error('Failed to prepare preview');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const closePreview = useCallback(() => {
+    if (pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+    }
+    setPdfUrl(null);
+    setIsPreviewOpen(false);
+  }, [pdfUrl]);
 
   if (loading) {
     return (
@@ -213,6 +254,7 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
 
   return (
     <div className="space-y-3">
+      {/* UI Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
@@ -220,16 +262,28 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
             Weekly Breakdown
           </h3>
         </div>
-        <Button
-          variant="secondary"
-          size="md"
-          onClick={handleDownloadPdf}
-          loading={isGeneratingPdf}
-          title="Download PDF Report"
-        >
-          <Download className="w-4 h-4" />
-          Download PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={handlePreviewPdf}
+            loading={isGeneratingPdf && isPreviewOpen}
+            title="Preview Weekly Report"
+            className="w-10 h-10 p-0 flex items-center justify-center"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={handleDownloadPdf}
+            loading={isGeneratingPdf && !isPreviewOpen}
+            title="Download PDF Report"
+            className="w-10 h-10 p-0 flex items-center justify-center"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-xl overflow-hidden">
@@ -359,6 +413,14 @@ export default function WeeklyReportTab({ worker }: WeeklyReportTabProps) {
           </table>
         </div>
       </div>
+
+      <PdfPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={closePreview}
+        title={`Weekly Report - ${worker.name}`}
+        pdfUrl={pdfUrl}
+        onDownload={handleDownloadPdf}
+      />
     </div>
   );
 }
