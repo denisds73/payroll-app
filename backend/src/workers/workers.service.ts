@@ -596,7 +596,7 @@ export class WorkersService {
     return { blockedDates };
   }
 
-  async getWeeklyReport(workerId: number) {
+  async getWeeklyReport(workerId: number, startDateStr?: string, endDateStr?: string) {
     const worker = await this.prisma.worker.findUnique({
       where: { id: workerId },
     });
@@ -605,13 +605,20 @@ export class WorkersService {
       throw new NotFoundException(`Worker with ID ${workerId} not found`);
     }
 
-    const lastSalary = await this.prisma.salary.findFirst({
-      where: { workerId },
-      orderBy: { cycleEnd: 'desc' },
-    });
+    let cycleStart: Date;
+    let cycleEnd: Date;
 
-    const cycleStart = lastSalary ? new Date(lastSalary.cycleEnd.getTime() + 86400000) : worker.joinedAt;
-    const cycleEnd = this.dateService.startOfToday();
+    if (startDateStr && endDateStr) {
+      cycleStart = new Date(startDateStr);
+      cycleEnd = new Date(endDateStr);
+    } else {
+      const lastSalary = await this.prisma.salary.findFirst({
+        where: { workerId },
+        orderBy: { cycleEnd: 'desc' },
+      });
+      cycleStart = lastSalary ? new Date(lastSalary.cycleEnd.getTime() + 86400000) : worker.joinedAt;
+      cycleEnd = this.dateService.startOfToday();
+    }
 
     if (cycleStart > cycleEnd) {
       return [];

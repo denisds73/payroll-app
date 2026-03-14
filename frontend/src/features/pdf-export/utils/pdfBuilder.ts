@@ -24,6 +24,7 @@ export function buildSalaryReportPdf(
       buildSalaryPeriod(data),
       buildAttendanceSummary(data),
       buildAttendanceTable(data),
+      buildWeeklyReportTable(data),
       buildExpensesTable(data),
       buildAdvancesTable(data),
       buildSalaryBreakdown(data),
@@ -404,13 +405,160 @@ function buildAttendanceTable(data: SalaryReportData): any {
   ];
 }
 
+function getWeekDaysPdf(startDate: string, endDate: string) {
+  const start = new Date(startDate + 'T00:00:00Z');
+  const end = new Date(endDate + 'T00:00:00Z');
+
+  const sunday = new Date(start);
+  sunday.setUTCDate(sunday.getUTCDate() - start.getUTCDay());
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sunday);
+    d.setUTCDate(d.getUTCDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const isInRange = d >= start && d <= end;
+    days.push({ date: dateStr, isInRange });
+  }
+  return days;
+}
+
+function shortDatePdf(dateString: string) {
+  const d = new Date(dateString);
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function buildWeeklyReportTable(data: SalaryReportData): any {
+  const weeklyReports = data.weeklyReports;
+
+  if (!weeklyReports || weeklyReports.length === 0) {
+    return [];
+  }
+
+  const DAY_NAMES = ['ஞா', 'தி', 'செ', 'பு', 'வி', 'வெ', 'ச'];
+
+  const tableBody: any[][] = [
+    [
+      { text: 'வாரம்', style: 'tableHeader', alignment: 'center' as const },
+      ...DAY_NAMES.map((d) => ({ text: d, style: 'tableHeader', alignment: 'center' as const })),
+      { text: 'வேலை\nநாட்கள்', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'OT', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'சம்பளம்', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'செலவு', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'சாப்பாடு', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'சைட்\nஅட்வான்ஸ்', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'மொத்த\nசெலவு', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'வரவு', style: 'tableHeader', alignment: 'center' as const },
+    ],
+  ];
+
+  let totalAtt = 0;
+  let totalOt = 0;
+  let totalEarn = 0;
+  let totalFood = 0;
+  let totalGen = 0;
+  let totalSiteAdv = 0;
+  let totalExp = 0;
+  let totalNet = 0;
+
+  for (const week of weeklyReports) {
+    const weekDays = getWeekDaysPdf(week.startDate, week.endDate);
+    
+    // Calculate Site Advance for this specific week
+    const weekSiteAdvance = week.expenses
+      .filter((e: any) => e.type === 'Site' || e.type === 'Other')
+      .reduce((sum: number, e: any) => sum + e.amount, 0);
+
+    totalAtt += week.attendanceCount;
+    totalOt += week.otUnits;
+    totalEarn += week.earning;
+    totalFood += week.expenseFood;
+    totalGen += week.expenseGeneral;
+    totalSiteAdv += weekSiteAdvance;
+    totalExp += week.expensesTotal;
+    totalNet += week.netEarning;
+
+    const row = [
+      { text: `${shortDatePdf(week.startDate)} - ${shortDatePdf(week.endDate)}`, style: 'tableCell', alignment: 'center' as const },
+      ...weekDays.map((day) => {
+        const att = week.attendances.find((a: any) => a.date === day.date);
+        const markingObj = (day.isInRange && att) ? buildAttendanceMarking(att.status, att.otUnits) : { text: '' };
+        return {
+          text: markingObj.text?.trim() || '',
+          style: 'tableCell',
+          alignment: 'center' as const,
+          color: day.isInRange ? '#18181b' : '#a1a1aa'
+        };
+      }),
+      { text: week.attendanceCount.toString(), style: 'tableCell', alignment: 'center' as const, bold: true },
+      { text: week.otUnits > 0 ? week.otUnits.toString() : '-', style: 'tableCell', alignment: 'center' as const },
+      { text: formatCurrency(week.earning), style: 'tableCell', alignment: 'right' as const, color: '#0984e3', bold: true },
+      { text: week.expenseGeneral > 0 ? formatCurrency(week.expenseGeneral) : '-', style: 'tableCell', alignment: 'right' as const },
+      { text: week.expenseFood > 0 ? formatCurrency(week.expenseFood) : '-', style: 'tableCell', alignment: 'right' as const },
+      { text: weekSiteAdvance > 0 ? formatCurrency(weekSiteAdvance) : '-', style: 'tableCell', alignment: 'right' as const, color: '#e17055' },
+      { text: formatCurrency(week.expensesTotal), style: 'tableCell', alignment: 'right' as const, bold: true, color: '#e17055' },
+      { text: formatCurrency(week.netEarning), style: 'tableCell', alignment: 'right' as const, bold: true, color: '#00b894' },
+    ];
+    tableBody.push(row);
+  }
+
+  // Totals Row
+  tableBody.push([
+    { text: 'மொத்தம்', style: 'totalRow', alignment: 'center' as const },
+    ...DAY_NAMES.map(() => ({ text: '', style: 'totalRow' })),
+    { text: totalAtt.toString(), style: 'totalRow', alignment: 'center' as const },
+    { text: totalOt > 0 ? totalOt.toString() : '-', style: 'totalRow', alignment: 'center' as const },
+    { text: formatCurrency(totalEarn), style: 'totalRow', alignment: 'right' as const, color: '#0984e3' },
+    { text: totalGen > 0 ? formatCurrency(totalGen) : '-', style: 'totalRow', alignment: 'right' as const },
+    { text: totalFood > 0 ? formatCurrency(totalFood) : '-', style: 'totalRow', alignment: 'right' as const },
+    { text: totalSiteAdv > 0 ? formatCurrency(totalSiteAdv) : '-', style: 'totalRow', alignment: 'right' as const, color: '#e17055' },
+    { text: formatCurrency(totalExp), style: 'totalRow', alignment: 'right' as const, color: '#e17055' },
+    { text: formatCurrency(totalNet), style: 'totalRow', alignment: 'right' as const, color: '#00b894' },
+  ]);
+
+  return [
+    {
+      text: 'WEEKLY BREAKDOWN',
+      bold: true,
+      fontSize: 11,
+      color: '#ffffff',
+      fillColor: '#8e44ad',
+      margin: [0, 15, 0, 0],
+      alignment: 'center' as const,
+    },
+    {
+      table: {
+        headerRows: 1,
+        widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', '*'],
+        body: tableBody,
+      },
+      layout: {
+        fillColor: (rowIndex: number, node: any) => {
+          if (rowIndex === 0) return '#8e44ad';
+          if (rowIndex === node.table.body.length - 1) return '#f8f9fa';
+          return rowIndex % 2 === 0 ? '#f8f9fa' : null;
+        },
+        hLineColor: () => '#e0e0e0',
+        vLineColor: () => '#e0e0e0',
+      },
+    },
+  ];
+}
+
 function buildExpensesTable(data: SalaryReportData): any {
-  const { records, summary } = data.expenses;
+  const allRecords = data.expenses.records;
+  const { summary } = data.expenses;
+  
+  // Filter out 'Site' and 'Other' expenses as they are now in the Weekly Report
+  const records = allRecords.filter(r => r.type.name !== 'Site' && r.type.name !== 'Other');
+  
+  // Re-calculate the filtered summary total
+  const filteredTotal = records.reduce((sum, r) => sum + r.amount, 0);
 
   if (records.length === 0) {
     return [
       { text: 'EXPENSES', style: 'sectionHeader' },
-      { text: 'No expenses for this period', italics: true },
+      { text: 'No general/food expenses for this period', italics: true },
     ];
   }
 
@@ -495,7 +643,7 @@ function buildExpensesTable(data: SalaryReportData): any {
     { text: 'TOTAL', style: 'totalRow' },
     ...typeTotals,
     {
-      text: formatCurrency(summary.total),
+      text: formatCurrency(filteredTotal),
       style: 'totalRow',
       alignment: 'right' as const,
     },

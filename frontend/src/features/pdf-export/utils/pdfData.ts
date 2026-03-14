@@ -27,7 +27,42 @@ export async function fetchSalaryReportData(salaryId: number): Promise<SalaryRep
     const salary: SalaryRecord = salaryResponse.data;
 
     console.log('✅ Salary fetched:', salary);
+    return await buildReportDataFromSalary(salary);
+  } catch (error) {
+    console.error('❌ Error fetching salary report data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Failed to fetch salary report data: ${errorMessage}`);
+  }
+}
 
+export async function fetchPreviewReportData(workerId: number, cycleStats: any): Promise<SalaryReportData> {
+  try {
+    console.log('📊 Fetching provisional report data for worker ID:', workerId);
+    const mockSalary: SalaryRecord = {
+      id: 0,
+      workerId,
+      cycleStart: cycleStats.cycleStart,
+      cycleEnd: cycleStats.cycleEnd,
+      basePay: cycleStats.basePay,
+      otPay: cycleStats.otPay,
+      grossPay: cycleStats.grossPay,
+      totalAdvance: cycleStats.totalAdvance,
+      totalExpense: cycleStats.totalExpense,
+      unpaidBalance: cycleStats.totalNetPayable,
+      openingBalance: cycleStats.openingBalance,
+      netPay: cycleStats.netPay,
+      totalPaid: 0,
+      status: 'PENDING',
+    };
+    return await buildReportDataFromSalary(mockSalary);
+  } catch (error) {
+    console.error('❌ Error fetching provisional report data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Failed to fetch preview report data: ${errorMessage}`);
+  }
+}
+
+async function buildReportDataFromSalary(salary: SalaryRecord): Promise<SalaryReportData> {
     const workerResponse = await workersAPI.getById(salary.workerId);
     const worker: WorkerInfo = workerResponse.data;
 
@@ -53,24 +88,37 @@ export async function fetchSalaryReportData(salaryId: number): Promise<SalaryRep
 
     console.log('📅 Fetching records for months:', months);
 
-    const [attendanceResponses, expensesResponse, advancesResponse] = await Promise.all([
+    const [attendanceResponses, expensesResponse, advancesResponse, weeklyReportResponse] = await Promise.all([
       Promise.all(months.map(m => attendanceAPI.getByWorkerAndMonth(salary.workerId, m.month, m.year))),
       expensesAPI.getByWorker(salary.workerId, { startDate, endDate }),
       advancesAPI.getByWorker(salary.workerId, { startDate, endDate }),
+      workersAPI.getWeeklyReport(salary.workerId, startDate, endDate),
     ]);
 
     const allAttendanceRecords: AttendanceRecord[] = attendanceResponses.flatMap(r => r.data);
     const allExpenseRecords: ExpenseRecord[] = expensesResponse.data;
     const allAdvanceRecords: AdvanceRecord[] = advancesResponse.data;
+    const allWeeklyReports = weeklyReportResponse.data;
 
     const attendanceRecords = filterRecordsByDateRange(allAttendanceRecords, startDate, endDate);
     const expenseRecords = filterRecordsByDateRange(allExpenseRecords, startDate, endDate);
     const advanceRecords = filterRecordsByDateRange(allAdvanceRecords, startDate, endDate);
+    
+    // Filter weekly reports strictly spanning the current cycle
+    const start = startDate.split('T')[0];
+    const end = endDate.split('T')[0];
+    const weeklyReports = allWeeklyReports.filter((w: any) => {
+      const wStart = w.startDate.split('T')[0];
+      const wEnd = w.endDate.split('T')[0];
+      // Include the week if it overlaps with the cycle period
+      return wStart <= end && wEnd >= start;
+    });
 
     console.log('✅ Records filtered for period:', {
       attendance: attendanceRecords.length,
       expenses: expenseRecords.length,
       advances: advanceRecords.length,
+      weeklyReports: weeklyReports.length,
     });
 
     const attendanceSummary = calculateAttendanceSummary(attendanceRecords);
@@ -98,17 +146,11 @@ export async function fetchSalaryReportData(salaryId: number): Promise<SalaryRep
       },
       generatedAt,
       generatedAtFormatted,
+      weeklyReports,
     };
 
     console.log('✅ Report data compiled successfully');
     return reportData;
-  } catch (error) {
-    console.error('❌ Error fetching salary report data:', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-
-    throw new Error(`Failed to fetch salary report data: ${errorMessage}`);
-  }
 }
 
 export async function fetchAdvanceReportData(advanceId: number) {

@@ -11,6 +11,8 @@ import {
   TrendingUp,
   User,
   Wallet,
+  Eye,
+  Loader2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -18,6 +20,11 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import CloseCycleModal from '../../components/modals/CloseCycleModal';
 import IssueAdvanceModal from '../../components/modals/IssueAdvanceModal';
 import PaySalaryModal from '../../components/modals/PaySalaryModal';
+import PdfPreviewModal from '../../components/modals/PdfPreviewModal';
+import { fetchPreviewReportData } from '../../features/pdf-export/utils/pdfData';
+import { buildSalaryReportPdf } from '../../features/pdf-export/utils/pdfBuilder';
+import { buildClosureReportPdf } from '../../features/pdf-export/utils/closurePdfBuilder';
+import { getPdfUrl } from '../../features/pdf-export/services/pdfService';
 import Button from '../../components/ui/Button';
 import Tabs from '../../components/ui/Tabs';
 import AttendanceTab from '../../components/workers/AttendanceTab';
@@ -58,6 +65,11 @@ export default function WorkerDetail() {
   const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [isCloseCycleModalOpen, setIsCloseCycleModalOpen] = useState(false);
+
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [previewPdfTitle, setPreviewPdfTitle] = useState('');
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   const worker = workers.find((w) => w.id === Number(id));
 
@@ -141,6 +153,24 @@ export default function WorkerDetail() {
       toast.success('Balance closed successfully!');
       fetchCycleStats(worker.id, true);
       fetchWorkers();
+    }
+  };
+
+  const handlePreviewReport = async (isClosure: boolean) => {
+    if (!worker || !cycleStats) return;
+    setIsPreviewing(true);
+    try {
+      const reportData = await fetchPreviewReportData(worker.id, cycleStats);
+      const docDefinition = isClosure ? buildClosureReportPdf(reportData) : buildSalaryReportPdf(reportData);
+      const url = await getPdfUrl(docDefinition);
+      setPreviewPdfUrl(url);
+      setPreviewPdfTitle(`Preview: ${isClosure ? 'Closure Report' : 'Salary Slip'} - ${worker.name}`);
+      setIsPreviewModalOpen(true);
+    } catch (err) {
+      toast.error('Failed to generate preview report');
+      console.error(err);
+    } finally {
+      setIsPreviewing(false);
     }
   };
 
@@ -276,27 +306,51 @@ export default function WorkerDetail() {
               Issue Advance
             </Button>
             {showCloseCycle ? (
-              <Button
-                variant="primary"
-                size="md"
-                className="flex items-center gap-2"
-                onClick={() => setIsCloseCycleModalOpen(true)}
-                disabled={!canCloseCycle || !worker.isActive}
-              >
-                <CheckCircle className="w-4 h-4" />
-                Close Balance
-              </Button>
+              <div className="flex rounded-lg shadow-sm">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="flex items-center gap-2 rounded-r-none border-r border-black/10"
+                  onClick={() => setIsCloseCycleModalOpen(true)}
+                  disabled={!canCloseCycle || !worker.isActive}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Close Balance
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="rounded-l-none px-3 hover:bg-primary-hover flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => handlePreviewReport(true)}
+                  disabled={isPreviewing || !canCloseCycle || !worker.isActive}
+                  title="Preview Report"
+                >
+                  {isPreviewing && showCloseCycle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
             ) : (
-              <Button
-                variant="primary"
-                size="md"
-                className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => setIsSalaryModalOpen(true)}
-                disabled={!canPaySalary || !worker.isActive}
-              >
-                <TrendingUp className="w-4 h-4" />
-                Pay Salary
-              </Button>
+              <div className="flex rounded-lg shadow-sm">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-none border-r border-black/10"
+                  onClick={() => setIsSalaryModalOpen(true)}
+                  disabled={!canPaySalary || !worker.isActive}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Pay Salary
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="rounded-l-none px-3 hover:bg-primary-hover flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => handlePreviewReport(false)}
+                  disabled={isPreviewing || !canPaySalary || !worker.isActive}
+                  title="Preview Report"
+                >
+                  {isPreviewing && !showCloseCycle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -507,6 +561,13 @@ export default function WorkerDetail() {
         isOpen={isCloseCycleModalOpen}
         onClose={() => setIsCloseCycleModalOpen(false)}
         onSuccess={handleCloseCycleSuccess}
+      />
+
+      <PdfPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        pdfUrl={previewPdfUrl}
+        title={previewPdfTitle}
       />
     </div>
   );
