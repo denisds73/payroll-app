@@ -171,7 +171,8 @@ export const workersAPI = {
 
   getBlockedDates: (workerId: number) => api.get(`/workers/${workerId}/blocked-dates`),
 
-  getWeeklyReport: (workerId: number) => api.get(`/workers/${workerId}/weekly-report`),
+  getWeeklyReport: (workerId: number, startDate?: string, endDate?: string) => 
+    api.get(`/workers/${workerId}/weekly-report`, { params: { startDate, endDate } }),
 };
 
 export const salariesAPI = {

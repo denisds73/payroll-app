@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ActivateWorkerDto } from './dto/activate-worker.dto';
 import { CreateWorkerDto } from './dto/create-worker.dto';
 import { DisableWorkerDto } from './dto/disable-worker.dto';
@@ -25,8 +25,12 @@ export class WorkersController {
   }
 
   @Get(':id/weekly-report')
-  getWeeklyReport(@Param('id', ParseIntPipe) id: number) {
-    return this.workersService.getWeeklyReport(id);
+  getWeeklyReport(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.workersService.getWeeklyReport(id, startDate, endDate);
   }
 
   @Post(':id/disable')

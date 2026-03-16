@@ -109,6 +109,31 @@ export interface SalaryRecord {
   signature?: string;
 }
 
+export interface ExpenseDetail {
+  date: string;
+  amount: number;
+  note: string;
+  type: string;
+}
+
+export interface WeeklyReport {
+  startDate: string;
+  endDate: string;
+  attendanceCount: number;
+  otUnits: number;
+  earning: number;
+  expenseFood: number;
+  expenseGeneral: number;
+  expensesTotal: number;
+  netEarning: number;
+  attendances: {
+    date: string;
+    status: 'PRESENT' | 'HALF' | 'ABSENT';
+    otUnits: number;
+  }[];
+  expenses: ExpenseDetail[];
+}
+
 export interface SalaryReportData {
   worker: WorkerInfo;
   salary: SalaryRecord;
@@ -124,6 +149,7 @@ export interface SalaryReportData {
     records: AdvanceRecord[];
     summary: AdvanceSummary;
   };
+  weeklyReports?: WeeklyReport[];
   generatedAt: string;
   generatedAtFormatted: string;
 }
