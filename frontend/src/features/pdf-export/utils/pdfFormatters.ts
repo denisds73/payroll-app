@@ -69,7 +69,8 @@ export function formatDateRange(startDate: string, endDate: string): string {
   if (start.getMonth() === end.getMonth()) {
     return `${startDay} - ${endDay} ${endMonth} ${endYear}`;
   }
-  return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${endYear}`;
+  const startYear = start.getFullYear();
+  return `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`;
 }
 
 export function capitalize(str: string): string {

@@ -275,7 +275,7 @@ export default function CloseCycleModal({
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
-                    <span className="font-medium text-text-primary">Gross Pay</span>
+                    <span className="font-medium text-text-primary">மொத்த சம்பளம் (Gross Pay)</span>
                     <span className="font-semibold text-text-primary">
                       {formatCurrency(cycleData.grossPay)}
                     </span>

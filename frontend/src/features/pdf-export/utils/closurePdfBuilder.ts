@@ -151,7 +151,7 @@ function buildCyclePeriod(data: SalaryReportData): Content {
       body: [
         [
           {
-            text: 'CYCLE PERIOD',
+            text: 'கணக்கு காலம் (CYCLE PERIOD)',
             colSpan: 2,
             bold: true,
             fontSize: 11,
@@ -218,7 +218,7 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                   widths: ['*', 'auto'],
                   body: [
                     [
-                      { text: 'Present Days', style: 'tableCell' },
+                      { text: 'முழு நாட்கள் (Present Days)', style: 'tableCell' },
                       {
                         text: summary.presentDays.toString(),
                         style: 'tableCell',
@@ -226,11 +226,11 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                       },
                     ],
                     [
-                      { text: 'Half Days', style: 'tableCell' },
+                      { text: 'அரை நாட்கள் (Half Days)', style: 'tableCell' },
                       { text: summary.halfDays.toString(), style: 'tableCell', alignment: 'right' },
                     ],
                     [
-                      { text: 'Absent Days', style: 'tableCell' },
+                      { text: 'வேலை செய்யாத நாட்கள் (Absent Days)', style: 'tableCell' },
                       {
                         text: summary.absentDays.toString(),
                         style: 'tableCell',
@@ -238,7 +238,7 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                       },
                     ],
                     [
-                      { text: 'Total Days Worked', style: 'tableCell', bold: true },
+                      { text: 'மொத்த வேலை செய்த நாட்கள் (Total Days Worked)', style: 'tableCell', bold: true },
                       {
                         text: summary.totalDays.toFixed(1),
                         style: 'tableCell',
@@ -247,7 +247,7 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                       },
                     ],
                     [
-                      { text: 'Total OT Units', style: 'tableCell', bold: true },
+                      { text: 'மொத்த OT (Total OT Units)', style: 'tableCell', bold: true },
                       {
                         text: summary.totalOtUnits.toFixed(1),
                         style: 'tableCell',
@@ -275,27 +275,7 @@ function buildAttendanceSummary(data: SalaryReportData): Content {
                   widths: ['*', 'auto'],
                   body: [
                     [
-                      { text: 'Base Wage Total', style: 'tableCell' },
-                      {
-                        text: formatCurrency(summary.totalBasePay),
-                        style: 'tableCell',
-                        alignment: 'right',
-                        bold: true,
-                        color: '#00b894',
-                      },
-                    ],
-                    [
-                      { text: 'Overtime Total', style: 'tableCell' },
-                      {
-                        text: formatCurrency(summary.totalOtPay),
-                        style: 'tableCell',
-                        alignment: 'right',
-                        bold: true,
-                        color: '#00b894',
-                      },
-                    ],
-                    [
-                      { text: 'Gross Pay', style: 'tableCell', bold: true },
+                      { text: 'மொத்த சம்பளம் (Gross Pay)', style: 'tableCell', bold: true },
                       {
                         text: formatCurrency(summary.totalBasePay + summary.totalOtPay),
                         style: 'tableCell',
