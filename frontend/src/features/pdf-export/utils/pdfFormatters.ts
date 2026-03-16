@@ -61,16 +61,8 @@ export function formatDateRange(startDate: string, endDate: string): string {
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return 'Invalid Date Range';
   }
-  const startDay = start.getDate().toString().padStart(2, '0');
-  const startMonth = start.toLocaleDateString('en-IN', { month: 'short' });
-  const endDay = end.getDate().toString().padStart(2, '0');
-  const endMonth = end.toLocaleDateString('en-IN', { month: 'short' });
-  const endYear = end.getFullYear();
-  if (start.getMonth() === end.getMonth()) {
-    return `${startDay} - ${endDay} ${endMonth} ${endYear}`;
-  }
-  const startYear = start.getFullYear();
-  return `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`;
+  const fmt = (d: Date) => `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+  return `${fmt(start)} - ${fmt(end)}`;
 }
 
 export function capitalize(str: string): string {
