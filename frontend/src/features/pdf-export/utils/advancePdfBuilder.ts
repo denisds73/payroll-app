@@ -245,7 +245,7 @@ function buildSignatureSection(data: AdvanceReportData, signatureDataUrl?: strin
           },
           signatureDataUrl
             ? {
-                text: `Signed on: ${formatDate(new Date().toISOString(), 'short')}`,
+                text: `Signed on: ${formatDate(new Date().toISOString())}`,
                 fontSize: 8,
                 color: '#6b7280',
                 italics: true,

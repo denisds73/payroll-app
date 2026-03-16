@@ -10,31 +10,12 @@ export function formatCurrency(amount: number, options?: FormattingOptions): str
   return `${currency}${formatted}`;
 }
 
-export function formatDate(
-  dateString: string,
-  format: 'short' | 'long' | 'full' = 'short',
-): string {
+export function formatDate(dateString: string): string {
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) {
     return 'Invalid Date';
   }
-  const options: Intl.DateTimeFormatOptions = {
-    day: '2-digit',
-    year: 'numeric',
-  };
-  switch (format) {
-    case 'short':
-      options.month = 'short';
-      break;
-    case 'long':
-      options.month = 'long';
-      break;
-    case 'full':
-      options.weekday = 'long';
-      options.month = 'long';
-      break;
-  }
-  return date.toLocaleDateString('en-IN', options);
+  return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
 }
 
 export function formatDateTime(timestamp: string): string {
@@ -42,7 +23,7 @@ export function formatDateTime(timestamp: string): string {
   if (Number.isNaN(date.getTime())) {
     return 'Invalid Date';
   }
-  const dateStr = formatDate(timestamp, 'short');
+  const dateStr = formatDate(timestamp);
   const timeStr = date.toLocaleTimeString('en-IN', {
     hour: 'numeric',
     minute: '2-digit',
