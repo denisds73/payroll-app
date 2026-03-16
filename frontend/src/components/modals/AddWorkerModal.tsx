@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <modal handling> */
-import { User, X } from 'lucide-react';
+import { CheckCircle2, User, X } from 'lucide-react';
 import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -12,6 +12,8 @@ import Button from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 import Input from '../ui/Input';
 import TamilInput from '../ui/TamilInput';
+
+type Step = 'form' | 'confirm';
 
 interface AddWorkerModalProps {
   isOpen: boolean;
@@ -27,6 +29,25 @@ interface WorkerFormData {
   openingBalance: string;
 }
 
+function formatCurrency(value: string): string {
+  const num = Number.parseFloat(value);
+  if (Number.isNaN(num) || value === '') return '—';
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
+}
+
+function formatDate(value: string): string {
+  if (!value) return '—';
+  try {
+    return new Date(value + (value.includes('T') ? '' : 'T00:00:00Z')).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return value;
+  }
+}
+
 export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps) {
   const navigate = useNavigate();
   const { fetchWorkers } = useWorkerStore();
@@ -37,7 +58,9 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
   const phoneId = useId();
   const wageId = useId();
   const otRateId = useId();
+  const openingBalanceId = useId();
 
+  const [step, setStep] = useState<Step>('form');
   const [formData, setFormData] = useState<WorkerFormData>({
     name: '',
     phone: '',
@@ -52,6 +75,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsAnimating(true), 10);
+      setStep('form');
       setFormData({
         name: '',
         phone: '',
@@ -60,29 +84,26 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
         joinedAt: today,
         openingBalance: '',
       });
-
     } else {
       setIsAnimating(false);
     }
   }, [isOpen, today]);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-
+  const validateForm = (): boolean => {
     const trimmedName = formData.name.trim();
     if (!trimmedName) {
       toast.error('Name is required');
-      return;
+      return false;
     }
     if (trimmedName.length > VALIDATION.name.maxLength) {
       toast.error(VALIDATION.name.message);
-      return;
+      return false;
     }
 
     const phoneError = validatePhone(formData.phone);
     if (phoneError) {
       toast.error(phoneError);
-      return;
+      return false;
     }
 
     const wageNum = Number.parseInt(formData.wage, 10);
@@ -95,13 +116,13 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
     );
     if (!formData.wage || wageError) {
       toast.error(wageError || VALIDATION.wage.messageMin);
-      return;
+      return false;
     }
 
     const otRateNum = Number.parseFloat(formData.otRate);
     if (!formData.otRate) {
       toast.error('OT rate is required');
-      return;
+      return false;
     }
     const otError = validateNumericRange(
       otRateNum,
@@ -112,8 +133,19 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
     );
     if (otError) {
       toast.error(otError);
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleGoToConfirm = (e: FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+    if (validateForm()) setStep('confirm');
+  };
+
+  const submitWorker = async (): Promise<void> => {
+    const wageNum = Number.parseInt(formData.wage, 10);
+    const otRateNum = Number.parseFloat(formData.otRate);
 
     setLoading(true);
 
@@ -168,6 +200,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
     if (!loading) {
       setIsAnimating(false);
       setTimeout(() => {
+        setStep('form');
         setFormData({
           name: '',
           phone: '',
@@ -214,14 +247,20 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <User className="w-5 h-5 text-primary" />
+            <div className={`p-2 rounded-lg ${step === 'confirm' ? 'bg-green-500/10' : 'bg-primary/10'}`}>
+              {step === 'confirm' ? (
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+              ) : (
+                <User className="w-5 h-5 text-primary" />
+              )}
             </div>
             <div>
               <h2 id={modalTitleId} className="text-lg font-semibold text-text-primary">
-                Add New Worker
+                {step === 'confirm' ? 'Confirm worker details' : 'Add New Worker'}
               </h2>
-              <p className="text-sm text-text-secondary">Enter worker details</p>
+              <p className="text-sm text-text-secondary">
+                {step === 'confirm' ? 'Review and confirm to add worker' : 'Enter worker details'}
+              </p>
             </div>
           </div>
           <button
@@ -234,7 +273,49 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate>
+        {step === 'confirm' ? (
+          <div className="p-4">
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-text-secondary font-medium">Name</dt>
+                <dd className="text-text-primary mt-0.5">{formData.name.trim() || '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary font-medium">Phone</dt>
+                <dd className="text-text-primary mt-0.5">{formData.phone.trim() || '—'}</dd>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-text-secondary font-medium">Daily Wage</dt>
+                  <dd className="text-text-primary mt-0.5">{formatCurrency(formData.wage)}</dd>
+                </div>
+                <div>
+                  <dt className="text-text-secondary font-medium">OT Rate</dt>
+                  <dd className="text-text-primary mt-0.5">{formatCurrency(formData.otRate)}</dd>
+                </div>
+              </div>
+              <div>
+                <dt className="text-text-secondary font-medium">Joined Date</dt>
+                <dd className="text-text-primary mt-0.5">{formatDate(formData.joinedAt)}</dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary font-medium">Opening Balance</dt>
+                <dd className="text-text-primary mt-0.5">
+                  {formData.openingBalance ? formatCurrency(formData.openingBalance) : '₹0'}
+                </dd>
+              </div>
+            </dl>
+            <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-border">
+              <Button type="button" variant="secondary" onClick={() => setStep('form')} disabled={loading}>
+                Back
+              </Button>
+              <Button type="button" onClick={submitWorker} loading={loading} disabled={loading}>
+                {loading ? 'Adding...' : 'Confirm & Add Worker'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+        <form onSubmit={handleGoToConfirm} noValidate>
           <div className="p-4 space-y-4">
 
 
@@ -333,6 +414,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
 
             <div>
               <label
+                htmlFor={openingBalanceId}
                 className="block text-sm font-medium text-text-secondary mb-1"
               >
                 Opening Balance
@@ -342,6 +424,7 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
                   ₹
                 </span>
                 <input
+                  id={openingBalanceId}
                   type="number"
                   step="0.01"
                   value={formData.openingBalance}
@@ -360,11 +443,12 @@ export default function AddWorkerModal({ isOpen, onClose }: AddWorkerModalProps)
             <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit" loading={loading} disabled={loading}>
-              {loading ? 'Adding...' : 'Add Worker'}
+            <Button type="submit" disabled={loading}>
+              Next
             </Button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
